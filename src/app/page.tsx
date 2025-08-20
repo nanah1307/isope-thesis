@@ -1,5 +1,5 @@
+
 import Image from "next/image";
-/*Insert isope landing page here, not the login page */
 
 export default function Home() {
   return (
