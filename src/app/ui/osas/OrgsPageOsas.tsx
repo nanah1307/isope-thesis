@@ -5,7 +5,7 @@ type OrgsProp = {
   org: Orgs;
 };
 
-export default function OrgsPage({ org }: OrgsProp) {
+export default function OrgsPageOsas({ org }: OrgsProp) {
   return (
     <div style={{ padding: "2rem" }}>
       <img
@@ -14,7 +14,6 @@ export default function OrgsPage({ org }: OrgsProp) {
         style={{ width: 100, height: 100, borderRadius: "50%" }}
       />
       <h1>{org.name}</h1>
-      <p>@{org.username}</p>
       <p>{org.bio}</p>
     </div>
   );

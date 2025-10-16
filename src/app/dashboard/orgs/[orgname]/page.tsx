@@ -1,4 +1,4 @@
-import OrgsPage from "@/app/ui/osas/osasorgs";
+import OrgsPageOsas from "@/app/ui/osas/OrgsPageOsas";
 import { getAllUsernames, getUserByUsername } from "@/app/lib/user"
 
 export default async function OrgPage({params,}:
@@ -11,7 +11,8 @@ export default async function OrgPage({params,}:
   if(!orgName){
     return <div>Org not found</div>;
   }
+  
   return<>
-  <OrgsPage org={orgName}/>
+  <OrgsPageOsas org={orgName}/>
   </>
 }
