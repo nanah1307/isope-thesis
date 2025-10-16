@@ -8,7 +8,6 @@ export default function dashboardlayout({
   return (
     <div>
       <Osasbar />
-      <main className="p-6">{children}</main>
     </div>
   );
 }
