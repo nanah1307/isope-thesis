@@ -28,7 +28,7 @@ export default function OrgsDashboard() {
       avatar: "",
       leftNotifications: 1,
       progress: 60,
-      rightNotifications: 0,
+      rightNotifications: 2,
       members: 98
     },
     {
@@ -44,8 +44,8 @@ export default function OrgsDashboard() {
       id: 5,
       name: "Rhythm",
       avatar: "",
-      leftNotifications: 99,
-      progress: 91,
+      leftNotifications: 992321,
+      progress: 1,
       rightNotifications: 1,
       members: 203
     },
@@ -53,7 +53,7 @@ export default function OrgsDashboard() {
       id: 6,
       name: "Elix Esports",
       avatar: "",
-      leftNotifications: 4,
+      leftNotifications: 11,
       progress: 65,
       rightNotifications: 2,
       members: 412
@@ -105,9 +105,34 @@ export default function OrgsDashboard() {
               className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow p-6 relative"
             >
               {/* Left Notifications */}
-              <div className="absolute left-4 top-4 flex flex-col gap-2">
-                <div className="bg-blue-100 text-blue-700 text-xs font-semibold px-2 py-1 rounded">
-                  {org.leftNotifications}
+              <div className="absolute left-4 top-4">
+                <div className="relative inline-flex items-center justify-center">
+                  <div className="bg-blue-600 rounded-full p-2 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-4 text-white">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
+                    </svg>
+                  </div>
+                  {org.leftNotifications > 0 && (
+                    <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                      {org.leftNotifications > 10 ? '9+' : org.leftNotifications}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Right Notifications */}
+              <div className="absolute right-4 top-4">
+                <div className="relative inline-flex items-center justify-center">
+                  <div className="bg-blue-600 rounded-full p-2 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-4 text-white">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                    </svg>
+                  </div>
+                  {org.rightNotifications > 0 && (
+                    <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                      {org.rightNotifications}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -128,13 +153,6 @@ export default function OrgsDashboard() {
                   View Organization
                 </button>
               </div>
-
-              {/* Right Notifications */}
-              <div className="absolute right-4 top-4 flex flex-col gap-2 items-end">
-                <div className="bg-red-100 text-red-700 text-xs font-semibold px-2 py-1 rounded">
-                  {org.rightNotifications}
-                </div>
-              </div>
             </div>
           ))}
         </div>
@@ -142,7 +160,7 @@ export default function OrgsDashboard() {
 
       {/* Create Organization Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-opacity-70 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-2xl font-bold text-gray-900">Create Organization</h2>
