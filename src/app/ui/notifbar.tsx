@@ -1,14 +1,28 @@
-import { useState } from 'react';
+'use client';
 
-export default function NotificationSidebar() {
+import { FC, useState } from 'react';
+
+interface Notification {
+  id: number;
+  title: string;
+  date: string;
+}
+
+interface Task {
+  id: number;
+  text: string;
+  checked: boolean;
+}
+
+const NotificationSidebar: FC = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [notifications, setNotifications] = useState([
+  const [notifications, setNotifications] = useState<Notification[]>([
     { id: 1, title: 'New Event', date: '9/17' },
     { id: 2, title: 'New Event', date: '9/17' },
     { id: 3, title: 'New Event', date: '9/17' }
   ]);
 
-  const [tasks] = useState([
+  const [tasks] = useState<Task[]>([
     { id: 1, text: 'CWTS - Instructional Activity', checked: false },
     { id: 2, text: 'Compile - Year End Report', checked: false },
     { id: 3, text: 'Optics - Proposed Activities', checked: false },
@@ -40,6 +54,7 @@ export default function NotificationSidebar() {
       {/* Overlay for mobile */}
       {isOpen && (
         <div
+          className="fixed inset-0 bg-opacity-30 z-40 lg:hidden"
           onClick={() => setIsOpen(false)}
         />
       )}
@@ -135,4 +150,6 @@ export default function NotificationSidebar() {
       </div>
     </>
   );
-}
+};
+
+export default NotificationSidebar;
