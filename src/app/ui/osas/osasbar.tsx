@@ -25,7 +25,6 @@ const Osasbar: FC = () => {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-
    return (
     <>
       {!sidebarOpen && (
