@@ -1,3 +1,4 @@
+//like models/anime.js
 export type orgProp = {
   id: number;
   name: string;
