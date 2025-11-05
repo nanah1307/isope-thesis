@@ -1,11 +1,11 @@
 export type orgProp = {
   id: number;
   name: string;
-  price: number;
-  stock: number;
-  details: string;
-  categories: string;
-  photo: string;
+  avatar: string;
+  leftNotifications: number;
+  progress: number;
+  rightNotifications: number;
+  members: number;
 };
 
 export type Cart = {
