@@ -1,14 +1,28 @@
-import { useState } from 'react';
+'use client';
 
-export default function NotificationSidebar() {
+import { FC, useState } from 'react';
+
+interface Notification {
+  id: number;
+  title: string;
+  date: string;
+}
+
+interface Task {
+  id: number;
+  text: string;
+  checked: boolean;
+}
+
+const NotificationSidebar: FC = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [notifications, setNotifications] = useState([
+  const [notifications, setNotifications] = useState<Notification[]>([
     { id: 1, title: 'New Event', date: '9/17' },
     { id: 2, title: 'New Event', date: '9/17' },
     { id: 3, title: 'New Event', date: '9/17' }
   ]);
 
-  const [tasks] = useState([
+  const [tasks] = useState<Task[]>([
     { id: 1, text: 'CWTS - Instructional Activity', checked: false },
     { id: 2, text: 'Compile - Year End Report', checked: false },
     { id: 3, text: 'Optics - Proposed Activities', checked: false },
@@ -40,6 +54,7 @@ export default function NotificationSidebar() {
       {/* Overlay for mobile */}
       {isOpen && (
         <div
+          className="fixed inset-0 bg-opacity-30 z-40 lg:hidden"
           onClick={() => setIsOpen(false)}
         />
       )}
@@ -55,7 +70,7 @@ export default function NotificationSidebar() {
         {/* Close button for mobile */}
         <button
           onClick={() => setIsOpen(false)}
-          className="lg:hidden absolute top-4 right-4 text-white hover:text-red-300 transition-colors"
+          className="lg:hidden absolute top-4 right-4 text-white hover:text-red-300 transition-colors cursor-pointer"
           aria-label="Close notifications"
         >
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
@@ -88,7 +103,7 @@ export default function NotificationSidebar() {
               </div>
               <button 
                 onClick={() => removeNotification(notif.id)}
-                className="text-white hover:text-red-300 transition-colors ml-2 flex-shrink-0"
+                className="text-white hover:text-red-300 transition-colors ml-2 flex-shrink-0 cursor-pointer"
                 aria-label="Remove notification"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
@@ -100,7 +115,7 @@ export default function NotificationSidebar() {
         </div>
 
         {/* View All Button */}
-        <button className="bg-yellow-400 text-blue-900 font-bold py-2 px-6 rounded-full hover:bg-yellow-300 transition-colors mb-8 self-start text-sm sm:text-base">
+        <button className="bg-yellow-400 text-blue-900 font-bold py-2 px-6 rounded-full hover:bg-yellow-300 transition-colors mb-8 self-start text-sm sm:text-base cursor-pointer">
           VIEW ALL
         </button>
 
@@ -135,4 +150,6 @@ export default function NotificationSidebar() {
       </div>
     </>
   );
-}
+};
+
+export default NotificationSidebar;

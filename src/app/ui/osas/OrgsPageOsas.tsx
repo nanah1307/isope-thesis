@@ -83,7 +83,7 @@ export default function OrgsPageOsas({ org }: OrgsProp) {
             <li key={name} className="flex-shrink-0">
               <button
                 type="button"
-                className={`font-medium text-gray-700 hover:text-black pb-1 focus:outline-none whitespace-nowrap ${
+                className={`cursor-pointer font-medium text-gray-700 hover:text-black pb-1 focus:outline-none whitespace-nowrap ${
                   active === name ? "border-b-2 border-blue-500" : ""
                 }`}
                 onClick={() => setActive(name)}

@@ -1,7 +1,20 @@
-export type OrgsProps = {
-  orgs: {
+export type orgProp = {
+  id: number;
+  name: string;
+  avatar: string;
+  leftNotifications: number;
+  progress: number;
+  rightNotifications: number;
+  members: number;
+};
+
+export type Cart = {
+  CartItems: Array<{
+    id: number;
     name: string;
-    bio: string;
-    avatar: string;
-  };
+    price: number;
+    details: string;
+    photo: string;
+    quantity: number;
+  }>;
 };
