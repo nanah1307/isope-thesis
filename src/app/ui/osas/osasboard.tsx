@@ -1,15 +1,7 @@
 'use client';
 import { useState, FC } from 'react';
 import Link from 'next/link';
-interface Organization {
-  id: number;
-  name: string;
-  avatar: string;
-  leftNotifications: number;
-  progress: number;
-  rightNotifications: number;
-  members: number;
-}
+import { orgProp } from '@/app/lib/definitions';
 
 interface OrgCardProps {
   org: orgProp;
