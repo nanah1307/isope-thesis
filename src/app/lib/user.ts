@@ -10,7 +10,7 @@ export type Orgs = {
 // This can later be replaced with a fetch to your API or DB
 const orgs: Record<string, Orgs> = {
   osas: {
-      username: "osas",
+      username: "CSO",
       name: "Office of students affairs",
       bio: "Full Stack Developer",
       avatar: "[insert pic here]",

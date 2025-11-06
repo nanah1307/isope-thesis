@@ -1,6 +1,7 @@
 export type orgProp = {
   id: number;
   name: string;
+  username:string;
   avatar: string;
   leftNotifications: number;
   progress: number;

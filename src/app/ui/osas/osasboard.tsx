@@ -68,6 +68,13 @@ const OrgCard: FC<OrgCardProps> = ({ org, onView }) => {
         </div>
 
         <h2 className="text-xl font-bold text-gray-900 mb-3">{org.name}</h2>
+
+        <Link
+         href={`./dashboard/orgs/${org.username}`}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors w-full"
+        >
+          View Organization
+        </Link>
       </div>
 
       {/* Button at bottom */}
@@ -160,6 +167,7 @@ const OrgsDashboard: FC = () => {
     {
       id: 1,
       name: "Central Student Organization",
+      username:"CSO",
       avatar: "",
       leftNotifications: 2,
       progress: 85,
@@ -169,6 +177,7 @@ const OrgsDashboard: FC = () => {
     {
       id: 2,
       name: "Compile",
+      username:"compile",
       avatar: "",
       leftNotifications: 3,
       progress: 72,
@@ -178,6 +187,7 @@ const OrgsDashboard: FC = () => {
     {
       id: 3,
       name: "Optics",
+      username:"optics",
       avatar: "",
       leftNotifications: 1,
       progress: 60,
@@ -187,6 +197,7 @@ const OrgsDashboard: FC = () => {
     {
       id: 4,
       name: "Pikzel Graphic Design",
+      username:"pikzel",
       avatar: "",
       leftNotifications: 2,
       progress: 78,
@@ -196,6 +207,7 @@ const OrgsDashboard: FC = () => {
     {
       id: 5,
       name: "Rhythm",
+      username:"rhythm",
       avatar: "",
       leftNotifications: 99,
       progress: 1,
@@ -205,11 +217,12 @@ const OrgsDashboard: FC = () => {
     {
       id: 6,
       name: "Elix Esports",
+      username:"elix",
       avatar: "",
       leftNotifications: 4,
       progress: 65,
       rightNotifications: 2,
-      members: 412
+      members: 412  
     }
   ]);
 
@@ -219,6 +232,7 @@ const OrgsDashboard: FC = () => {
     const newOrg: orgProp = {
       id: Math.max(...orgs.map(o => o.id), 0) + 1,
       name: name,
+      username: '',
       avatar: '',
       leftNotifications: 0,
       progress: 0,
