@@ -76,14 +76,6 @@ const OrgCard: FC<OrgCardProps> = ({ org, onView }) => {
           View Organization
         </Link>
       </div>
-
-      {/* Button at bottom */}
-      <Link
-        href={`/${org.name}`}
-        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors w-full text-center"
-      >
-        View Organization
-      </Link>
     </div>
   );
 };
