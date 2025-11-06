@@ -1,7 +1,15 @@
 'use client';
 import { useState, FC } from 'react';
-import { orgProp } from '@/app/lib/definitions';
-
+import Link from 'next/link';
+interface Organization {
+  id: number;
+  name: string;
+  avatar: string;
+  leftNotifications: number;
+  progress: number;
+  rightNotifications: number;
+  members: number;
+}
 
 interface OrgCardProps {
   org: orgProp;
@@ -69,12 +77,12 @@ const OrgCard: FC<OrgCardProps> = ({ org, onView }) => {
 
         <h2 className="text-xl font-bold text-gray-900 mb-3">{org.name}</h2>
 
-        <button 
-          onClick={() => onView?.(org)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors w-full cursor-pointer"
+        <Link
+         href={`/${org.name}`}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors w-full"
         >
           View Organization
-        </button>
+        </Link>
       </div>
     </div>
   );
