@@ -17,7 +17,7 @@ interface CreateOrgModalProps {
 // Org Card Component
 const OrgCard: FC<OrgCardProps> = ({ org, onView }) => {
   return (
-    <div className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow p-6 relative">
+    <div className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow p-6 relative flex flex-col h-full">
       {/* Left Notifications */}
       <div className="absolute left-4 top-4">
         <div 
@@ -57,7 +57,7 @@ const OrgCard: FC<OrgCardProps> = ({ org, onView }) => {
       </div>
 
       {/* Center Content */}
-      <div className="flex flex-col items-center text-center">
+      <div className="flex flex-col items-center text-center flex-1">
         <div className="relative mb-4">
           <div className="w-20 h-20 rounded-full bg-gray-200 border-4 border-blue-100 flex items-center justify-center text-3xl">
             {org.avatar}
@@ -76,6 +76,14 @@ const OrgCard: FC<OrgCardProps> = ({ org, onView }) => {
           View Organization
         </Link>
       </div>
+
+      {/* Button at bottom */}
+      <Link
+        href={`/${org.name}`}
+        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors w-full text-center"
+      >
+        View Organization
+      </Link>
     </div>
   );
 };
