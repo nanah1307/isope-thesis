@@ -9,9 +9,9 @@ export type Orgs = {
 
 // This can later be replaced with a fetch to your API or DB
 const orgs: Record<string, Orgs> = {
-  osas: {
+  CSO: {
       username: "CSO",
-      name: "Office of students affairs",
+      name: "Central Student Organization",
       bio: "Full Stack Developer",
       avatar: "[insert pic here]",
     },
@@ -23,7 +23,7 @@ const orgs: Record<string, Orgs> = {
     },
     iact: {
       username: "iact",
-      name: "iacademy act",
+      name: "iact",
       bio: "Mobile Engineer",
       avatar: "[insert pic here]",
     }
