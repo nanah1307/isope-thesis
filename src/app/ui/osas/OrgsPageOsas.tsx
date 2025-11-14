@@ -1,7 +1,9 @@
 'use client';
 
+import Link from "next/link";
 import { useState } from "react";
-import { Orgs } from "@/app/lib/user";
+import { Orgs, requirements, OrgRequirementStatus, orgRequirementStatuses, Req } from "@/app/lib/user";
+import React from "react";
 
 type OrgsProp = {
   org: Orgs;
@@ -22,17 +24,33 @@ const links: LinkType[] = [
 export default function OrgsPageOsas({ org }: OrgsProp) {
   const [active, setActive] = useState('Overview');
 
+  const getStatus = (reqId: string): OrgRequirementStatus | undefined => {
+    return orgRequirementStatuses.find(
+      (s) => s.orgUsername === org.username && s.requirementId === reqId
+    );
+
+  const groupedRequirements: Record<string, Req[]> = requirements.reduce((acc, req) => {
+    if (!acc[req.section]) acc[req.section] = [];
+    acc[req.section].push(req);
+    return acc;
+  }, {} as Record<string, Req[]>);
+
   const content: Record<string, React.ReactNode[]> = {
     Overview: [
-      <p key="overview-1" className="text-sm sm:text-base leading-relaxed">{org.bio}</p>
+      <p key="bio" className="text-sm sm:text-base leading-relaxed">{org.bio}</p>,
+      <p key="adviser" className="text-sm sm:text-base leading-relaxed">Adviser: {org.adviser}</p>,
+      <p key="accreditlvl" className="text-sm sm:text-base leading-relaxed">Accreditation Level: {org.accreditlvl}</p>
     ],
-    Members: [],
+    Members: [
+      <p key="members-1" className="text-sm sm:text-base leading-relaxed text-gray-600">placeholder</p>
+    ],
     Requirements: [
-      <div className="overflow-x-auto" key="requirements-3">
+      <div className="overflow-x-auto" key="requirements-1">
         <table className="min-w-full border border-gray-300 bg-white text-black text-xs sm:text-sm md:text-base">
           <thead>
             <tr className="bg-white text-black">
               <th className="border border-gray-300 px-3 py-2 text-left w-2/3">Requirement</th>
+              <th className="border border-gray-300 px-3 py-2 text-left">View</th>
               <th className="border border-gray-300 px-3 py-2 text-left">Start</th>
               <th className="border border-gray-300 px-3 py-2 text-left">Due</th>
               <th className="border border-gray-300 px-3 py-2 text-left">Submitted</th>
@@ -41,7 +59,35 @@ export default function OrgsPageOsas({ org }: OrgsProp) {
             </tr>
           </thead>
           <tbody>
-            {/* DATA HERE */}
+            {Object.entries(groupedRequirements).map(([section, reqs]) => (
+              <React.Fragment key={section}>
+                <tr className="bg-gray-200">
+                  <td colSpan={7} className="px-3 py-2 font-bold text-black">{section}</td>
+                </tr>
+
+                {reqs.map((req) => {
+                  const status = getStatus(req.id);
+                  return (
+                    <tr key={req.id} className="border-b border-gray-200">
+                      <td className="border px-3 py-2">{req.title}</td>
+                      <td className="border px-3 py-2">
+                        <Link
+                          href={`/orgs/${org.username}/requirements/${req.id}`}
+                          className="text-blue-500 hover:underline"
+                        >
+                          View
+                        </Link>
+                      </td>
+                      <td className="border px-3 py-2">{status?.start?.toLocaleDateString() ?? "-"}</td>
+                      <td className="border px-3 py-2">{status?.due?.toLocaleDateString() ?? "-"}</td>
+                      <td className="border px-3 py-2">{status?.submitted ? "✅" : "❌"}</td>
+                      <td className="border px-3 py-2">{status?.graded ? "✅" : "❌"}</td>
+                      <td className="border px-3 py-2">{status?.graded ? status.score : "-"}</td>
+                    </tr>
+                  );
+                })}
+              </React.Fragment>
+            ))}
           </tbody>
         </table>
       </div>
@@ -59,7 +105,9 @@ export default function OrgsPageOsas({ org }: OrgsProp) {
             </tr>
           </thead>
           <tbody>
-            {/* DATA HERE */}
+            <tr className="border-b border-gray-200">
+              {/* DATA HERE */}
+            </tr>
           </tbody>
         </table>
       </div>
