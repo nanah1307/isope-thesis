@@ -28,6 +28,7 @@ export default function OrgsPageOsas({ org }: OrgsProp) {
     return orgRequirementStatuses.find(
       (s) => s.orgUsername === org.username && s.requirementId === reqId
     );
+  };
 
   const groupedRequirements: Record<string, Req[]> = requirements.reduce((acc, req) => {
     if (!acc[req.section]) acc[req.section] = [];
