@@ -52,7 +52,6 @@ export default function OrgsPageOsas({ org }: OrgsProp) {
             <tr className="bg-white text-black">
               <th className="border border-gray-300 px-3 py-2 text-left w-2/3">Requirement</th>
               <th className="border border-gray-300 px-3 py-2 text-left">View</th>
-              <th className="border border-gray-300 px-3 py-2 text-left">Start</th>
               <th className="border border-gray-300 px-3 py-2 text-left">Due</th>
               <th className="border border-gray-300 px-3 py-2 text-left">Submitted</th>
               <th className="border border-gray-300 px-3 py-2 text-left">Graded</th>
@@ -79,7 +78,6 @@ export default function OrgsPageOsas({ org }: OrgsProp) {
                           View
                         </Link>
                       </td>
-                      <td className="border px-3 py-2">{status?.start?.toLocaleDateString() ?? "-"}</td>
                       <td className="border px-3 py-2">{status?.due?.toLocaleDateString() ?? "-"}</td>
                       <td className="border px-3 py-2">{status?.submitted ? "✅" : "❌"}</td>
                       <td className="border px-3 py-2">{status?.graded ? "✅" : "❌"}</td>
