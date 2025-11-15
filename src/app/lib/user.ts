@@ -113,6 +113,7 @@ export const requirements: Req[] = [
 export type OrgRequirementStatus = {
   orgUsername: string;
   requirementId: string;
+  start: Date;
   due: Date;
   submitted: boolean;
   graded: boolean;
@@ -123,6 +124,7 @@ export const orgRequirementStatuses: OrgRequirementStatus[] = [
   {
     orgUsername: "CSO",
     requirementId: "req011",
+    start: new Date("2025-01-10"),
     due: new Date("2025-03-31"),
     submitted: true,
     graded: true,
@@ -131,6 +133,7 @@ export const orgRequirementStatuses: OrgRequirementStatus[] = [
     {
     orgUsername: "CSO",
     requirementId: "req012",
+    start: new Date("2025-01-10"),
     due: new Date("2025-03-31"),
     submitted: true,
     graded: true,
@@ -139,6 +142,7 @@ export const orgRequirementStatuses: OrgRequirementStatus[] = [
   {
     orgUsername: "elix",
     requirementId: "req012",
+    start: new Date("2025-04-01"),
     due: new Date("2025-06-30"),
     submitted: false,
     graded: false,
