@@ -37,6 +37,14 @@ const orgs: Record<string, Orgs> = {
     }
 };
 
+export function getAllUsernames() {
+  return Object.keys(orgs);
+}
+
+export function getUserByUsername(username: string): Orgs | null {
+  return orgs[username] || null;
+}
+
 export type Req = {
   id: string;
   section: string;
@@ -149,11 +157,3 @@ export const orgRequirementStatuses: OrgRequirementStatus[] = [
     score: 0,
   },
 ]
-
-export function getAllUsernames() {
-  return Object.keys(orgs);
-}
-
-export function getUserByUsername(username: string): Orgs | null {
-  return orgs[username] || null;
-}
