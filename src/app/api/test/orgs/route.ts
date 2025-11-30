@@ -1,4 +1,4 @@
-//app/api/test/orgs/route.ts
+// app/api/test/orgs/route.ts
 import { supabase } from "@/app/lib/database";
 import { NextResponse } from "next/server";
 
@@ -11,7 +11,7 @@ export async function GET(request: Request) {
       .from("orgs")
       .select("*")
       .eq("username", username)
-      .maybeSingle(); // <-- Important fix
+      .maybeSingle();
 
     if (error) {
       return NextResponse.json(
@@ -21,15 +21,16 @@ export async function GET(request: Request) {
     }
 
     if (!data) {
-      return NextResponse.json({ success: false, data: null }, { status: 404 });
+      return NextResponse.json(
+        { success: false, data: null },
+        { status: 404 }
+      );
     }
 
     return NextResponse.json({ success: true, data });
   }
 
-  const { data, error } = await supabase
-    .from("orgs")
-    .select("*");
+  const { data, error } = await supabase.from("orgs").select("*");
 
   if (error) {
     return NextResponse.json(
