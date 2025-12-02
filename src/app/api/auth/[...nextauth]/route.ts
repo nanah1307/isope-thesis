@@ -13,8 +13,6 @@ const handler = NextAuth({
   secret: process.env.NEXTAUTH_SECRET,
 
   callbacks: {
-    
-      
     async signIn({ user }) {
       const email = user?.email || "";
       const domain = email.split("@")[1];
