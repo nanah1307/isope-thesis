@@ -1,5 +1,3 @@
-"use client";
-
 import Osasbar from "@/app/ui/osas/osasbar";
 import OrgsDashboard from "@/app/ui/osas/osasboard";
 
