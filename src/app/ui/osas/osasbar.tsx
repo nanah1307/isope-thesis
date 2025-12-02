@@ -1,32 +1,31 @@
 'use client';
 
-import { FC } from 'react';
+import { FC, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { HomeIcon, ArrowRightStartOnRectangleIcon, UserGroupIcon, UserIcon, Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
-import { useState } from 'react';
+import { signOut } from "next-auth/react";
 
 interface LinkType {
   name: string;
-  href: string;
+  href?: string;
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  onClick?: () => void;
 }
 
 const links: LinkType[] = [
   { name: 'Home', href: '/dashboard', icon: HomeIcon },
   { name: 'Orgs', href: '/dashboard/invoices', icon: UserGroupIcon },
   { name: 'User', href: '/dashboard/customers', icon: UserIcon },
-  { name: 'Log Out', href: '/', icon: ArrowRightStartOnRectangleIcon },
-  
+  { name: 'Log Out', icon: ArrowRightStartOnRectangleIcon, onClick: () => signOut() },
 ];
 
 const Osasbar: FC = () => {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-
-   return (
+  return (
     <>
       {!sidebarOpen && (
         <button
@@ -68,10 +67,29 @@ const Osasbar: FC = () => {
             const LinkIcon = link.icon;
             const isActive = pathname === link.href;
 
+            if (link.onClick) {
+              return (
+                <button
+                  key={link.name}
+                  onClick={() => {
+                    link.onClick?.();
+                    setSidebarOpen(false);
+                  }}
+                  className={clsx(
+                    'flex flex-col items-center gap-1 w-full px-[0.8rem] py-2 rounded-md text-mid font-medium transition-colors text-black',
+                    'hover:bg-gray-100 cursor-pointer'
+                  )}
+                >
+                  <LinkIcon className="w-10 h-10 text-black" />
+                  <span>{link.name}</span>
+                </button>
+              );
+            }
+
             return (
               <Link
                 key={link.name}
-                href={link.href}
+                href={link.href!}
                 className={clsx(
                   'flex flex-col items-center gap-1 w-full px-[0.8rem] py-2 rounded-md text-mid font-medium transition-colors text-black',
                   {
@@ -97,6 +115,6 @@ const Osasbar: FC = () => {
       )}
     </>
   );
-}
+};
 
 export default Osasbar;
