@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { HomeIcon, ArrowRightStartOnRectangleIcon, UserGroupIcon, UserIcon, Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
-import { signOut } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 
 interface LinkType {
   name: string;
@@ -18,13 +18,14 @@ const links: LinkType[] = [
   { name: 'Home', href: '/dashboard', icon: HomeIcon },
   { name: 'Orgs', href: '/dashboard/invoices', icon: UserGroupIcon },
   { name: 'User', href: '/dashboard/customers', icon: UserIcon },
-  { name: 'Log Out', icon: ArrowRightStartOnRectangleIcon, onClick: () => signOut() },  
+  { name: 'Log Out', icon: ArrowRightStartOnRectangleIcon, onClick: ()=> signOut({ callbackUrl: "/login" })},  
+  
 ];
 
 const Osasbar: FC = () => {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-
+  const { data: session, status } = useSession();
 
    return ( 
     <>
