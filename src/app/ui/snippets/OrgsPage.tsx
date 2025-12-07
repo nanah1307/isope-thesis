@@ -76,7 +76,7 @@ export default function OrgsPage({ org }: OrgsProp) {
                       <td className="border px-3 py-2">{req.title}</td>
                       <td className="border px-3 py-2">
                         <Link
-                          href={`/orgs/${org.username}/requirements/${req.id}`}
+                          href={`/dashboard/orgs/${org.username}/requirements/${req.id}`}
                           className="text-blue-500 hover:underline"
                         >
                             <DocumentTextIcon/> View

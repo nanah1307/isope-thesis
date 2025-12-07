@@ -1,4 +1,4 @@
-import OrgsPageOsas from "@/app/ui/snippets/OrgsPage";
+import OrgsPage from "@/app/ui/snippets/OrgsPage";
 import { getAllUsernames, getUserByUsername } from "@/app/lib/user"
 
 export default async function OrgPage({
@@ -15,7 +15,7 @@ export default async function OrgPage({
   
   return (
     <>
-      <OrgsPageOsas org={org} />
+      <OrgsPage org={org} />
     </>
   );
 }
