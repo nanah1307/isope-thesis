@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Orgs, requirements, OrgRequirementStatus, orgRequirementStatuses, Req } from "@/app/lib/user";
+import { DocumentTextIcon  } from '@heroicons/react/24/outline';
 import React from "react";
 
 type OrgsProp = {
@@ -74,9 +75,9 @@ export default function OrgsPageOsas({ org }: OrgsProp) {
                       <td className="border px-3 py-2">
                         <Link
                           href={`/dashboard/orgs/${org.username}/requirements/${req.id}`}
-                          className="text-blue-500 hover:underline"
+                          className="text-blue-500 hover:underline hover:bg-gray-200"
                         >
-                          View
+                            <DocumentTextIcon/> View
                         </Link>
                       </td>
                       <td className="border px-3 py-2">{status?.start?.toLocaleDateString() ?? "-"}</td>
@@ -132,9 +133,8 @@ export default function OrgsPageOsas({ org }: OrgsProp) {
             <li key={name} className="flex-shrink-0">
               <button
                 type="button"
-                className={`cursor-pointer font-medium text-gray-700 hover:text-black pb-1 focus:outline-none whitespace-nowrap ${
-                  active === name ? "border-b-2 border-blue-500" : ""
-                }`}
+                className={`cursor-pointer text-gray-700 hover:text-black hover:bg-gray-200 pb-1 focus:outline-none whitespace-nowrap 
+                  ${ active === name ? "font-bold border-b-4 border-blue-500 shadow-md" : "font-medium shadow-md"}`}
                 onClick={() => setActive(name)}
               >
                 {name}
