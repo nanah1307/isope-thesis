@@ -27,13 +27,29 @@ const handler = NextAuth({
       
     },
     async jwt({token, user}){
+
+      // if (user?.email) {
+      //   const { data, error } = await supabaseServer
+      //     .from("users")
+      //     .select("role")
+      //     .eq("email", user.email)
+      //     .single();
+
+      //   if (error) {
+      //     console.warn("Student Found", error);
+      //     token.role = "member";
+      //   } else {
+      //     token.role = data.role; 
+      //   }
+      // }
+      
       if (user?.email) {
         const roleMap = {
-          "admin@yourcompany.com": "admin",
-          "manager@yourcompany.com": "manager",
-          "staff@yourcompany.com": "staff",
+          "admin@yourcompany.com": "osas",
+          "manager@yourcompany.com": "adviser",
+          "staff@yourcompany.com": "org",
         };
-        token.role = roleMap[user.email] || "guest";
+        token.role = roleMap[user.email] || "student";
       }
         return token;
       },

@@ -1,11 +1,22 @@
 // middleware.ts
 import { withAuth } from "next-auth/middleware";
+import { getToken } from "next-auth/jwt";
+import { NextResponse } from "next/server";
 
-export default withAuth({
-  pages: {
-    signIn: "/login", // Redirect here if not logged in
-  },
-});
+
+export async function middleware(req) {
+  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+
+  // Not logged in → redirect
+  if (!token) return NextResponse.redirect(new URL("/login", req.url));
+
+  // Block /admin for non-admin users
+  if (req.nextUrl.pathname.startsWith("/admin") && token.role !== "admin") {
+    return NextResponse.redirect(new URL("/no-access", req.url));
+  }
+
+  return NextResponse.next();
+}
 
 export const config = {
   // Apply to all routes EXCEPT login and NextAuth API
