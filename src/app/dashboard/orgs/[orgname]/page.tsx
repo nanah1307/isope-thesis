@@ -7,7 +7,6 @@ export default async function OrgPage({params,}:
 }){
 
   const orgName = getUserByUsername((await params).orgname);
-
   if(!orgName){
     return <div>Org not found</div>;
   }
