@@ -1,19 +1,11 @@
 "use client";
 
 import { signIn, signOut, useSession } from "next-auth/react";
+import { redirect } from "next/dist/server/api-utils";
 
 export default function Home() {
   const { data: session } = useSession();
 
-  if (session) {
-    return (
-      <div>
-        <p>Signed in as {session.user?.email}</p>
-        <button onClick={() => signOut()}>Sign out</button>
-      </div>
-    );
-  }
-  
   return (
     <div className="bg-white min-h-screen">
       <header className="bg-[#014FB3] text-white flex items-center justify-center py-6 shadow-md">
