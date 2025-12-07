@@ -7,12 +7,17 @@ import { NextResponse } from "next/server";
 export async function middleware(req) {
   const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
 
-  // Not logged in → redirect
+  // Not logged in
   if (!token) return NextResponse.redirect(new URL("/login", req.url));
 
-  // Block /admin for non-admin users
+  // Block /admin for non-osas users
   if (req.nextUrl.pathname.startsWith("/admin") && token.role !== "admin") {
     return NextResponse.redirect(new URL("/no-access", req.url));
+  }
+  
+  if (req.nextUrl.pathname === "/login") {
+
+    return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
   return NextResponse.next();

@@ -19,7 +19,6 @@ const links: LinkType[] = [
   { name: 'Orgs', href: '/dashboard/invoices', icon: UserGroupIcon },
   { name: 'User', href: '/dashboard/customers', icon: UserIcon },
   { name: 'Log Out', icon: ArrowRightStartOnRectangleIcon, onClick: ()=> signOut({ callbackUrl: "/login" })},  
-  
 ];
 
 const Osasbar: FC = () => {

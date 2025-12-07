@@ -26,6 +26,10 @@ const handler = NextAuth({
 
       
     },
+    async redirect({ url, baseUrl }) {
+    // After login → always send them to /dashboard
+    return "/dashboard";
+  },
     async jwt({token, user}){
 
       // if (user?.email) {
@@ -42,7 +46,7 @@ const handler = NextAuth({
       //     token.role = data.role; 
       //   }
       // }
-      
+
       if (user?.email) {
         const roleMap = {
           "admin@yourcompany.com": "osas",
