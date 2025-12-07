@@ -20,5 +20,5 @@ export async function middleware(req) {
 
 export const config = {
   // Apply to all routes EXCEPT login and NextAuth API
-  matcher: ["/((?!login|api/auth).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|public|img|login|api/auth).*)"],
 };
