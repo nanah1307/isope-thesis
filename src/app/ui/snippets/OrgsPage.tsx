@@ -21,7 +21,7 @@ const links: LinkType[] = [
   { name: 'Archive', href: '/' },
 ];
 
-export default function OrgsPageOsas({ org }: OrgsProp) {
+export default function OrgsPage({ org }: OrgsProp) {
   const [active, setActive] = useState('Overview');
 
   const getStatus = (reqId: string): OrgRequirementStatus | undefined => {
@@ -47,6 +47,7 @@ export default function OrgsPageOsas({ org }: OrgsProp) {
     ],
     Requirements: [
       <div className="overflow-x-auto" key="requirements-1">
+        {/*if view = */}
         <table className="min-w-full border border-gray-300 bg-white text-black text-xs sm:text-sm md:text-base">
           <thead>
             <tr className="bg-white text-black">
@@ -111,6 +112,8 @@ export default function OrgsPageOsas({ org }: OrgsProp) {
             </tr>
           </tbody>
         </table>
+        {/*if edit */}
+
       </div>
     ],
   };

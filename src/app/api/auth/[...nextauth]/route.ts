@@ -30,6 +30,7 @@ const handler = NextAuth({
     // After login redirect to dashboard
     return "/dashboard";
   },
+  //add roles of users
     async jwt({token, user}){
 
       // if (user?.email) {
@@ -40,7 +41,7 @@ const handler = NextAuth({
       //     .single();
 
       //   if (error) {
-      //     console.warn("Student Found", error);
+      //     console.warn("Member Found", error);
       //     token.role = "member";
       //   } else {
       //     token.role = data.role; 
@@ -53,7 +54,7 @@ const handler = NextAuth({
           "manager@yourcompany.com": "adviser",
           "staff@yourcompany.com": "org",
         };
-        token.role = roleMap[user.email] || "student";
+        token.role = roleMap[user.email] || "member";
       }
         return token;
       },

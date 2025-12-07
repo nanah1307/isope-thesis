@@ -11,7 +11,7 @@ export async function middleware(req) {
   if (!token &&req.nextUrl.pathname !== "/login"  ) return NextResponse.redirect(new URL("/login", req.url));
 
   // Block /admin for non-osas users
-  if (req.nextUrl.pathname.startsWith("/admin") && token.role !== "admin") {
+  if (req.nextUrl.pathname.startsWith("/admin") && token.role !== "osas") {
     return NextResponse.redirect(new URL("/no-access", req.url));
   }
   
@@ -23,6 +23,5 @@ export async function middleware(req) {
 }
 
 export const config = {
-  // Apply to all routes EXCEPT login and NextAuth API
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|public|img|api/auth).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|public|img|api/auth|ui).*)"],
 };
