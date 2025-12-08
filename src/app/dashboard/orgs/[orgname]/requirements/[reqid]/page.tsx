@@ -14,7 +14,7 @@ import {
 const RadioOption = ({ option, selected, onClick }: { option: string; selected: boolean; onClick: () => void }) => (
   <button 
     onClick={onClick} 
-    className={`w-full text-left px-4 py-3 rounded-lg border-2 transition-colors ${
+    className={`w-full text-left px-4 py-3 rounded-lg border-2 transition-colors cursor-pointer ${
       selected ? 'bg-blue-50 border-blue-500' : 'bg-gray-200 border-gray-300 hover:border-gray-400'
     }`}
   >
@@ -151,7 +151,7 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
   const TabButton = ({ tab, label }: { tab: 'instructions' | 'grading'; label: string }) => (
     <button 
       onClick={() => setActiveTab(tab)} 
-      className={`px-6 py-4 font-medium ${
+      className={`px-6 py-4 font-medium cursor-pointer ${
         activeTab === tab 
           ? 'text-gray-900 border-b-2 border-blue-600' 
           : 'text-gray-500 hover:text-gray-700'
@@ -187,7 +187,7 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
                     {!hasSubmitted && (
                       <button 
                         onClick={() => window.location.href = `/dashboard/orgs/${orgname}/requirements/${reqid}/evaluation`}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-10 py-4 rounded flex items-center gap-3"
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-10 py-4 rounded flex items-center gap-3 cursor-pointer"
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" 
                           strokeWidth={1.5} stroke="currentColor" className="size-6">
@@ -299,7 +299,7 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
                   onClick={handleAddComment} 
                   className="mt-2 w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 
                            disabled:cursor-not-allowed text-white font-medium px-4 py-2 
-                           rounded-lg transition-colors text-sm"
+                           rounded-lg transition-colors text-sm cursor-pointer"
                 >
                   Add Comment
                 </button>
@@ -315,7 +315,7 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
                       <button 
                         type="button"
                         onClick={() => handleDeleteComment(c.id)} 
-                        className="text-gray-400 hover:text-red-600 transition-colors"
+                        className="text-gray-400 hover:text-red-600 transition-colors cursor-pointer"
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" 
                           strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
