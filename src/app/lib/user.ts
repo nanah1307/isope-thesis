@@ -1,4 +1,5 @@
-// lib/users.ts
+// app/lib/user.ts
+import { supabase } from "@/app/lib/database";
 
 export type Orgs = {
   username: string;
@@ -9,33 +10,25 @@ export type Orgs = {
   avatar: string;
 };
 
-// This can later be replaced with a fetch to your API or DB
-const orgs: Record<string, Orgs> = {
-  CSO: {
-      username: "CSO",
-      name: "Central Student Organization",
-      bio: "Full Stack Developer",
-      adviser: "Sir Matt",
-      accreditlvl: 3,
-      avatar: "[insert pic here]",
-    },
-    elix: {
-      username: "elix",
-      name: "Elix",
-      bio: "Product Designer",
-      adviser: "Sir Hans",
-      accreditlvl: 1,
-      avatar: "[insert pic here]",
-    },
-    iact: {
-      username: "iact",
-      name: "iact",
-      bio: "Mobile Engineer",
-      adviser: "Sir Mon",
-      accreditlvl: 3,
-      avatar: "[insert pic here]",
-    }
-};
+export async function getAllUsernames(): Promise<string[]> {
+  const { data, error } = await supabase
+    .from("orgs")
+    .select("username");
+
+  if (error || !data) return [];
+  return data.map((o) => o.username);
+}
+
+export async function getUserByUsername(username: string): Promise<Orgs | null> {
+  const { data, error } = await supabase
+    .from("orgs")
+    .select("*")
+    .eq("username", username)
+    .maybeSingle();
+
+  if (error || !data) return null;
+  return data;
+}
 
 export type Req = {
   id: string;
@@ -149,11 +142,3 @@ export const orgRequirementStatuses: OrgRequirementStatus[] = [
     score: 0,
   },
 ]
-
-export function getAllUsernames() {
-  return Object.keys(orgs);
-}
-
-export function getUserByUsername(username: string): Orgs | null {
-  return orgs[username] || null;
-}

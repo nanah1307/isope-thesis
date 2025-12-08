@@ -1,5 +1,7 @@
-import Osasbar from "@/app/ui/osas/osasbar";
-import OrgsDashboard from "@/app/ui/osas/osasboard";
+"use client";
+
+import Osasbar from "@/app/ui/snippets/navbar";
+import OrgsDashboard from "@/app/ui/snippets/dashboard";
 
 export default function dashboardlayout({
   children,

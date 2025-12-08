@@ -26,19 +26,41 @@ const handler = NextAuth({
 
       
     },
+    async redirect({ url, baseUrl }) {
+    // After login redirect to dashboard
+    return "/dashboard";
+  },
+  //add roles of users
     async jwt({token, user}){
+
+      // if (user?.email) {
+      //   const { data, error } = await supabaseServer
+      //     .from("users")
+      //     .select("role")
+      //     .eq("email", user.email)
+      //     .single();
+
+      //   if (error) {
+      //     console.warn("Member Found", error);
+      //     token.role = "member";
+      //   } else {
+      //     token.role = data.role; 
+      //   }
+      // }
+      
       if (user?.email) {
         const roleMap = {
-          "admin@yourcompany.com": "admin",
-          "manager@yourcompany.com": "manager",
-          "staff@yourcompany.com": "staff",
+          "admin@yourcompany.com": "osas",
+          "manager@yourcompany.com": "adviser",
+          "staff@yourcompany.com": "org",
         };
-        token.role = roleMap[user.email] || "guest";
+        token.role = roleMap[user.email] || "member";
       }
         return token;
       },
-    
+      
        async session({ session, token }) {
+        console.log(" Current Token:", token);
       session.user.role = token.role;
       return session;
     }
