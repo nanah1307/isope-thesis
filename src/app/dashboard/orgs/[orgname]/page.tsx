@@ -1,18 +1,18 @@
-import OrgsPageOsas from "@/app/ui/osas/OrgsPageOsas";
-import { getAllUsernames, getUserByUsername } from "@/app/lib/user"
+import OrgsPage from "@/app/ui/snippets/OrgsPage";
+import {getUserByUsername } from "@/app/lib/user"
+import { notFound } from "next/navigation";
 
-export default async function OrgPage({params,}:
-{
-  params:Promise<{orgname:string}>;
-}){
+export default async function Page(props: any) {
+const { params } = props as { params: { orgname: string } };
+  const org = await getUserByUsername(params.orgname);
 
-  const orgName = getUserByUsername((await params).orgname);
-
-  if(!orgName){
-    return <div>Org not found</div>;
+  if (!org) {
+    notFound();
   }
   
-  return<>
-  <OrgsPageOsas org={orgName}/>
-  </>
+  return (
+    <>
+      <OrgsPage org={org} />
+    </>
+  );
 }
