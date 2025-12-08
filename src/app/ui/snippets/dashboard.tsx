@@ -5,6 +5,15 @@ import { supabase } from '@/app/lib/database';
 
 // Org Card
 const OrgCard: FC<{ org: any }> = ({ org }) => {
+  // Generate random progress once per org
+  const [progress] = useState(() => Math.floor(Math.random() * 80) + 10);
+
+  const radius = 30;
+  const stroke = 5;
+  const normalizedRadius = radius - stroke * 2;
+  const circumference = normalizedRadius * 2 * Math.PI;
+  const strokeDashoffset = circumference - (progress / 100) * circumference;
+
   return (
     <div className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow p-6 flex flex-col h-full">
       <div className="flex-1 flex flex-col items-center text-center">
@@ -19,9 +28,41 @@ const OrgCard: FC<{ org: any }> = ({ org }) => {
         <button className="flex-1 px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm transition">
           Notif
         </button>
-        <button className="flex-1 px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm transition">
-          Progress
-        </button>
+
+        {/* Circle progress without blue button */}
+        <div className="flex-1 flex items-center justify-center">
+          <svg height={radius * 2} width={radius * 2}>
+            <circle
+              stroke="#e5e7eb"
+              fill="transparent"
+              strokeWidth={stroke}
+              r={normalizedRadius}
+              cx={radius}
+              cy={radius}
+            />
+            <circle
+              stroke="#2563eb"
+              fill="transparent"
+              strokeWidth={stroke}
+              strokeDasharray={circumference + ' ' + circumference}
+              style={{ strokeDashoffset, transition: 'stroke-dashoffset 0.35s' }}
+              strokeLinecap="round"
+              r={normalizedRadius}
+              cx={radius}
+              cy={radius}
+            />
+            <text
+              x="50%"
+              y="50%"
+              dominantBaseline="middle"
+              textAnchor="middle"
+              className="text-sm fill-black font-medium"
+            >
+              {progress}%
+            </text>
+          </svg>
+        </div>
+
         <button className="flex-1 px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm transition">
           Dues
         </button>
