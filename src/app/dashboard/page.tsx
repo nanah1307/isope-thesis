@@ -1,17 +1,14 @@
 "use client";
-import { useSession } from "next-auth/react";
-import Osasboard from '@/app/ui/snippets/dashboard';
+
+import OrgsDashboard from '@/app/ui/snippets/dashboard';
 import NotificationSidebar from '../ui/notifbar';
 
 export default function DashboardPage() {
-  const { data: session } = useSession();
-  if (!session) return <p>Not logged in</p>;
-
   return (
     <div className="flex min-h-screen">
       {/* Main Dashboard */}
       <div className="flex-1">
-        <Osasboard />
+        <OrgsDashboard />
       </div>
 
       {/* Sidebar for desktop */}
