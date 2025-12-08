@@ -1,7 +1,8 @@
-import NextAuth from "next-auth";
+import NextAuth, { DefaultSession, DefaultUser } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 
 const allowedDomain = "iacademy.edu.ph"; // change this to your domain
+
 
 const handler = NextAuth({
   providers: [
@@ -49,19 +50,23 @@ const handler = NextAuth({
       // }
       
       if (user?.email) {
-        const roleMap = {
+        const roleMap: Record<string, string> = {
           "admin@yourcompany.com": "osas",
           "manager@yourcompany.com": "adviser",
           "staff@yourcompany.com": "org",
         };
-        token.role = roleMap[user.email] || "member";
+        token.role = roleMap[user.email] ?? "member";
       }
         return token;
       },
       
        async session({ session, token }) {
-        console.log(" Current Token:", token);
-      session.user.role = token.role;
+      console.log(" Current Token:", token);
+      session.user = session.user ?? {
+        name: token.name ?? null,
+        email: token.email ?? null,
+      };
+      (session.user as any).role = token.role ?? "member";
       return session;
     }
       
