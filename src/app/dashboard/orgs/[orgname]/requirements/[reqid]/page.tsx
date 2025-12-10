@@ -11,24 +11,6 @@ import {
   formatName
 } from '@/app/lib/assessments';
 
-const RadioOption = ({ option, selected, onClick }: { option: string; selected: boolean; onClick: () => void }) => (
-  <button 
-    onClick={onClick} 
-    className={`w-full text-left px-4 py-3 rounded-lg border-2 transition-colors ${
-      selected ? 'bg-blue-50 border-blue-500' : 'bg-gray-200 border-gray-300 hover:border-gray-400'
-    }`}
-  >
-    <div className="flex items-center gap-3">
-      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-        selected ? 'border-blue-500' : 'border-gray-400'
-      }`}>
-        {selected && <div className="w-3 h-3 rounded-full bg-blue-500" />}
-      </div>
-      <span className="font-medium text-gray-900">{option}</span>
-    </div>
-  </button>
-);
-
 const QuestionHeader = ({ title, icon }: { title: string; icon?: boolean }) => (
   <div className={`bg-gradient-to-r from-yellow-100 to-yellow-50 rounded-lg p-4 mb-4 ${
     icon ? 'border-2 border-yellow-400 flex items-center gap-3' : ''
@@ -98,7 +80,7 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentTime(Date.now());
-    }, 60000); // Update every 60 seconds
+    }, 60000);
 
     return () => clearInterval(interval);
   }, []);
@@ -151,7 +133,7 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
   const TabButton = ({ tab, label }: { tab: 'instructions' | 'grading'; label: string }) => (
     <button 
       onClick={() => setActiveTab(tab)} 
-      className={`px-6 py-4 font-medium ${
+      className={`px-6 py-4 font-medium cursor-pointer ${
         activeTab === tab 
           ? 'text-gray-900 border-b-2 border-blue-600' 
           : 'text-gray-500 hover:text-gray-700'
@@ -184,19 +166,6 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
                     <p className="text-gray-900 mb-10 leading-relaxed text-xl max-w-4xl font-medium">
                       Accomplish evaluation by <span className="font-bold">{formattedDueDate}</span>.
                     </p>
-                    {!hasSubmitted && (
-                      <button 
-                        onClick={() => window.location.href = `/dashboard/orgs/${orgname}/requirements/${reqid}/evaluation`}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-10 py-4 rounded flex items-center gap-3"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" 
-                          strokeWidth={1.5} stroke="currentColor" className="size-6">
-                          <path strokeLinecap="round" strokeLinejoin="round" 
-                            d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                        </svg>
-                        Prepare answer
-                      </button>
-                    )}
                   </div>
                 )}
                 {activeTab === 'grading' && hasSubmitted && (
@@ -299,7 +268,7 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
                   onClick={handleAddComment} 
                   className="mt-2 w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 
                            disabled:cursor-not-allowed text-white font-medium px-4 py-2 
-                           rounded-lg transition-colors text-sm"
+                           rounded-lg transition-colors text-sm cursor-pointer"
                 >
                   Add Comment
                 </button>
@@ -315,7 +284,7 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
                       <button 
                         type="button"
                         onClick={() => handleDeleteComment(c.id)} 
-                        className="text-gray-400 hover:text-red-600 transition-colors"
+                        className="text-gray-400 hover:text-red-600 transition-colors cursor-pointer"
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" 
                           strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">

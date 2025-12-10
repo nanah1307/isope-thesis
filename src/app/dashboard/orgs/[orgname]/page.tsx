@@ -1,17 +1,14 @@
 import OrgsPage from "@/app/ui/snippets/OrgsPage";
-import { getAllUsernames, getUserByUsername } from "@/app/lib/user"
+import {getUserByUsername } from "@/app/lib/user"
+import { notFound } from "next/navigation";
 
-export default async function OrgPage({
-  params,
-}: {
-  params: { orgname: string };
-}) {
+export default async function Page(props: any) {
+const { params } = props as { params: { orgname: string } };
   const org = await getUserByUsername(params.orgname);
 
   if (!org) {
-    return <div>Org not found</div>;
+    notFound();
   }
-  
   
   return (
     <>
