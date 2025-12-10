@@ -8,73 +8,88 @@ import { supabase } from '@/app/lib/database';
 const OrgCard: FC<{ org: any }> = ({ org }) => {
   const [progress] = useState(() => Math.floor(Math.random() * 80) + 10);
 
-  const radius = 30;
-  const stroke = 5;
-  const normalizedRadius = radius - stroke * 2;
-  const circumference = normalizedRadius * 2 * Math.PI;
+  // Circle math
+  const radius = 52;
+  const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (progress / 100) * circumference;
 
   return (
-    <div className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow p-6 flex flex-col h-full relative">
-      {/* Top-left Notif button */}
-      <button className="cursor-pointer absolute top-4 left-4 bg-blue-600 hover:bg-blue-700 text-white rounded-full flex items-center justify-center w-10 h-10 p-0 transition">
-        <BellIcon className="w-6 h-6" />
-      </button>
+    <div className="relative">
 
-      {/* Top-right Dues button */}
-      <button className="cursor-pointer absolute top-4 right-4 bg-blue-600 hover:bg-blue-700 text-white rounded-full flex items-center justify-center w-10 h-10 p-0 transition">
-        <DocumentIcon className="w-6 h-6" />
-      </button>
+      {/* card */}
+      <Link
+        href={`./dashboard/orgs/${org.username}`}
+        className="group block bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow p-6 h-full cursor-pointer"
+      >
+        <div className="flex flex-col items-center text-center mt-6">
 
-      {/* Avatar */}
-      <div className="flex-1 flex flex-col items-center text-center mt-6">
-        <div className="w-20 h-20 rounded-full bg-gray-200 border-4 border-blue-100 flex items-center justify-center text-3xl mb-4">
+          {/* === Progress Circle Surrounding Avatar === */}
+          <div className="relative flex items-center justify-center mb-6">
+
+        {/* Progress Circle */}
+        <svg width="120" height="120" className="absolute">
+          <circle
+            stroke="#e5e7eb"
+            fill="transparent"
+            strokeWidth="6"
+            r={radius}
+            cx="60"
+            cy="60"
+          />
+          <circle
+            stroke="#2563eb"
+            fill="transparent"
+            strokeWidth="6"
+            strokeDasharray={`${circumference} ${circumference}`}
+            strokeLinecap="round"
+            style={{
+              strokeDashoffset,
+              transition: 'stroke-dashoffset 0.35s',
+            }}
+            r={radius}
+            cx="60"
+            cy="60"
+          />
+        </svg>
+
+        {/* Avatar */}
+        <div className="w-20 h-20 rounded-full bg-gray-200 border-4 border-white flex items-center justify-center text-3xl relative z-10">
           {org.avatar || org.name[0]}
         </div>
-        <h2 className="text-xl font-bold text-gray-900 mb-3">{org.name}</h2>
 
-        {/* Circle progress */}
-        <div className="flex items-center justify-center">
-          <svg height={radius * 2} width={radius * 2}>
-            <circle
-              stroke="#e5e7eb"
-              fill="transparent"
-              strokeWidth={stroke}
-              r={normalizedRadius}
-              cx={radius}
-              cy={radius}
-            />
-            <circle
-              stroke="#2563eb"
-              fill="transparent"
-              strokeWidth={stroke}
-              strokeDasharray={circumference + ' ' + circumference}
-              style={{ strokeDashoffset, transition: 'stroke-dashoffset 0.35s' }}
-              strokeLinecap="round"
-              r={normalizedRadius}
-              cx={radius}
-              cy={radius}
-            />
-            <text
-              x="50%"
-              y="50%"
-              dominantBaseline="middle"
-              textAnchor="middle"
-              className="text-sm fill-black font-medium"
-            >
-              {progress}%
-            </text>
-          </svg>
+        {/* === Progress num % Bottom-Right === */}
+        <div className="absolute bottom-1 right-1 bg-white shadow-sm rounded-full px-2 py-1 text-xs font-semibold text-blue-600 z-20">
+          {progress}%
         </div>
       </div>
 
-      {/* View Organization button */}
-      <Link
-        href={`./dashboard/orgs/${org.username}`}
-        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors w-full text-center mt-auto"
-      >
-        View Organization
+
+          {/* Org Name (underline on card hover) */}
+          <h2 className="text-xl font-bold text-gray-900 mb-3 group-hover:underline">
+            {org.name}
+          </h2>
+        </div>
       </Link>
+
+      {/* Notification Button */}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+        }}
+        className="cursor-pointer absolute top-4 left-4 bg-blue-600 hover:bg-blue-700 text-white rounded-full flex items-center justify-center w-10 h-10 transition"
+      >
+        <BellIcon className="w-6 h-6" />
+      </button>
+
+      {/* Dues Button */}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+        }}
+        className="cursor-pointer absolute top-4 right-4 bg-blue-600 hover:bg-blue-700 text-white rounded-full flex items-center justify-center w-10 h-10 transition"
+      >
+        <DocumentIcon className="w-6 h-6" />
+      </button>
     </div>
   );
 };
@@ -104,7 +119,10 @@ const CreateOrgModal: FC<{
       <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-bold text-black">Create Organization</h2>
-          <button onClick={onClose} className="cursor-pointer text-gray-500 hover:text-gray-700 text-xl">
+          <button
+            onClick={onClose}
+            className="cursor-pointer text-gray-500 hover:text-gray-700 text-xl"
+          >
             ✕
           </button>
         </div>
@@ -112,7 +130,9 @@ const CreateOrgModal: FC<{
         <div className="space-y-4">
           {/* Organization Name */}
           <div>
-            <label className="block text-sm font-medium text-black mb-1">Organization Name</label>
+            <label className="block text-sm font-medium text-black mb-1">
+              Organization Name
+            </label>
             <input
               type="text"
               value={name}
@@ -125,7 +145,9 @@ const CreateOrgModal: FC<{
 
           {/* Organization Email */}
           <div>
-            <label className="block text-sm font-medium text-black mb-1">Organization Email</label>
+            <label className="block text-sm font-medium text-black mb-1">
+              Organization Email
+            </label>
             <input
               type="email"
               value={email}
@@ -173,7 +195,13 @@ const OrgsDashboard: FC = () => {
   }, []);
 
   const handleCreateOrg = (name: string, email: string) => {
-    const newOrg = { id: Date.now(), name, username: name.toLowerCase(), avatar: '', email };
+    const newOrg = {
+      id: Date.now(),
+      name,
+      username: name.toLowerCase(),
+      avatar: '',
+      email,
+    };
     setOrgs([...orgs, newOrg]);
   };
 
@@ -205,8 +233,11 @@ const OrgsDashboard: FC = () => {
         </div>
       )}
 
-      {/* Modal */}
-      <CreateOrgModal isOpen={showModal} onClose={() => setShowModal(false)} onCreate={handleCreateOrg} />
+      <CreateOrgModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        onCreate={handleCreateOrg}
+      />
     </div>
   );
 };
