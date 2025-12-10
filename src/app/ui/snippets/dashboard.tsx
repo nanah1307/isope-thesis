@@ -1,11 +1,11 @@
 'use client';
 import { useEffect, useState, FC } from 'react';
 import Link from 'next/link';
+import { BellIcon, DocumentIcon } from '@heroicons/react/24/outline';
 import { supabase } from '@/app/lib/database';
 
 // Org Card
 const OrgCard: FC<{ org: any }> = ({ org }) => {
-  // Generate random progress once per org
   const [progress] = useState(() => Math.floor(Math.random() * 80) + 10);
 
   const radius = 30;
@@ -15,22 +15,26 @@ const OrgCard: FC<{ org: any }> = ({ org }) => {
   const strokeDashoffset = circumference - (progress / 100) * circumference;
 
   return (
-    <div className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow p-6 flex flex-col h-full">
-      <div className="flex-1 flex flex-col items-center text-center">
+    <div className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow p-6 flex flex-col h-full relative">
+      {/* Top-left Notif button */}
+      <button className="cursor-pointer absolute top-4 left-4 bg-blue-600 hover:bg-blue-700 text-white rounded-full flex items-center justify-center w-10 h-10 p-0 transition">
+        <BellIcon className="w-6 h-6" />
+      </button>
+
+      {/* Top-right Dues button */}
+      <button className="cursor-pointer absolute top-4 right-4 bg-blue-600 hover:bg-blue-700 text-white rounded-full flex items-center justify-center w-10 h-10 p-0 transition">
+        <DocumentIcon className="w-6 h-6" />
+      </button>
+
+      {/* Avatar */}
+      <div className="flex-1 flex flex-col items-center text-center mt-6">
         <div className="w-20 h-20 rounded-full bg-gray-200 border-4 border-blue-100 flex items-center justify-center text-3xl mb-4">
           {org.avatar || org.name[0]}
         </div>
         <h2 className="text-xl font-bold text-gray-900 mb-3">{org.name}</h2>
-      </div>
 
-      {/* Placeholder buttons */}
-      <div className="flex justify-between mb-3 gap-2">
-        <button className="flex-1 px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm transition">
-          Notif
-        </button>
-
-        {/* Circle progress without blue button */}
-        <div className="flex-1 flex items-center justify-center">
+        {/* Circle progress */}
+        <div className="flex items-center justify-center">
           <svg height={radius * 2} width={radius * 2}>
             <circle
               stroke="#e5e7eb"
@@ -62,10 +66,6 @@ const OrgCard: FC<{ org: any }> = ({ org }) => {
             </text>
           </svg>
         </div>
-
-        <button className="flex-1 px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm transition">
-          Dues
-        </button>
       </div>
 
       {/* View Organization button */}
@@ -104,7 +104,7 @@ const CreateOrgModal: FC<{
       <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-bold text-black">Create Organization</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700 text-xl">
+          <button onClick={onClose} className="cursor-pointer text-gray-500 hover:text-gray-700 text-xl">
             ✕
           </button>
         </div>
@@ -140,13 +140,13 @@ const CreateOrgModal: FC<{
         <div className="flex justify-end gap-2 mt-4">
           <button
             onClick={onClose}
-            className="text-black px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-100 transition"
+            className="cursor-pointer text-black px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-100 transition"
           >
             Cancel
           </button>
           <button
             onClick={handleCreate}
-            className="text-white px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-md transition"
+            className="cursor-pointer text-white px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-md transition"
           >
             Create
           </button>
@@ -189,7 +189,7 @@ const OrgsDashboard: FC = () => {
         </div>
         <button
           onClick={() => setShowModal(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+          className="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
         >
           Create Organization
         </button>
