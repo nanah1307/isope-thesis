@@ -53,8 +53,18 @@ const OrgCard: FC<{ org: any }> = ({ org }) => {
         </svg>
 
         {/* Avatar */}
-        <div className="w-20 h-20 rounded-full bg-gray-200 border-4 border-white flex items-center justify-center text-3xl relative z-10">
-          {org.avatar || org.name[0]}
+        <div className="w-20 h-20 rounded-full border-4 border-white relative z-10 overflow-hidden">
+          {org.avatar ? (
+            <img
+              src={org.avatar}
+              alt={org.name}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full bg-gray-200 flex items-center justify-center text-3xl">
+              {org.name[0]}
+            </div>
+          )}
         </div>
 
         {/* === Progress num % Bottom-Right === */}
