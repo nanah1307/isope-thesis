@@ -123,7 +123,7 @@ export default function OrgsPage({ org, requirements, statuses }: OrgsProp) {
         <div className="flex flex-col sm:flex-row sm:items-start gap-2">
           {isEditingOrg && <span className="w-36 font-medium">Bio:</span>}
           {isEditingOrg ? (
-            <textarea
+            <textarea title="org-bio"
               value={bioDraft}
               onChange={(e) => setBioDraft(e.target.value)}
               className="flex-1 min-h-[80px] p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
@@ -137,7 +137,7 @@ export default function OrgsPage({ org, requirements, statuses }: OrgsProp) {
         <div className="flex flex-col sm:flex-row sm:items-center gap-2">
           {isEditingOrg && <span className="w-36 font-medium">Adviser:</span>}
           {isEditingOrg ? (
-            <input
+            <input title="org-adviser"
               type="text"
               value={adviserDraft}
               onChange={(e) => setAdviserDraft(e.target.value)}
@@ -152,7 +152,7 @@ export default function OrgsPage({ org, requirements, statuses }: OrgsProp) {
         <div className="flex flex-col sm:flex-row sm:items-center gap-2">
           {isEditingOrg && <span className="w-36 font-medium">Accreditation Level:</span>}
           {isEditingOrg ? (
-            <select
+            <select title="org-accreditlvl"
               value={accreditlvlDraft}
               onChange={(e) => setAccreditlvlDraft(Number(e.target.value))}
               className="flex-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
