@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
-import { requirements, orgRequirementStatuses } from '@/app/lib/user';
+import { Req, OrgRequirementStatus } from '@/app/lib/user';
 import { 
   getAssessmentByOrgAndReq, 
   Comment,
@@ -44,8 +44,19 @@ const QuestionHeader = ({ title, icon }: { title: string; icon?: boolean }) => (
   </div>
 );
 
-export default function RequirementPage({ params }: { params: Promise<{ orgname: string; reqid: string }> }) {
-  const { orgname, reqid } = use(params);
+type Props = {
+  orgname: string;
+  reqid: string;
+  requirements: Req[];
+  statuses: OrgRequirementStatus[];
+};
+
+export default function RequirementPage({
+  orgname,
+  reqid,
+  requirements,
+  statuses,
+}: Props) {
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
   const [activeTab, setActiveTab] = useState<'instructions' | 'grading'>('instructions');
@@ -59,9 +70,19 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
   const [currentTime, setCurrentTime] = useState(Date.now());
 
   const requirement = requirements.find(r => r.id === reqid);
-  const requirementName = requirement?.title || reqid;
-  const formattedDueDate = dueDate?.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) || 'TBD';
+  const requirementName = requirement?.title ?? reqid;
 
+  // ✅ use actual data array, not TYPE
+  const reqStatus = statuses.find(
+    s => s.orgUsername === orgname && s.requirementId === reqid
+  );
+
+  const formattedDueDate =
+    dueDate?.toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    }) ?? 'TBD';
   useEffect(() => {
     const assessment = getAssessmentByOrgAndReq(orgname, reqid);
     if (assessment) {
@@ -71,10 +92,9 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
       setEvaluationAnswer(assessment.answers['evaluation_ld_q1'] || '');
     }
 
-    const reqStatus = orgRequirementStatuses.find(
-      (status) => status.orgUsername === orgname && status.requirementId === reqid
-    );
-    if (reqStatus) setDueDate(reqStatus.due);
+    if (reqStatus?.due) {
+      setDueDate(new Date(reqStatus.due));
+    }
 
     const gradeKey = `grade_${orgname}_${reqid}`;
     const savedGrade = localStorage.getItem(gradeKey);
@@ -89,28 +109,31 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
     }
 
     setComments(loadCommentsFromLocalStorage(orgname, reqid));
-  }, [orgname, reqid]);
+  }, [orgname, reqid, reqStatus]);
 
   useEffect(() => {
-    if (orgname && reqid) saveCommentsToLocalStorage(orgname, reqid, comments);
+    if (orgname && reqid) {
+      saveCommentsToLocalStorage(orgname, reqid, comments);
+    }
   }, [comments, orgname, reqid]);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentTime(Date.now());
-    }, 60000); // Update every 60 seconds
+    const interval = setInterval(() => setCurrentTime(Date.now()), 60000);
 
     return () => clearInterval(interval);
   }, []);
 
   const handleAddComment = () => {
     if (!newComment.trim()) return;
-    setComments(prev => [...prev, {
-      id: `comment${Date.now()}`,
+    setComments(prev => [
+      ...prev,
+      {
+        id: `comment_${Date.now()}`,
       text: newComment,
       timestamp: new Date(),
-      author: 'OSAS'
-    }]);
+      author: 'OSAS',
+      },
+    ]);
     setNewComment('');
   };
 
@@ -119,11 +142,14 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
   };
 
   const handleSubmitGrade = () => {
-    localStorage.setItem(`grade_${orgname}_${reqid}`, JSON.stringify({
+    localStorage.setItem(
+      `grade_${orgname}_${reqid}`,
+      JSON.stringify({
       score,
       feedback: '',
-      gradedAt: new Date().toISOString()
-    }));
+      gradedAt: new Date().toISOString(),
+      })
+    );
     window.location.reload();
   };
 
@@ -312,10 +338,11 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
                         <span className="text-xs text-gray-500" key={currentTime}>{formatTimestamp(c.timestamp)}</span>
                         <span className="text-xs text-gray-400 ml-2">• {c.author}</span>
                       </div>
-                      <button 
+                      <button
                         type="button"
                         onClick={() => handleDeleteComment(c.id)} 
                         className="text-gray-400 hover:text-red-600 transition-colors"
+                        title="Delete Comment"
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" 
                           strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">

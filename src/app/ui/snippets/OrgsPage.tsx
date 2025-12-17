@@ -1,14 +1,16 @@
-// app/ui/osas/OrgsPageOsas.tsx
+// app/ui/snippets/OrgsPageOsas.tsx
 'use client';
 
 import Link from "next/link";
 import { useState } from "react";
-import { Orgs, requirements, OrgRequirementStatus, orgRequirementStatuses, Req } from "@/app/lib/user";
-import { DocumentTextIcon  } from '@heroicons/react/24/outline';
+import { Orgs, Req, OrgRequirementStatus } from "@/app/lib/user";
+import { DocumentTextIcon } from '@heroicons/react/24/outline';
 import React from "react";
 
 type OrgsProp = {
   org: Orgs;
+  requirements: Req[];                 // ⬅ now received from Supabase
+  statuses: OrgRequirementStatus[];    // ⬅ now received from Supabase
 };
 
 type LinkType = {
@@ -23,16 +25,15 @@ const links: LinkType[] = [
   { name: 'Archive', href: '/' },
 ];
 
-export default function OrgsPage({ org }: OrgsProp) {
-  const [active, setActive] = useState('Overview');
+export default function OrgsPage({ org, requirements, statuses }: OrgsProp) {
+  const [active, setActive] = useState("Overview");
 
-  const getStatus = (reqId: string): OrgRequirementStatus | undefined => {
-    return orgRequirementStatuses.find(
-      (s) => s.orgUsername === org.username && s.requirementId === reqId
-    );
-  };
+  // Get status for each requirement (per org)
+  const getStatus = (reqId: string) =>
+    statuses.find((s) => s.requirementId === reqId);
 
-  const groupedRequirements: Record<string, Req[]> = requirements.reduce((acc, req) => {
+  // Group by section
+  const groupedRequirements = requirements.reduce((acc, req) => {
     if (!acc[req.section]) acc[req.section] = [];
     acc[req.section].push(req);
     return acc;
@@ -45,11 +46,10 @@ export default function OrgsPage({ org }: OrgsProp) {
       <p key="accreditlvl" className="text-sm sm:text-base leading-relaxed">Accreditation Level: {org.accreditlvl}</p>
     ],
     Members: [
-      <p key="members-1" className="text-sm sm:text-base leading-relaxed text-gray-600">placeholder</p>
-    ],
+     <p key="members-1" className="text-sm sm:text-base leading-relaxed  text-gray-600">placeholder</p>
+      ],
     Requirements: [
-      <div className="overflow-x-auto" key="requirements-1">
-        {/*if view = */}
+      <div key="requirements-1" className="overflow-x-auto">
         <table className="min-w-full border border-gray-300 bg-white text-black text-xs sm:text-sm md:text-base">
           <thead>
             <tr className="bg-white text-black">
@@ -63,35 +63,35 @@ export default function OrgsPage({ org }: OrgsProp) {
             </tr>
           </thead>
           <tbody>
-            {Object.entries(groupedRequirements).map(([section, reqs]) => (
-              <React.Fragment key={section}>
-                <tr className="bg-gray-200">
+          {Object.entries(groupedRequirements).map(([section, reqs]) => (
+            <React.Fragment key={section}>
+              <tr className="bg-gray-200">
                   <td colSpan={7} className="px-3 py-2 font-bold text-black">{section}</td>
-                </tr>
+              </tr>
 
-                {reqs.map((req) => {
-                  const status = getStatus(req.id);
-                  return (
+              {reqs.map((req) => {
+                const status = getStatus(req.id);
+                return (
                     <tr key={req.id} className="border-b border-gray-200">
-                      <td className="border px-3 py-2">{req.title}</td>
-                      <td className="border px-3 py-2">
-                        <Link
-                          href={`/dashboard/orgs/${org.username}/requirements/${req.id}`}
-                          className="text-blue-500 hover:underline"
-                        >
-                            <DocumentTextIcon/> View
-                        </Link>
-                      </td>
-                      <td className="border px-3 py-2">{status?.start?.toLocaleDateString() ?? "-"}</td>
-                      <td className="border px-3 py-2">{status?.due?.toLocaleDateString() ?? "-"}</td>
-                      <td className="border px-3 py-2">{status?.submitted ? "✅" : "❌"}</td>
-                      <td className="border px-3 py-2">{status?.graded ? "✅" : "❌"}</td>
-                      <td className="border px-3 py-2">{status?.graded ? status.score : "-"}</td>
-                    </tr>
-                  );
-                })}
-              </React.Fragment>
-            ))}
+                    <td className="border px-3 py-2">{req.title}</td>
+                    <td className="border px-3 py-2">
+                      <Link
+                        href={`/dashboard/orgs/${org.username}/requirements/${req.id}`}
+                        className="text-blue-500 hover:underline"
+                      >
+                        <DocumentTextIcon className="w-4"/> View
+                      </Link>
+                    </td>
+                    <td className="border px-3 py-2">{status?.start ? new Date(status.start).toLocaleDateString() : "-"}</td>
+                    <td className="border px-3 py-2">{status?.due ? new Date(status.due).toLocaleDateString() : "-"}</td>
+                    <td className="border px-3 py-2">{status?.submitted ? "✅" : "❌"}</td>
+                    <td className="border px-3 py-2">{status?.graded ? "✅" : "❌"}</td>
+                    <td className="border px-3 py-2">{status?.graded ? status.score : "-"}</td>
+                  </tr>
+                );
+              })}
+            </React.Fragment>
+          ))}
           </tbody>
         </table>
       </div>
@@ -123,14 +123,11 @@ export default function OrgsPage({ org }: OrgsProp) {
   return (
     <div className="min-h-screen bg-white p-4 sm:p-8">
       <div className="text-black flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-6 p-4 sm:p-6 rounded mx-auto max-w-xl">
-        <img
-          src={org.avatar}
-          alt={org.name}
-          className="w-16 h-16 sm:w-24 sm:h-24 rounded-full object-cover"
-        />
+        <img src={org.avatar} className="w-16 h-16 sm:w-24 sm:h-24 rounded-full object-cover" alt={org.name}/>
         <h1 className="text-2xl sm:text-3xl font-semibold text-center sm:text-left">{org.name}</h1>
       </div>
 
+      {/* Tabs */}
       <nav className="rounded mt-6 p-2 sm:p-4">
         <ul className="flex flex-wrap sm:flex-nowrap justify-start sm:justify-left gap-4 sm:space-x-8 overflow-x-auto pb-2">
           {links.map(({ name }) => (
