@@ -3,6 +3,7 @@ import { useEffect, useState, FC } from 'react';
 import Link from 'next/link';
 import { BellIcon, DocumentIcon } from '@heroicons/react/24/outline';
 import { supabase } from '@/app/lib/database';
+import { useSession } from "next-auth/react";
 
 // Org Card
 const OrgCard: FC<{ org: any }> = ({ org }) => {
@@ -190,6 +191,8 @@ const CreateOrgModal: FC<{
 
 // Dashboard
 const OrgsDashboard: FC = () => {
+  const { data: session, status } = useSession();
+
   const [orgs, setOrgs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -216,14 +219,16 @@ const OrgsDashboard: FC = () => {
   };
 
   if (loading) return <div className="p-4 text-black">Loading organizations...</div>;
-
+  
   return (
     <div className="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen p-6">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-3xl font-bold text-black">DASHBOARD</h1>
-          <p className="text-black">Hello, user</p>
+          <p className="text-black">
+            Hello, {session?.user?.name}
+          </p>
         </div>
         <button
           onClick={() => setShowModal(true)}

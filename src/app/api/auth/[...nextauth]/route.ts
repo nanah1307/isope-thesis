@@ -55,16 +55,18 @@ const handler = NextAuth({
           "manager@yourcompany.com": "adviser",
           "staff@yourcompany.com": "org",
         };
+        token.picture = user.image;
         token.role = roleMap[user.email] ?? "member";
       }
         return token;
       },
       
        async session({ session, token }) {
-      console.log(" Current Token:", token);
+      console.log(" Current Token:",);
       session.user = session.user ?? {
         name: token.name ?? null,
         email: token.email ?? null,
+        image: token.picture??null
       };
       (session.user as any).role = token.role ?? "member";
       return session;
