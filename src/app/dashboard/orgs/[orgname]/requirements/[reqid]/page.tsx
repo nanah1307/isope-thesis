@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
-import { requirements, orgRequirementStatuses } from '@/app/lib/user';
-import { 
-  getAssessmentByOrgAndReq, 
+import { useState, useEffect } from 'react';
+import { supabase } from '@/app/lib/database';
+import {
+  getAssessmentByOrgAndReq,
   Comment,
   saveCommentsToLocalStorage,
   loadCommentsFromLocalStorage,
@@ -11,10 +11,15 @@ import {
   formatName
 } from '@/app/lib/assessments';
 
+/* =========================
+   COMPONENTS
+========================= */
 const QuestionHeader = ({ title, icon }: { title: string; icon?: boolean }) => (
-  <div className={`bg-gradient-to-r from-yellow-100 to-yellow-50 rounded-lg p-4 mb-4 ${
-    icon ? 'border-2 border-yellow-400 flex items-center gap-3' : ''
-  }`}>
+  <div
+    className={`bg-gradient-to-r from-yellow-100 to-yellow-50 rounded-lg p-4 mb-4 ${
+      icon ? 'border-2 border-yellow-400 flex items-center gap-3' : ''
+    }`}
+  >
     {icon && (
       <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="white" className="w-5 h-5">
@@ -22,284 +27,221 @@ const QuestionHeader = ({ title, icon }: { title: string; icon?: boolean }) => (
         </svg>
       </div>
     )}
-    <h3 className={`text-gray-900 font-bold ${icon ? 'text-lg' : 'text-base'} uppercase`}>{title}</h3>
+    <h3 className={`text-gray-900 font-bold ${icon ? 'text-lg' : 'text-base'} uppercase`}>
+      {title}
+    </h3>
   </div>
 );
 
-export default function RequirementPage({ params }: { params: Promise<{ orgname: string; reqid: string }> }) {
-  const { orgname, reqid } = use(params);
+/* =========================
+   PAGE
+========================= */
+export default function RequirementPage({
+  params,
+}: {
+  params: { orgname: string; reqid: string };
+}) {
+  const { orgname, reqid } = params;
+
+  const [requirementName, setRequirementName] = useState(reqid);
+  const [dueDate, setDueDate] = useState<Date | null>(null);
+
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
   const [activeTab, setActiveTab] = useState<'instructions' | 'grading'>('instructions');
+
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [membershipAnswer, setMembershipAnswer] = useState('');
   const [evaluationAnswer, setEvaluationAnswer] = useState('');
   const [attemptCount, setAttemptCount] = useState(0);
-  const [score, setScore] = useState<number>(0);
-  const [submittedScore, setSubmittedScore] = useState<number>(0);
-  const [dueDate, setDueDate] = useState<Date | null>(null);
+
+  const [score, setScore] = useState(0);
+  const [submittedScore, setSubmittedScore] = useState(0);
   const [currentTime, setCurrentTime] = useState(Date.now());
 
-  const requirement = requirements.find(r => r.id === reqid);
-  const requirementName = requirement?.title || reqid;
-  const formattedDueDate = dueDate?.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) || 'TBD';
-
+  /* =========================
+     LOAD DATA
+  ========================= */
   useEffect(() => {
-    const assessment = getAssessmentByOrgAndReq(orgname, reqid);
-    if (assessment) {
-      setHasSubmitted(assessment.submittedAt !== null);
-      setAttemptCount(assessment.submittedAt ? 1 : 0);
-      setMembershipAnswer(assessment.answers['membership'] || '');
-      setEvaluationAnswer(assessment.answers['evaluation_ld_q1'] || '');
-    }
+    async function load() {
+      // requirement title
+      const { data: req } = await supabase
+        .from('requirements')
+        .select('title')
+        .eq('id', reqid)
+        .maybeSingle();
 
-    const reqStatus = orgRequirementStatuses.find(
-      (status) => status.orgUsername === orgname && status.requirementId === reqid
-    );
-    if (reqStatus) setDueDate(reqStatus.due);
+      if (req?.title) setRequirementName(req.title);
 
-    const gradeKey = `grade_${orgname}_${reqid}`;
-    const savedGrade = localStorage.getItem(gradeKey);
-    if (savedGrade) {
-      try {
-        const gradeData = JSON.parse(savedGrade);
-        setScore(gradeData.score || 0);
-        setSubmittedScore(gradeData.score || 0);
-      } catch (e) {
-        console.error('Error loading grade:', e);
+      // due date
+      const { data: status } = await supabase
+        .from('org_requirement_status')
+        .select('due')
+        .eq('org_username', orgname)
+        .eq('requirement_id', reqid)
+        .maybeSingle();
+
+      if (status?.due) setDueDate(new Date(status.due));
+
+      // assessment (local)
+      const assessment = getAssessmentByOrgAndReq(orgname, reqid);
+      if (assessment) {
+        setHasSubmitted(Boolean(assessment.submittedAt));
+        setAttemptCount(assessment.submittedAt ? 1 : 0);
+        setMembershipAnswer(assessment.answers['membership'] || '');
+        setEvaluationAnswer(assessment.answers['evaluation_ld_q1'] || '');
       }
+
+      // grade (local)
+      const saved = localStorage.getItem(`grade_${orgname}_${reqid}`);
+      if (saved) {
+        const g = JSON.parse(saved);
+        setScore(g.score || 0);
+        setSubmittedScore(g.score || 0);
+      }
+
+      setComments(loadCommentsFromLocalStorage(orgname, reqid));
     }
 
-    setComments(loadCommentsFromLocalStorage(orgname, reqid));
+    load();
   }, [orgname, reqid]);
 
   useEffect(() => {
-    if (orgname && reqid) saveCommentsToLocalStorage(orgname, reqid, comments);
+    saveCommentsToLocalStorage(orgname, reqid, comments);
   }, [comments, orgname, reqid]);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentTime(Date.now());
-    }, 60000);
-
-    return () => clearInterval(interval);
+    const i = setInterval(() => setCurrentTime(Date.now()), 60000);
+    return () => clearInterval(i);
   }, []);
 
+  /* =========================
+     ACTIONS
+  ========================= */
   const handleAddComment = () => {
     if (!newComment.trim()) return;
-    setComments(prev => [...prev, {
-      id: `comment${Date.now()}`,
-      text: newComment,
-      timestamp: new Date(),
-      author: 'OSAS'
-    }]);
+    setComments(prev => [
+      ...prev,
+      {
+        id: `c_${Date.now()}`,
+        text: newComment,
+        timestamp: new Date(),
+        author: 'OSAS',
+      },
+    ]);
     setNewComment('');
   };
 
-  const handleDeleteComment = (commentId: string) => {
-    setComments(prev => prev.filter(c => c.id !== commentId));
-  };
+  const handleDeleteComment = (id: string) =>
+    setComments(prev => prev.filter(c => c.id !== id));
 
   const handleSubmitGrade = () => {
-    localStorage.setItem(`grade_${orgname}_${reqid}`, JSON.stringify({
-      score,
-      feedback: '',
-      gradedAt: new Date().toISOString()
-    }));
-    window.location.reload();
+    localStorage.setItem(
+      `grade_${orgname}_${reqid}`,
+      JSON.stringify({
+        score,
+        gradedAt: new Date().toISOString(),
+      })
+    );
+    setSubmittedScore(score);
   };
 
-  const AnswersDisplay = () => (
-    <>
-      <div className="mb-8">
-        <QuestionHeader title="TYPE OF MEMBERSHIP" icon />
-        <div className="bg-gray-50 border border-gray-300 rounded-lg p-4">
-          <p className="text-gray-900 font-medium">{membershipAnswer || 'No answer provided'}</p>
-        </div>
-      </div>
-      <div className="mb-8">
-        <QuestionHeader title="EVALUATION - Leadership Development (LD)" />
-        <p className="text-gray-900 mb-4">
-          1. The organization's structure, system and processes allows for and encourage 
-          transfer of knowledge skills and attitude from present leaders to the next set of leaders.
-        </p>
-        <div className="bg-gray-50 border border-gray-300 rounded-lg p-4">
-          <p className="text-gray-900 font-medium">{evaluationAnswer || 'No answer provided'}</p>
-        </div>
-      </div>
-    </>
-  );
+  const formattedDueDate =
+    dueDate?.toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    }) ?? 'TBD';
 
-  const TabButton = ({ tab, label }: { tab: 'instructions' | 'grading'; label: string }) => (
-    <button 
-      onClick={() => setActiveTab(tab)} 
-      className={`px-6 py-4 font-medium cursor-pointer ${
-        activeTab === tab 
-          ? 'text-gray-900 border-b-2 border-blue-600' 
-          : 'text-gray-500 hover:text-gray-700'
-      }`}
-    >
-      {label}
-    </button>
-  );
-
+  /* =========================
+     UI
+  ========================= */
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center gap-3 mb-8">
-          <div className="w-12 h-12 bg-blue-900 rounded-full" />
-          <h1 className="text-3xl font-bold text-gray-900">
-            {formatName(orgname)} - {requirementName}
-          </h1>
+        <h1 className="text-3xl font-bold mb-8">
+          {formatName(orgname)} – {requirementName}
+        </h1>
+
+        {/* Tabs */}
+        <div className="border-b flex mb-8">
+          <button onClick={() => setActiveTab('instructions')} className="px-6 py-4">
+            Instructions
+          </button>
+          {hasSubmitted && (
+            <button onClick={() => setActiveTab('grading')} className="px-6 py-4">
+              Grading
+            </button>
+          )}
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          <div className="lg:col-span-3">
-            <div className="bg-white rounded-lg shadow-sm">
-              <div className="border-b-2 border-gray-300 flex">
-                <TabButton tab="instructions" label="Instructions" />
-                {hasSubmitted && <TabButton tab="grading" label="Grading" />}
-              </div>
-              <div className="p-12 min-h-[500px]">
-                {activeTab === 'instructions' && (
-                  <div>
-                    <h2 className="text-red-600 font-bold mb-8 text-2xl">Instructions:</h2>
-                    <p className="text-gray-900 mb-10 leading-relaxed text-xl max-w-4xl font-medium">
-                      Accomplish evaluation by <span className="font-bold">{formattedDueDate}</span>.
-                    </p>
-                  </div>
-                )}
-                {activeTab === 'grading' && hasSubmitted && (
-                  <div>
-                    <h2 className="text-gray-900 font-bold mb-8 text-2xl">Grading</h2>
-                    <div className="mb-8 bg-gray-50 rounded-lg p-6 border border-gray-200">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Submitted Answers</h3>
-                      <AnswersDisplay />
-                    </div>
-                    <div className="mb-8">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Assessment</h3>
-                      <div className="space-y-6">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Score (out of 100)
-                          </label>
-                          <input 
-                            type="text" 
-                            value={score || ''}
-                            onChange={(e) => {
-                              let value = parseInt(e.target.value);
-                              setScore(isNaN(value) ? 0 : Math.min(100, Math.max(1, value)));
-                            }}
-                            placeholder="100"
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-                          />
-                        </div>
-                        <div className="pt-4">
-                          <button 
-                            onClick={handleSubmitGrade}
-                            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg transition-colors cursor-pointer"
-                          >
-                            Submit Grade
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
+
+        {activeTab === 'instructions' && (
+          <p className="text-xl">
+            Accomplish evaluation by <strong>{formattedDueDate}</strong>.
+          </p>
+        )}
+
+        {activeTab === 'grading' && hasSubmitted && (
+          <>
+            <QuestionHeader title="TYPE OF MEMBERSHIP" icon />
+            <p>{membershipAnswer || 'No answer provided'}</p>
+
+            <QuestionHeader title="EVALUATION – LD" />
+            <p>{evaluationAnswer || 'No answer provided'}</p>
+
+            <div className="mt-6">
+              <input
+              title="submit"
+                type="number"
+                min={1}
+                max={100}
+                value={score}
+                onChange={e => setScore(+e.target.value || 0)}
+                className="border px-3 py-2"
+              />
+              <button
+                onClick={handleSubmitGrade}
+                className="ml-3 bg-blue-600 text-white px-4 py-2 rounded"
+              >
+                Submit Grade
+              </button>
             </div>
-          </div>
-          
-          <div className="lg:col-span-1 space-y-6">
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h3 className="font-semibold text-gray-900 mb-4">Submission Info</h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Due by:</span>
-                  <span className="text-gray-900 font-medium">{formattedDueDate}</span>
+          </>
+        )}
+
+        {/* Comments */}
+        <div className="mt-12">
+          <h3 className="font-bold mb-3">Comments</h3>
+          <textarea
+          title="newcomment"
+            value={newComment}
+            onChange={e => setNewComment(e.target.value)}
+            className="w-full border p-2"
+          />
+          <button onClick={handleAddComment} className="mt-2 bg-blue-600 text-white px-4 py-2">
+            Add Comment
+          </button>
+
+          <div className="mt-4 space-y-3">
+            {comments.map(c => (
+              <div key={c.id} className="border p-3 bg-white">
+                <div className="text-xs text-gray-500" key={currentTime}>
+                  {formatTimestamp(c.timestamp)} • {c.author}
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Attempts:</span>
-                  <span className="text-gray-900 font-medium">{attemptCount}</span>
-                </div>
-              </div>
-            </div>
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h3 className="font-semibold text-gray-900 mb-4">Grade</h3>
-              <div className="flex justify-center">
-                <div className="relative w-32 h-32">
-                  <svg className="w-32 h-32 transform -rotate-90">
-                    <circle cx="64" cy="64" r="56" stroke="#e5e7eb" strokeWidth="12" fill="none" />
-                    <circle 
-                      cx="64" cy="64" r="56" 
-                      stroke={submittedScore > 0 ? "#3b82f6" : "#d1d5db"}
-                      strokeWidth="12" fill="none" 
-                      strokeDasharray="351.858" 
-                      strokeDashoffset={351.858 - (351.858 * submittedScore / 100)}
-                      strokeLinecap="round" 
-                    />
-                  </svg>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-3xl font-bold text-gray-900">{submittedScore}%</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h3 className="font-semibold text-gray-900 mb-4">Adviser's Feedback</h3>
-              <div className="flex items-center gap-3">
-                <div className="w-6 h-6 border-2 border-gray-300 rounded" />
-                <span className="font-semibold text-gray-900">Approved!</span>
-              </div>
-            </div>
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h3 className="font-semibold text-gray-900 mb-4">Comments</h3>
-              <div className="mb-4">
-                <textarea 
-                  value={newComment} 
-                  onChange={(e) => setNewComment(e.target.value)} 
-                  placeholder="Add a comment..." 
-                  className="w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-lg 
-                           focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none 
-                           text-sm placeholder:text-gray-400" 
-                  rows={3} 
-                />
-                <button 
-                  type="button"
-                  onClick={handleAddComment} 
-                  className="mt-2 w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 
-                           disabled:cursor-not-allowed text-white font-medium px-4 py-2 
-                           rounded-lg transition-colors text-sm cursor-pointer"
+                <p>{c.text}</p>
+                <button
+                  onClick={() => handleDeleteComment(c.id)}
+                  className="text-red-500 text-xs"
                 >
-                  Add Comment
+                  Delete
                 </button>
               </div>
-              <div className="space-y-3 max-h-[400px] overflow-y-auto">
-                {comments.map(c => (
-                  <div key={c.id} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <span className="text-xs text-gray-500" key={currentTime}>{formatTimestamp(c.timestamp)}</span>
-                        <span className="text-xs text-gray-400 ml-2">• {c.author}</span>
-                      </div>
-                      <button 
-                        type="button"
-                        onClick={() => handleDeleteComment(c.id)} 
-                        className="text-gray-400 hover:text-red-600 transition-colors cursor-pointer"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" 
-                          strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-                          <path strokeLinecap="round" strokeLinejoin="round" 
-                            d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" 
-                          />
-                        </svg>
-                      </button>
-                    </div>
-                    <p className="text-sm text-gray-700 break-words">{c.text}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
+            ))}
           </div>
+        </div>
+
+        <div className="mt-10 text-center text-3xl font-bold">
+          {submittedScore}%
         </div>
       </div>
     </div>
