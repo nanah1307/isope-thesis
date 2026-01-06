@@ -11,24 +11,6 @@ import {
   formatName
 } from '@/app/lib/assessments';
 
-const RadioOption = ({ option, selected, onClick }: { option: string; selected: boolean; onClick: () => void }) => (
-  <button 
-    onClick={onClick} 
-    className={`w-full text-left px-4 py-3 rounded-lg border-2 transition-colors cursor-pointer ${
-      selected ? 'bg-blue-50 border-blue-500' : 'bg-gray-200 border-gray-300 hover:border-gray-400'
-    }`}
-  >
-    <div className="flex items-center gap-3">
-      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-        selected ? 'border-blue-500' : 'border-gray-400'
-      }`}>
-        {selected && <div className="w-3 h-3 rounded-full bg-blue-500" />}
-      </div>
-      <span className="font-medium text-gray-900">{option}</span>
-    </div>
-  </button>
-);
-
 const QuestionHeader = ({ title, icon }: { title: string; icon?: boolean }) => (
   <div className={`bg-gradient-to-r from-yellow-100 to-yellow-50 rounded-lg p-4 mb-4 ${
     icon ? 'border-2 border-yellow-400 flex items-center gap-3' : ''
@@ -57,6 +39,9 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
   const [submittedScore, setSubmittedScore] = useState<number>(0);
   const [dueDate, setDueDate] = useState<Date | null>(null);
   const [currentTime, setCurrentTime] = useState(Date.now());
+  const [isEditingInstructions, setIsEditingInstructions] = useState(false);
+  const [instructions, setInstructions] = useState('');
+  const [questionType, setQuestionType] = useState<'freeform' | 'pdf'>('freeform');
 
   const requirement = requirements.find(r => r.id === reqid);
   const requirementName = requirement?.title || reqid;
@@ -88,8 +73,24 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
       }
     }
 
+    // Load saved instructions
+    const instructionsKey = `instructions_${orgname}_${reqid}`;
+    const savedInstructions = localStorage.getItem(instructionsKey);
+    if (savedInstructions) {
+      setInstructions(savedInstructions);
+    } else {
+      setInstructions(`Accomplish evaluation by ${formattedDueDate}.`);
+    }
+
+    // Load saved question type
+    const questionTypeKey = `questionType_${orgname}_${reqid}`;
+    const savedQuestionType = localStorage.getItem(questionTypeKey);
+    if (savedQuestionType) {
+      setQuestionType(savedQuestionType as 'freeform' | 'pdf');
+    }
+
     setComments(loadCommentsFromLocalStorage(orgname, reqid));
-  }, [orgname, reqid]);
+  }, [orgname, reqid, formattedDueDate]);
 
   useEffect(() => {
     if (orgname && reqid) saveCommentsToLocalStorage(orgname, reqid, comments);
@@ -98,7 +99,7 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentTime(Date.now());
-    }, 60000); // Update every 60 seconds
+    }, 60000);
 
     return () => clearInterval(interval);
   }, []);
@@ -125,6 +126,29 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
       gradedAt: new Date().toISOString()
     }));
     window.location.reload();
+  };
+
+  const handleSaveInstructions = () => {
+    const instructionsKey = `instructions_${orgname}_${reqid}`;
+    localStorage.setItem(instructionsKey, instructions);
+    setIsEditingInstructions(false);
+  };
+
+  const handleCancelEditInstructions = () => {
+    const instructionsKey = `instructions_${orgname}_${reqid}`;
+    const savedInstructions = localStorage.getItem(instructionsKey);
+    if (savedInstructions) {
+      setInstructions(savedInstructions);
+    } else {
+      setInstructions(`Accomplish evaluation by ${formattedDueDate}.`);
+    }
+    setIsEditingInstructions(false);
+  };
+
+  const handleQuestionTypeChange = (type: 'freeform' | 'pdf') => {
+    setQuestionType(type);
+    const questionTypeKey = `questionType_${orgname}_${reqid}`;
+    localStorage.setItem(questionTypeKey, type);
   };
 
   const AnswersDisplay = () => (
@@ -180,23 +204,79 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
               <div className="p-12 min-h-[500px]">
                 {activeTab === 'instructions' && (
                   <div>
-                    <h2 className="text-red-600 font-bold mb-8 text-2xl">Instructions:</h2>
-                    <p className="text-gray-900 mb-10 leading-relaxed text-xl max-w-4xl font-medium">
-                      Accomplish evaluation by <span className="font-bold">{formattedDueDate}</span>.
-                    </p>
-                    {!hasSubmitted && (
-                      <button 
-                        onClick={() => window.location.href = `/dashboard/orgs/${orgname}/requirements/${reqid}/evaluation`}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-10 py-4 rounded flex items-center gap-3 cursor-pointer"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" 
-                          strokeWidth={1.5} stroke="currentColor" className="size-6">
-                          <path strokeLinecap="round" strokeLinejoin="round" 
-                            d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                        </svg>
-                        Prepare answer
-                      </button>
+                    <div className="flex justify-between items-center mb-8">
+                      <h2 className="text-red-600 font-bold text-2xl">Instructions:</h2>
+                      {!isEditingInstructions ? (
+                        <button
+                          onClick={() => setIsEditingInstructions(true)}
+                          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors cursor-pointer"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                          </svg>
+                          Edit Instructions
+                        </button>
+                      ) : (
+                        <div className="flex gap-2">
+                          <button
+                            onClick={handleSaveInstructions}
+                            className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors cursor-pointer"
+                          >
+                            Save
+                          </button>
+                          <button
+                            onClick={handleCancelEditInstructions}
+                            className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white font-medium rounded-lg transition-colors cursor-pointer"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {isEditingInstructions ? (
+                      <textarea
+                        value={instructions}
+                        onChange={(e) => setInstructions(e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 text-xl font-medium min-h-[200px]"
+                        placeholder="Enter instructions here..."
+                      />
+                    ) : (
+                      <p className="text-gray-900 mb-10 leading-relaxed text-xl max-w-4xl font-medium">
+                        {instructions}
+                      </p>
                     )}
+
+                    <div className="mt-8 pt-8 border-t border-gray-200">
+                      <h3 className="text-gray-900 font-bold text-lg mb-4">Question Type:</h3>
+                      <div className="flex gap-6">
+                        <label className="flex items-center gap-3 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="questionType"
+                            value="freeform"
+                            checked={questionType === 'freeform'}
+                            onChange={() => handleQuestionTypeChange('freeform')}
+                            className="w-5 h-5 text-blue-600 focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                          />
+                          <span className="text-gray-900 font-medium text-lg">Freeform Answer</span>
+                        </label>
+                        <label className="flex items-center gap-3 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="questionType"
+                            value="pdf"
+                            checked={questionType === 'pdf'}
+                            onChange={() => handleQuestionTypeChange('pdf')}
+                            className="w-5 h-5 text-blue-600 focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                          />
+                          <span className="text-gray-900 font-medium text-lg">PDF Submission</span>
+                        </label>
+                      </div>
+                        <p className="text-blue-900 text-sm">
+                          {questionType === 'freeform' }
+                        </p>
+                    </div>
                   </div>
                 )}
                 {activeTab === 'grading' && hasSubmitted && (
