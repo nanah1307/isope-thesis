@@ -48,14 +48,14 @@ export default function OrgsPage({ org }: OrgsProp) {
   }, {} as Record<string, Req[]>);
 
   const [isEditingOrg, setIsEditingOrg] = useState(false);
-  const [bio, setBio] = useState(org.bio);
-  const [bioDraft, setBioDraft] = useState(org.bio);
+  const [bio, setBio] = useState(org.bio ?? '');
+  const [bioDraft, setBioDraft] = useState(org.bio ?? '');
 
-  const [adviser, setAdviser] = useState(org.adviser);
-  const [adviserDraft, setAdviserDraft] = useState(org.adviser);
+  const [adviser, setAdviser] = useState(org.adviser ?? '');
+  const [adviserDraft, setAdviserDraft] = useState(org.adviser ?? '');
 
-  const [accreditlvl, setAccreditlvl] = useState(org.accreditlvl);
-  const [accreditlvlDraft, setAccreditlvlDraft] = useState(org.accreditlvl);
+  const [accreditlvl, setAccreditlvl] = useState(org.accreditlvl ?? 1);
+  const [accreditlvlDraft, setAccreditlvlDraft] = useState(org.accreditlvl ?? 1);
 
   const [saving, setSaving] = useState(false);
 
@@ -65,8 +65,8 @@ export default function OrgsPage({ org }: OrgsProp) {
     const { error } = await supabase
       .from('orgs')
       .update({
-        bio: bioDraft,
-        adviser: adviserDraft,
+        bio: bioDraft || null,
+        adviser: adviserDraft || null,
         accreditlvl: accreditlvlDraft,
       })
       .eq('username', org.username); 

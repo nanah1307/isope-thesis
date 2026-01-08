@@ -110,21 +110,21 @@ const OrgCard: FC<{ org: any }> = ({ org }) => {
 const CreateOrgModal: FC<{
   isOpen: boolean;
   onClose: () => void;
-  onCreate: (name: string, email: string) => void;
+  onCreate: (name: string, email: string) => Promise<void>;
 }> = ({ isOpen, onClose, onCreate }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
 
   if (!isOpen) return null;
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (name.trim() && email.trim()) {
-      onCreate(name, email);
+      await onCreate(name, email);
       setName('');
       setEmail('');
-      onClose();
     }
   };
+
 
   return (
     <div className="fixed inset-0 bg-opacity-50 flex items-center justify-center z-50">
@@ -208,16 +208,62 @@ const OrgsDashboard: FC = () => {
     fetchOrgs();
   }, []);
 
-  const handleCreateOrg = (name: string, email: string) => {
-    const newOrg = {
-      id: Date.now(),
-      name,
-      username: name.toLowerCase(),
-      avatar: '',
-      email,
-    };
-    setOrgs([...orgs, newOrg]);
-  };
+const handleCreateOrg = async (name: string, email: string) => {
+  if (!name.trim() || !email.trim()) {
+    alert(
+      'Failed to create organization. Organization not made due to existing or invalid input.'
+    );
+    return;
+  }
+
+  const username = name
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '');
+
+  const { data: existingOrg } = await supabase
+    .from('orgs')
+    .select('username')
+    .or(`email.eq.${email},username.eq.${username}`)
+    .maybeSingle();
+
+  if (existingOrg) {
+    alert(
+      'Failed to create organization. Organization not made due to existing or invalid input.'
+    );
+    return;
+  }
+
+
+  const { data, error } = await supabase
+    .from('orgs')
+    .insert([
+      {
+        username,
+        name,
+        email,
+        bio: null,
+        adviser: null,
+        accreditlvl: null,
+        avatar: null,
+      },
+    ])
+    .select()
+    .single();
+
+  if (error) {
+    alert(
+      'Failed to create organization. Organization not made due to existing or invalid input.'
+    );
+    console.error('Error creating org:', error);
+    return;
+  }
+
+
+  setOrgs((prev) => [...prev, data]);
+  setShowModal(false);
+};
+
 
   if (loading) return <div className="p-4 text-black">Loading organizations...</div>;
   
