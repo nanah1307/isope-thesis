@@ -7,6 +7,7 @@ import { Orgs, requirements, OrgRequirementStatus, orgRequirementStatuses, Req }
 import { DocumentTextIcon  } from '@heroicons/react/24/outline';
 import React from "react";
 import { supabase } from '@/app/lib/database';
+import { useSearchParams } from "next/navigation";
 
 type OrgsProp = {
   org: Orgs;
@@ -25,7 +26,14 @@ const links: LinkType[] = [
 ];
 
 export default function OrgsPage({ org }: OrgsProp) {
-  const [active, setActive] = useState('Overview');
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get('tab');
+
+  const [active, setActive] = useState(
+    tabParam && links.some(l => l.name === tabParam)
+      ? tabParam
+      : 'Overview'
+  );
 
   const getStatus = (reqId: string): OrgRequirementStatus | undefined => {
     return orgRequirementStatuses.find(

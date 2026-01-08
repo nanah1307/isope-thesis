@@ -93,14 +93,15 @@ const OrgCard: FC<{ org: any }> = ({ org }) => {
       </button>
 
       {/* Dues Button */}
-      <button
+      <Link
+        href={`/dashboard/orgs/${org.username}?tab=Requirements`}
         onClick={(e) => {
           e.stopPropagation();
         }}
         className="cursor-pointer absolute top-4 right-4 bg-blue-600 hover:bg-blue-700 text-white rounded-full flex items-center justify-center w-10 h-10 transition"
       >
         <DocumentIcon className="w-6 h-6" />
-      </button>
+      </Link>
     </div>
   );
 };
