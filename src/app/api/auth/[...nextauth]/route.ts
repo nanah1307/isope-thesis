@@ -24,7 +24,7 @@ const handler = NextAuth({
       const { data: existingUser } = await supabase
         .from("users")
         .select("id")
-        .eq("email", email)
+        .eq("Email", email)
         .maybeSingle();
 
       //Insert only if it doesn't exist
