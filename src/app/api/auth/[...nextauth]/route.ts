@@ -19,7 +19,6 @@ const handler = NextAuth({
       const email = user?.email || "";
       const domain = email.split("@")[1];
       
-
       if (domain === allowedDomain) {
          //Check if user exists
       const { data: existingUser } = await supabase
@@ -37,13 +36,12 @@ const handler = NextAuth({
 
         if (error) {
           console.error("❌ Supabase insert failed:", error);
-          return false; // block login if DB fails
+          return "/login?error=unauthorized"; // block login if DB fails
         }
       }
-        return true; // ✅ allow login
+        return true; //allow login
       } else {
-        console.warn(`❌ Unauthorized login attempt: ${email}`);
-        return false; // ❌ block login
+        return "/login?error=unauthorized"; // block login
       }
       
     },
