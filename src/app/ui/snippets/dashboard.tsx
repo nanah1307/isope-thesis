@@ -197,6 +197,12 @@ const OrgsDashboard: FC = () => {
   const [orgs, setOrgs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [search, setSearch] = useState('');
+
+  const filteredOrgs = orgs.filter((org) =>
+  org.name.toLowerCase().includes(search.toLowerCase()) ||
+  org.username.toLowerCase().includes(search.toLowerCase())
+  );
 
   useEffect(() => {
     const fetchOrgs = async () => {
@@ -268,31 +274,44 @@ const handleCreateOrg = async (name: string, email: string) => {
   if (loading) return <div className="p-4 text-black">Loading organizations...</div>;
   
   return (
-    <div className="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen p-6">
+    <div className="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen p-6 overflow-y-scroll">
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <div>
           <h1 className="text-3xl font-bold text-black">DASHBOARD</h1>
-          <p className="text-black">
-            Hello, {session?.user?.name}
-          </p>
+          <p className="text-black">Hello, {session?.user?.name}</p>
         </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
-        >
-          Create Organization
-        </button>
+      
+        <div className="flex items-center gap-3 ml-auto">
+          <input
+            type="text"
+            placeholder="Search organization"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-64 min-w-[16rem] max-w-[16rem] flex-shrink-0
+                       bg-white px-4 py-2 rounded-md border border-gray-300 text-black
+                       focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+          />
+      
+          <button
+            onClick={() => setShowModal(true)}
+            className="cursor-pointer flex-shrink-0 bg-blue-600 hover:bg-blue-700 text-white
+                       px-4 py-2 rounded-md text-sm font-medium transition-colors"
+          >
+            Create Organization
+          </button>
+        </div>
       </div>
 
-      {orgs.length === 0 ? (
-        <p className="text-black">No organizations found.</p>
+
+      {filteredOrgs.length === 0 ? (
+      <p className="text-black">No organizations found.</p>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {orgs.map((org) => (
-            <OrgCard key={org.username} org={org} />
-          ))}
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredOrgs.map((org) => (
+        <OrgCard key={org.username} org={org} />
+        ))}
+      </div>
       )}
 
       <CreateOrgModal
