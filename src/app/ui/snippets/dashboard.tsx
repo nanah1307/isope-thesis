@@ -1,60 +1,31 @@
 'use client';
 import { useEffect, useState, FC } from 'react';
-import Link from 'next/link';
 import { BellIcon, DocumentIcon } from '@heroicons/react/24/outline';
 import { supabase } from '@/app/lib/database';
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation"; 
 
-// Org Card
 const OrgCard: FC<{ org: any }> = ({ org }) => {
+  const router = useRouter();
   const [progress] = useState(() => Math.floor(Math.random() * 80) + 10);
 
-  // Circle math
-  const radius = 52;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (progress / 100) * circumference;
+  // Navigate to org dashboard
+  const goToOrg = () => router.push(`./dashboard/orgs/${org.username}`);
+
+  // Navigate to dues tab
+  const goToDues = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    router.push(`/dashboard/orgs/${org.username}?tab=Requirements`);
+  };
 
   return (
-    <div className="relative">
-
-      {/* card */}
-      <Link
-        href={`./dashboard/orgs/${org.username}`}
-        className="group block bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow p-6 h-full cursor-pointer"
-      >
-        <div className="flex flex-col items-center text-center mt-6">
-
-          {/* === Progress Circle Surrounding Avatar === */}
-          <div className="relative flex items-center justify-center mb-6">
-
-        {/* Progress Circle */}
-        <svg width="120" height="120" className="absolute">
-          <circle
-            stroke="#e5e7eb"
-            fill="transparent"
-            strokeWidth="6"
-            r={radius}
-            cx="60"
-            cy="60"
-          />
-          <circle
-            stroke="#2563eb"
-            fill="transparent"
-            strokeWidth="6"
-            strokeDasharray={`${circumference} ${circumference}`}
-            strokeLinecap="round"
-            style={{
-              strokeDashoffset,
-              transition: 'stroke-dashoffset 0.35s',
-            }}
-            r={radius}
-            cx="60"
-            cy="60"
-          />
-        </svg>
-
-        {/* Avatar */}
-        <div className="w-20 h-20 rounded-full border-4 border-white relative z-10 overflow-hidden">
+    <div
+      onClick={goToOrg}
+      className="group flex flex-col bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow p-6 h-full cursor-pointer"
+    >
+      {/* Avatar + Name */}
+      <div className="flex flex-col items-center text-center mt-6 flex-grow">
+        <div className="w-20 h-20 rounded-full border-2 border-gray-300 mb-4 overflow-hidden bg-white">
           {org.avatar ? (
             <img
               src={org.avatar}
@@ -68,62 +39,68 @@ const OrgCard: FC<{ org: any }> = ({ org }) => {
           )}
         </div>
 
-        {/* === Progress num % Bottom-Right === */}
-        <div className="absolute bottom-1 right-1 bg-white shadow-sm rounded-full px-2 py-1 text-xs font-semibold text-blue-600 z-20">
+        <h2 className="text-xl font-bold text-gray-900 mb-4 group-hover:underline line-clamp-2">
+          {org.name}
+        </h2>
+      </div>
+
+      {/* Progress Bar */}
+      <div className="mt-4">
+        <div className="text-xs font-semibold text-blue-600 mb-1 text-center">
           {progress}%
+        </div>
+        <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+          <div
+            className="bg-blue-600 h-full rounded-full transition-all"
+            style={{ width: `${progress}%` }}
+          />
         </div>
       </div>
 
+      {/* Action Buttons */}
+      <div className="mt-5 pt-3 grid grid-cols-2 gap-2">
+        {/* Dues */}
+        <button
+          onClick={goToDues}
+          className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-md text-sm font-medium transition cursor-pointer"
+        >
+          <DocumentIcon className="w-5 h-5" />
+          <span>Requirements</span>
+        </button>
 
-          {/* Org Name (underline on card hover) */}
-          <h2 className="text-xl font-bold text-gray-900 mb-3 group-hover:underline">
-            {org.name}
-          </h2>
-        </div>
-      </Link>
-
-      {/* Notification Button */}
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-        }}
-        className="cursor-pointer absolute top-4 left-4 bg-blue-600 hover:bg-blue-700 text-white rounded-full flex items-center justify-center w-10 h-10 transition"
-      >
-        <BellIcon className="w-6 h-6" />
-      </button>
-
-      {/* Dues Button */}
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-        }}
-        className="cursor-pointer absolute top-4 right-4 bg-blue-600 hover:bg-blue-700 text-white rounded-full flex items-center justify-center w-10 h-10 transition"
-      >
-        <DocumentIcon className="w-6 h-6" />
-      </button>
+        {/* Notifications */}
+        <button
+          onClick={(e) => e.stopPropagation()}
+          className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-md text-sm font-medium transition cursor-pointer"
+        >
+          <BellIcon className="w-5 h-5" />
+          <span>Notifications</span>
+        </button>
+      </div>
     </div>
   );
 };
+
 
 // Create Organization Modal
 const CreateOrgModal: FC<{
   isOpen: boolean;
   onClose: () => void;
-  onCreate: (name: string, email: string) => void;
+  onCreate: (name: string, email: string) => Promise<void>;
 }> = ({ isOpen, onClose, onCreate }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
 
   if (!isOpen) return null;
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (name.trim() && email.trim()) {
-      onCreate(name, email);
+      await onCreate(name, email);
       setName('');
       setEmail('');
-      onClose();
     }
   };
+
 
   return (
     <div className="fixed inset-0 bg-opacity-50 flex items-center justify-center z-50">
@@ -196,6 +173,12 @@ const OrgsDashboard: FC = () => {
   const [orgs, setOrgs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [search, setSearch] = useState('');
+
+  const filteredOrgs = orgs.filter((org) =>
+  org.name.toLowerCase().includes(search.toLowerCase()) ||
+  org.username.toLowerCase().includes(search.toLowerCase())
+  );
 
   useEffect(() => {
     const fetchOrgs = async () => {
@@ -207,45 +190,104 @@ const OrgsDashboard: FC = () => {
     fetchOrgs();
   }, []);
 
-  const handleCreateOrg = (name: string, email: string) => {
-    const newOrg = {
-      id: Date.now(),
-      name,
-      username: name.toLowerCase(),
-      avatar: '',
-      email,
-    };
-    setOrgs([...orgs, newOrg]);
-  };
+const handleCreateOrg = async (name: string, email: string) => {
+  if (!name.trim() || !email.trim()) {
+    alert(
+      'Failed to create organization. Organization not made due to existing or invalid input.'
+    );
+    return;
+  }
+
+  const username = name
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '');
+
+  const { data: existingOrg } = await supabase
+    .from('orgs')
+    .select('username')
+    .or(`email.eq.${email},username.eq.${username}`)
+    .maybeSingle();
+
+  if (existingOrg) {
+    alert(
+      'Failed to create organization. Organization not made due to existing or invalid input.'
+    );
+    return;
+  }
+
+
+  const { data, error } = await supabase
+    .from('orgs')
+    .insert([
+      {
+        username,
+        name,
+        email,
+        bio: null,
+        adviser: null,
+        accreditlvl: null,
+        avatar: null,
+      },
+    ])
+    .select()
+    .single();
+
+  if (error) {
+    alert(
+      'Failed to create organization. Organization not made due to existing or invalid input.'
+    );
+    console.error('Error creating org:', error);
+    return;
+  }
+
+
+  setOrgs((prev) => [...prev, data]);
+  setShowModal(false);
+};
+
 
   if (loading) return <div className="p-4 text-black">Loading organizations...</div>;
   
   return (
-    <div className="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen p-6">
+    <div className="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen p-6 overflow-y-scroll">
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <div>
           <h1 className="text-3xl font-bold text-black">DASHBOARD</h1>
-          <p className="text-black">
-            Hello, {session?.user?.name}
-          </p>
+          <p className="text-black">Hello, {session?.user?.name}</p>
         </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
-        >
-          Create Organization
-        </button>
+      
+        <div className="flex items-center gap-3 ml-auto">
+          <input
+            type="text"
+            placeholder="Search organization"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-64 min-w-[16rem] max-w-[16rem] flex-shrink-0
+                       bg-white px-4 py-2 rounded-md border border-gray-300 text-black
+                       focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+          />
+      
+          <button
+            onClick={() => setShowModal(true)}
+            className="cursor-pointer flex-shrink-0 bg-blue-600 hover:bg-blue-700 text-white
+                       px-4 py-2 rounded-md text-sm font-medium transition-colors"
+          >
+            Create Organization
+          </button>
+        </div>
       </div>
 
-      {orgs.length === 0 ? (
-        <p className="text-black">No organizations found.</p>
+
+      {filteredOrgs.length === 0 ? (
+      <p className="text-black">No organizations found.</p>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {orgs.map((org) => (
-            <OrgCard key={org.username} org={org} />
-          ))}
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredOrgs.map((org) => (
+        <OrgCard key={org.username} org={org} />
+        ))}
+      </div>
       )}
 
       <CreateOrgModal
