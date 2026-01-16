@@ -1,8 +1,7 @@
+import UploadMembersPage from '@/app/ui/snippets/orgs/test';
 
 export default function Page() {
   return (
-    <div className="flex min-h-screen">
-     test
-    </div>
+    <UploadMembersPage/>
   );
 }
