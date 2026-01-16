@@ -46,7 +46,7 @@ export default function UploadMembersModal() {
 
   return (
     <>
-      {/* Trigger Button */}
+      {/* Trigger button */}
       <button
         onClick={() => setOpen(true)}
         className="px-4 py-2 bg-blue-500 text-white rounded cursor-pointer hover:bg-blue-700"
@@ -69,7 +69,8 @@ export default function UploadMembersModal() {
                 ✕
               </button>
             </div>
-            {/* Download Template Button */}
+
+            {/* Download template button */}
       <button
         onClick={downloadTemplate}
         className="
