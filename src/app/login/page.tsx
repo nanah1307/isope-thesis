@@ -2,12 +2,10 @@
 
 import { signIn, signOut, useSession } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
 export default function Home() {
   const { data: session } = useSession();
-const error = useSearchParams().get("error");
-
-
   return (
     <div className="bg-white min-h-screen">
       <header className="bg-[#014FB3] text-white flex items-center justify-center py-6 shadow-md">
@@ -25,9 +23,9 @@ const error = useSearchParams().get("error");
         <div className="mt-50 border-8 border-blue-500 px-10 py-10 rounded-lg space-y-2 text-center">
           <p className="text-black font-bold">iACADEMY</p>
           <p className="text-black font-bold">iSOPE Online</p>
-           {error === "unauthorized" && (
-            <p className="text-red-500">Only iAcademy accounts are allowed.</p>
-            )}
+          <Suspense fallback={null}>
+            <LoginErrorMessage />
+          </Suspense>
           <div className="w-full h-px bg-blue-500 my-4"></div>
           <p className="text-black text-3xl">Sign in</p>
           <p className="text-black">Please use your domain account to login.</p>
@@ -37,4 +35,10 @@ const error = useSearchParams().get("error");
     </div>
     
   );
+}
+
+function LoginErrorMessage() {
+  const error = useSearchParams().get("error");
+  if (error !== "unauthorized") return null;
+  return <p className="text-red-500">Only iAcademy accounts are allowed.</p>;
 }
