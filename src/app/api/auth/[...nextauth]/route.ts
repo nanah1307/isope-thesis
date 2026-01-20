@@ -31,7 +31,8 @@ const handler = NextAuth({
       if (!existingUser) {
         const { error } = await supabase.from("users").insert({
           Email:email,
-          Name:user.name
+          Name:user.name,
+          Role:"member"
         });
 
         if (error) {
@@ -61,7 +62,6 @@ const handler = NextAuth({
           .single();
 
         if (error) {
-          console.warn("Member Found", error);
           token.role = "member";
         } else {
           token.role = data.Role; 
