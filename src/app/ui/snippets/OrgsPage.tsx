@@ -1,18 +1,13 @@
-// app/ui/osas/OrgsPageOsas.tsx
 'use client';
 
-import Link from "next/link";
-import { useState } from "react";
-import { Orgs, requirements, OrgRequirementStatus, orgRequirementStatuses, Req } from "@/app/lib/definitions";
-import { DocumentTextIcon  } from '@heroicons/react/24/outline';
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { supabase } from '@/app/lib/database';
 import { useSearchParams } from "next/navigation";
 import OrgsRequirement from "./orgs/OrgsRequirements";
 import OrgsMembers from "./orgs/OrgsMembers";
 
 type OrgsProp = {
-  org: Orgs;
+  org: any;
 };
 
 type LinkType = {
@@ -36,18 +31,6 @@ export default function OrgsPage({ org }: OrgsProp) {
       ? tabParam
       : 'Overview'
   );
-
-  const getStatus = (reqId: string): OrgRequirementStatus | undefined => {
-    return orgRequirementStatuses.find(
-      (s) => s.orgUsername === org.username && s.requirementId === reqId
-    );
-  };
-
-  const groupedRequirements: Record<string, Req[]> = requirements.reduce((acc, req) => {
-    if (!acc[req.section]) acc[req.section] = [];
-    acc[req.section].push(req);
-    return acc;
-  }, {} as Record<string, Req[]>);
 
   const [isEditingOrg, setIsEditingOrg] = useState(false);
   const [bio, setBio] = useState(org.bio ?? '');
@@ -86,103 +69,108 @@ export default function OrgsPage({ org }: OrgsProp) {
     setSaving(false);
   };
 
-
-
   const content: Record<string, React.ReactNode[]> = {
-  Overview: [
-    <div key="overview" className="relative">
-      {/* Edit Overview */}
-      <div className="absolute top-0 right-0 flex flex-col space-y-2">
-        {!isEditingOrg ? (
-          <button
-            className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-md cursor-pointer hover:bg-blue-700 transition-colors"
-            onClick={() => setIsEditingOrg(true)}
-          >
-            Edit
-          </button>
-        ) : (
-          <>
+    Overview: [
+      <div key="overview" className="relative">
+        {/* Edit Overview */}
+        <div className="absolute top-0 right-0 flex flex-col space-y-2">
+          {!isEditingOrg ? (
             <button
-              disabled={saving}
-              className="px-3 py-1.5 text-sm font-medium text-white bg-green-600 rounded-md cursor-pointer hover:bg-green-700 disabled:opacity-50 transition-colors"
-              onClick={saveOrg}
+              className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-md cursor-pointer hover:bg-blue-700 transition-colors"
+              onClick={() => setIsEditingOrg(true)}
             >
-              {saving ? 'Saving...' : 'Save'}
+              Edit
             </button>
+          ) : (
+            <>
+              <button
+                disabled={saving}
+                className="px-3 py-1.5 text-sm font-medium text-white bg-green-600 rounded-md cursor-pointer hover:bg-green-700 disabled:opacity-50 transition-colors"
+                onClick={saveOrg}
+              >
+                {saving ? 'Saving...' : 'Save'}
+              </button>
 
-            <button
-              disabled={saving}
-              className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-200 rounded-md cursor-pointer hover:bg-gray-300 transition-colors"
-              onClick={() => {
-                setBioDraft(bio);
-                setAdviserDraft(adviser);
-                setAccreditlvlDraft(accreditlvl);
-                setIsEditingOrg(false);
-              }}
-            >
-              Cancel
-            </button>
-          </>
-        )}
+              <button
+                disabled={saving}
+                className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-200 rounded-md cursor-pointer hover:bg-gray-300 transition-colors"
+                onClick={() => {
+                  setBioDraft(bio);
+                  setAdviserDraft(adviser);
+                  setAccreditlvlDraft(accreditlvl);
+                  setIsEditingOrg(false);
+                }}
+              >
+                Cancel
+              </button>
+            </>
+          )}
+        </div>
+
+        {/* Editable Fields */}
+        <div className="space-y-3 pr-16">
+          {/* Bio */}
+          <div className="flex flex-col sm:flex-row sm:items-start gap-2">
+            {isEditingOrg && <span className="w-36 font-medium">Bio:</span>}
+            {isEditingOrg ? (
+              <textarea
+                value={bioDraft}
+                onChange={(e) => setBioDraft(e.target.value)}
+                className="flex-1 min-h-[80px] p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+              />
+            ) : (
+              <p className="text-sm sm:text-base leading-relaxed">{bio}</p>
+            )}
+          </div>
+
+          {/* Adviser */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+            {isEditingOrg && <span className="w-36 font-medium">Adviser:</span>}
+            {isEditingOrg ? (
+              <input
+                type="text"
+                value={adviserDraft}
+                onChange={(e) => setAdviserDraft(e.target.value)}
+                className="flex-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+              />
+            ) : (
+              <p className="text-sm sm:text-base leading-relaxed">Adviser: {adviser}</p>
+            )}
+          </div>
+
+          {/* Accreditation Level */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+            {isEditingOrg && <span className="w-36 font-medium">Accreditation Level:</span>}
+            {isEditingOrg ? (
+              <select
+                value={accreditlvlDraft}
+                onChange={(e) => setAccreditlvlDraft(Number(e.target.value))}
+                className="flex-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+              >
+                <option value={1}>1</option>
+                <option value={2}>2</option>
+                <option value={3}>3</option>
+              </select>
+            ) : (
+              <p className="text-sm sm:text-base leading-relaxed">Accreditation Level: {accreditlvl}</p>
+            )}
+          </div>
+        </div>
       </div>
+    ],
 
-      {/* Editable Fields */}
-      <div className="space-y-3 pr-16">
-        {/* Bio */}
-        <div className="flex flex-col sm:flex-row sm:items-start gap-2">
-          {isEditingOrg && <span className="w-36 font-medium">Bio:</span>}
-          {isEditingOrg ? (
-            <textarea
-              value={bioDraft}
-              onChange={(e) => setBioDraft(e.target.value)}
-              className="flex-1 min-h-[80px] p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
-            />
-          ) : (
-            <p className="text-sm sm:text-base leading-relaxed">{bio}</p>
-          )}
-        </div>
-
-        {/* Adviser */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-          {isEditingOrg && <span className="w-36 font-medium">Adviser:</span>}
-          {isEditingOrg ? (
-            <input
-              type="text"
-              value={adviserDraft}
-              onChange={(e) => setAdviserDraft(e.target.value)}
-              className="flex-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
-            />
-          ) : (
-            <p className="text-sm sm:text-base leading-relaxed">Adviser: {adviser}</p>
-          )}
-        </div>
-
-        {/* Accreditation Level */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-          {isEditingOrg && <span className="w-36 font-medium">Accreditation Level:</span>}
-          {isEditingOrg ? (
-            <select
-              value={accreditlvlDraft}
-              onChange={(e) => setAccreditlvlDraft(Number(e.target.value))}
-              className="flex-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
-            >
-              <option value={1}>1</option>
-              <option value={2}>2</option>
-              <option value={3}>3</option>
-            </select>
-          ) : (
-            <p className="text-sm sm:text-base leading-relaxed">Accreditation Level: {accreditlvl}</p>
-          )}
-        </div>
-      </div>
-    </div>
-  ],
     Members: [
-      <OrgsMembers username={org.username}/>
+      <div key="members" className="w-full">
+        <OrgsMembers username={org.username} />
+      </div>
     ],
+
     Requirements: [
-      <OrgsRequirement username={org.username}/>
+      <div key="requirements" className="w-full">
+        <OrgsRequirement username={org.username} />
+      </div>
     ],
+
     Archive: [
       <div className="overflow-x-auto" key="archive-1">
         <table className="min-w-full border border-gray-300 bg-white text-black text-xs sm:text-sm md:text-base">
@@ -201,8 +189,6 @@ export default function OrgsPage({ org }: OrgsProp) {
             </tr>
           </tbody>
         </table>
-        {/*if edit */}
-
       </div>
     ],
   };
