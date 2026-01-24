@@ -36,7 +36,7 @@ export async function POST(req: Request) {
   console.log(rows);
   // Filter out invalid rows
   const validMembers = members.filter(
-    (m) => m.student_name.toUpperCase() && m.organizations.toLowerCase() && m.school_year
+    (m) => m.student_name && m.organizations.toLowerCase() && m.school_year
   );
 
   if (validMembers.length === 0) {
