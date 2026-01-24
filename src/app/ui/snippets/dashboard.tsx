@@ -58,8 +58,8 @@ const OrgCard: FC<{ org: any }> = ({ org }) => {
       </div>
 
       {/* Action Buttons */}
-      <div className="mt-5 pt-3 grid grid-cols-2 gap-2">
-        {/* Dues */}
+      <div className="mt-5 pt-3 grid grid-cols-[1fr_auto] gap-2">
+        {/* Requirements */}
         <button
           onClick={goToDues}
           className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-md text-sm font-medium transition cursor-pointer"
@@ -71,10 +71,9 @@ const OrgCard: FC<{ org: any }> = ({ org }) => {
         {/* Notifications */}
         <button
           onClick={(e) => e.stopPropagation()}
-          className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-md text-sm font-medium transition cursor-pointer"
+          className="flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-md transition cursor-pointer"
         >
           <BellIcon className="w-5 h-5" />
-          <span>Notifications</span>
         </button>
       </div>
     </div>
