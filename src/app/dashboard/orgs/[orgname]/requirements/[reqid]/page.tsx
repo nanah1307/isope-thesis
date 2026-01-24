@@ -3,7 +3,7 @@
 import { useState, useEffect, use } from 'react';
 import { requirements, orgRequirementStatuses } from '@/app/lib/definitions';
 import { 
-  getAssessmentByOrgAndReq,
+  getAssessmentByOrgAndReq, 
   Comment,
   saveCommentsToLocalStorage,
   loadCommentsFromLocalStorage,
@@ -11,6 +11,21 @@ import {
   formatName
 } from '@/app/lib/assessments';
 import { supabase } from '@/app/lib/database';
+
+const QuestionHeader = ({ title, icon }: { title: string; icon?: boolean }) => (
+  <div className={`bg-gradient-to-r from-yellow-100 to-yellow-50 rounded-lg p-4 mb-4 ${
+    icon ? 'border-2 border-yellow-400 flex items-center gap-3' : ''
+  }`}>
+    {icon && (
+      <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="white" className="w-5 h-5">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+        </svg>
+      </div>
+    )}
+    <h3 className={`text-gray-900 font-bold ${icon ? 'text-lg' : 'text-base'} uppercase`}>{title}</h3>
+  </div>
+);
 
 export default function RequirementPage({ params }: { params: Promise<{ orgname: string; reqid: string }> }) {
   const { orgname, reqid } = use(params);
@@ -29,6 +44,7 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
   const [isEditingInstructions, setIsEditingInstructions] = useState(false);
   const [isEditingGrade, setIsEditingGrade] = useState(false);
   const [instructions, setInstructions] = useState('');
+  const [questionType, setQuestionType] = useState<'freeform' | 'pdf'>('freeform');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -90,10 +106,7 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
         // Update existing record - ONLY update grade column, NOT score
         const { error: updateError } = await supabase
           .from('org_requirement_status')
-          .update({
-            grade: newScore,
-            graded: true
-          })
+          .update({ grade: newScore, graded: true })
           .eq('id', existing.id);
 
         if (updateError) {
@@ -135,6 +148,8 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
   useEffect(() => {
     const assessment = getAssessmentByOrgAndReq(orgname, reqid);
     if (assessment) {
+      setHasSubmitted(assessment.submittedAt !== null);
+      setAttemptCount(assessment.submittedAt ? 1 : 0);
       setMembershipAnswer(assessment.answers['membership'] || '');
       setEvaluationAnswer(assessment.answers['evaluation_ld_q1'] || '');
     }
@@ -142,23 +157,20 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
     const reqStatus = orgRequirementStatuses.find(
       (status) => status.orgUsername === orgname && status.requirementId === reqid
     );
-    if (reqStatus) {
-      setDueDate(reqStatus.due);
-      setHasSubmitted(reqStatus.submitted);
-      setAttemptCount(reqStatus.submitted ? 1 : 0);
-    }
+    if (reqStatus) setDueDate(reqStatus.due);
 
     // Load grade from Supabase
     loadGradeFromSupabase();
 
-    // Load saved instructions
+    // Load saved instructions (keeping this in localStorage for now)
     const instructionsKey = `instructions_${orgname}_${reqid}`;
     const savedInstructions = localStorage.getItem(instructionsKey);
-    if (savedInstructions) {
-      setInstructions(savedInstructions);
-    } else {
-      setInstructions(`Accomplish evaluation by ${formattedDueDate}.`);
-    }
+    setInstructions(savedInstructions || `Accomplish evaluation by ${formattedDueDate}.`);
+
+    // Load saved question type (keeping this in localStorage for now)
+    const questionTypeKey = `questionType_${orgname}_${reqid}`;
+    const savedQuestionType = localStorage.getItem(questionTypeKey);
+    if (savedQuestionType) setQuestionType(savedQuestionType as 'freeform' | 'pdf');
 
     setComments(loadCommentsFromLocalStorage(orgname, reqid));
   }, [orgname, reqid, formattedDueDate]);
@@ -168,10 +180,7 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
   }, [comments, orgname, reqid]);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentTime(Date.now());
-    }, 60000);
-
+    const interval = setInterval(() => setCurrentTime(Date.now()), 60000);
     return () => clearInterval(interval);
   }, []);
 
@@ -192,85 +201,57 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
 
   const handleSubmitGrade = async () => {
     const success = await saveGradeToSupabase(score);
-    if (success) {
-      setIsEditingGrade(false);
-    }
+    if (success) setIsEditingGrade(false);
   };
 
   const handleSaveInstructions = () => {
-    const instructionsKey = `instructions_${orgname}_${reqid}`;
-    localStorage.setItem(instructionsKey, instructions);
+    localStorage.setItem(`instructions_${orgname}_${reqid}`, instructions);
     setIsEditingInstructions(false);
   };
 
   const handleCancelEditInstructions = () => {
-    const instructionsKey = `instructions_${orgname}_${reqid}`;
-    const savedInstructions = localStorage.getItem(instructionsKey);
-    if (savedInstructions) {
-      setInstructions(savedInstructions);
-    } else {
-      setInstructions(`Accomplish evaluation by ${formattedDueDate}.`);
-    }
+    const saved = localStorage.getItem(`instructions_${orgname}_${reqid}`);
+    setInstructions(saved || `Accomplish evaluation by ${formattedDueDate}.`);
     setIsEditingInstructions(false);
+  };
+
+  const handleQuestionTypeChange = (type: 'freeform' | 'pdf') => {
+    setQuestionType(type);
+    localStorage.setItem(`questionType_${orgname}_${reqid}`, type);
   };
 
   const AnswersDisplay = () => (
     <>
-      <div className="mb-6">
-        <h4 className="text-sm font-semibold text-gray-700 mb-2 uppercase">Type of Membership</h4>
-        <div className="bg-white border border-gray-300 rounded-lg p-4">
-          <p className="text-gray-900">{membershipAnswer || 'No answer provided'}</p>
+      <div className="mb-8">
+        <QuestionHeader title="TYPE OF MEMBERSHIP" icon />
+        <div className="bg-gray-50 border border-gray-300 rounded-lg p-4">
+          <p className="text-gray-900 font-medium">{membershipAnswer || 'No answer provided'}</p>
         </div>
       </div>
-      <div className="mb-6">
-        <h4 className="text-sm font-semibold text-gray-700 mb-2 uppercase">Evaluation - Leadership Development (LD)</h4>
-        <p className="text-gray-700 text-sm mb-3">
+      <div className="mb-8">
+        <QuestionHeader title="EVALUATION - Leadership Development (LD)" />
+        <p className="text-gray-900 mb-4">
           1. The organization's structure, system and processes allows for and encourage 
           transfer of knowledge skills and attitude from present leaders to the next set of leaders.
         </p>
-        <div className="bg-white border border-gray-300 rounded-lg p-4">
-          <p className="text-gray-900">{evaluationAnswer || 'No answer provided'}</p>
+        <div className="bg-gray-50 border border-gray-300 rounded-lg p-4">
+          <p className="text-gray-900 font-medium">{evaluationAnswer || 'No answer provided'}</p>
         </div>
       </div>
     </>
   );
 
-  const TabButton = ({ tab, label }: { tab: 'instructions' | 'grading'; label: string }) => (
-    <button 
-      onClick={() => !isEditingInstructions && !isEditingGrade && setActiveTab(tab)} 
-      disabled={isEditingInstructions || isEditingGrade}
-      className={`px-6 py-4 font-medium ${
-        isEditingInstructions || isEditingGrade 
-          ? 'cursor-not-allowed opacity-50' 
-          : 'cursor-pointer'
-      } ${
-        activeTab === tab 
-          ? 'text-gray-900 border-b-2 border-blue-600' 
-          : 'text-gray-500 hover:text-gray-700'
-      }`}
-    >
-      {label}
-    </button>
-  );
+  const isEditing = isEditingInstructions || isEditingGrade;
 
   return (
     <div className="min-h-screen bg-gray-50 p-8 relative">
-      {/* Overlay when editing */}
-      {(isEditingInstructions || isEditingGrade) && (
-        <div className="fixed inset-0 bg-opacity-50 z-40" />
-      )}
+      {isEditing && <div className="fixed inset-0 bg-opacity-50 z-40" />}
       
-      {/* Error message */}
       {error && (
         <div className="max-w-7xl mx-auto mb-4">
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative" role="alert">
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative">
             <span className="block sm:inline">{error}</span>
-            <button
-              className="absolute top-0 bottom-0 right-0 px-4 py-3"
-              onClick={() => setError(null)}
-            >
-              <span className="text-red-700">×</span>
-            </button>
+            <button className="absolute top-0 bottom-0 right-0 px-4 py-3" onClick={() => setError(null)}>×</button>
           </div>
         </div>
       )}
@@ -278,17 +259,29 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
       <div className="max-w-7xl mx-auto relative z-50">
         <div className="flex items-center gap-3 mb-8">
           <div className="w-12 h-12 bg-blue-900 rounded-full" />
-          <h1 className="text-3xl font-bold text-gray-900">
-            {formatName(orgname)} - {requirementName}
-          </h1>
+          <h1 className="text-3xl font-bold text-gray-900">{formatName(orgname)} - {requirementName}</h1>
         </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           <div className="lg:col-span-3">
             <div className="bg-white rounded-lg shadow-sm">
               <div className="border-b-2 border-gray-300 flex">
-                <TabButton tab="instructions" label="Instructions" />
-                {hasSubmitted && <TabButton tab="grading" label="Grading" />}
+                {(['instructions', 'grading'] as const).map(tab => (
+                  (tab === 'grading' && !hasSubmitted) ? null : (
+                    <button 
+                      key={tab}
+                      onClick={() => !isEditing && setActiveTab(tab)} 
+                      disabled={isEditing}
+                      className={`px-6 py-4 font-medium ${isEditing ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'} ${
+                        activeTab === tab ? 'text-gray-900 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                    </button>
+                  )
+                ))}
               </div>
+
               <div className="p-12 min-h-[500px]">
                 {activeTab === 'instructions' && (
                   <div>
@@ -309,36 +302,55 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
                         </button>
                       ) : (
                         <div className="flex gap-2">
-                          <button
-                            onClick={handleSaveInstructions}
-                            className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors cursor-pointer"
-                          >
-                            Save
-                          </button>
-                          <button
-                            onClick={handleCancelEditInstructions}
-                            className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white font-medium rounded-lg transition-colors cursor-pointer"
-                          >
-                            Cancel
-                          </button>
+                          <button onClick={handleSaveInstructions} className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors cursor-pointer">Save</button>
+                          <button onClick={handleCancelEditInstructions} className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white font-medium rounded-lg transition-colors cursor-pointer">Cancel</button>
                         </div>
                       )}
                     </div>
 
                     {isEditingInstructions ? (
-                      <textarea
-                        value={instructions}
-                        onChange={(e) => setInstructions(e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 text-xl font-medium min-h-[200px]"
-                        placeholder="Enter instructions here..."
-                      />
+                      <>
+                        <textarea
+                          value={instructions}
+                          onChange={(e) => setInstructions(e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 text-xl font-medium min-h-[200px]"
+                          placeholder="Enter instructions here..."
+                        />
+                        
+                        <div className="mt-8 pt-8 border-t border-gray-200">
+                          <h3 className="text-gray-900 font-bold text-lg mb-4">Question Type:</h3>
+                          <div className="flex gap-6">
+                            <label className="flex items-center gap-3 cursor-pointer">
+                              <input
+                                type="radio"
+                                name="questionType"
+                                value="freeform"
+                                checked={questionType === 'freeform'}
+                                onChange={() => handleQuestionTypeChange('freeform')}
+                                className="w-5 h-5 text-blue-600 focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                              />
+                              <span className="text-gray-900 font-medium text-lg">Freeform Answer</span>
+                            </label>
+                            <label className="flex items-center gap-3 cursor-pointer">
+                              <input
+                                type="radio"
+                                name="questionType"
+                                value="pdf"
+                                checked={questionType === 'pdf'}
+                                onChange={() => handleQuestionTypeChange('pdf')}
+                                className="w-5 h-5 text-blue-600 focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                              />
+                              <span className="text-gray-900 font-medium text-lg">PDF Submission</span>
+                            </label>
+                          </div>
+                        </div>
+                      </>
                     ) : (
-                      <p className="text-gray-900 mb-10 leading-relaxed text-xl max-w-4xl font-medium">
-                        {instructions}
-                      </p>
+                      <p className="text-gray-900 mb-10 leading-relaxed text-xl max-w-4xl font-medium">{instructions}</p>
                     )}
                   </div>
                 )}
+
                 {activeTab === 'grading' && hasSubmitted && (
                   <div>
                     <h2 className="text-gray-900 font-bold mb-8 text-2xl">Grading</h2>
@@ -366,6 +378,7 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
                 </div>
               </div>
             </div>
+
             <div className="bg-white rounded-lg shadow-sm p-6">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="font-semibold text-gray-900">Grade</h3>
@@ -384,10 +397,7 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
                   </button>
                 ) : (
                   <button
-                    onClick={() => {
-                      setScore(submittedScore);
-                      setIsEditingGrade(false);
-                    }}
+                    onClick={() => { setScore(submittedScore); setIsEditingGrade(false); }}
                     className="px-3 py-1.5 bg-gray-500 hover:bg-gray-600 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer"
                   >
                     Cancel
@@ -402,39 +412,32 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
               ) : isEditingGrade ? (
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Score (out of {maxScore})
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Score (out of {maxScore})</label>
                     <input 
                       type="text" 
-                      value={score === 0 ? '' : score}
+                      value={score}
                       onChange={(e) => {
-                        const inputValue = e.target.value;
+                        const val = e.target.value;
                         
-                        // Only allow empty string or valid numbers
-                        if (inputValue === '') {
-                          setScore(0);
-                          return;
+                        // Allow empty string to clear the input
+                        if (val === '') { 
+                          setScore(0); 
+                          return; 
                         }
                         
                         // Check if input contains only digits
-                        if (!/^\d+$/.test(inputValue)) {
-                          return; // Reject non-numeric input
-                        }
+                        if (!/^\d+$/.test(val)) return;
                         
-                        const numValue = parseInt(inputValue, 10);
+                        const num = parseInt(val, 10);
                         
-                        // Only update if within valid range
-                        if (numValue >= 0 && numValue <= maxScore) {
-                          setScore(numValue);
+                        // Allow 0 and any number up to maxScore
+                        if (num >= 0 && num <= maxScore) {
+                          setScore(num);
                         }
                       }}
                       onKeyDown={(e) => {
-                        // Prevent non-numeric keys except backspace, delete, arrow keys, tab
-                        const allowedKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'];
-                        if (!allowedKeys.includes(e.key) && !/^\d$/.test(e.key)) {
-                          e.preventDefault();
-                        }
+                        const allowed = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'];
+                        if (!allowed.includes(e.key) && !/^\d$/.test(e.key)) e.preventDefault();
                       }}
                       placeholder={maxScore.toString()}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
@@ -468,6 +471,7 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
                 </div>
               )}
             </div>
+
             <div className="bg-white rounded-lg shadow-sm p-6">
               <h3 className="font-semibold text-gray-900 mb-4">Adviser's Feedback</h3>
               <div className="flex items-center gap-3">
@@ -475,6 +479,7 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
                 <span className="font-semibold text-gray-900">Approved!</span>
               </div>
             </div>
+
             <div className="bg-white rounded-lg shadow-sm p-6">
               <h3 className="font-semibold text-gray-900 mb-4">Comments</h3>
               <div className="mb-4">
@@ -482,23 +487,18 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
                   value={newComment} 
                   onChange={(e) => setNewComment(e.target.value)} 
                   placeholder="Add a comment..." 
-                  disabled={isEditingInstructions || isEditingGrade}
-                  className={`w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-lg 
-                           focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none 
-                           text-sm placeholder:text-gray-400 ${
-                             isEditingInstructions || isEditingGrade ? 'opacity-50 cursor-not-allowed' : ''
-                           }`} 
+                  disabled={isEditing}
+                  className={`w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none text-sm placeholder:text-gray-400 ${
+                    isEditing ? 'opacity-50 cursor-not-allowed' : ''
+                  }`} 
                   rows={3} 
                 />
                 <button 
-                  type="button"
                   onClick={handleAddComment} 
-                  disabled={isEditingInstructions || isEditingGrade}
-                  className={`mt-2 w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 
-                           disabled:cursor-not-allowed text-white font-medium px-4 py-2 
-                           rounded-lg transition-colors text-sm ${
-                             isEditingInstructions || isEditingGrade ? '' : 'cursor-pointer'
-                           }`}
+                  disabled={isEditing}
+                  className={`mt-2 w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-medium px-4 py-2 rounded-lg transition-colors text-sm ${
+                    isEditing ? '' : 'cursor-pointer'
+                  }`}
                 >
                   Add Comment
                 </button>
@@ -512,18 +512,14 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
                         <span className="text-xs text-gray-400 ml-2">• {c.author}</span>
                       </div>
                       <button 
-                        type="button"
                         onClick={() => handleDeleteComment(c.id)} 
-                        disabled={isEditingInstructions || isEditingGrade}
+                        disabled={isEditing}
                         className={`text-gray-400 hover:text-red-600 transition-colors ${
-                          isEditingInstructions || isEditingGrade ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                          isEditing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
                         }`}
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" 
-                          strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-                          <path strokeLinecap="round" strokeLinejoin="round" 
-                            d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" 
-                          />
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
                         </svg>
                       </button>
                     </div>
