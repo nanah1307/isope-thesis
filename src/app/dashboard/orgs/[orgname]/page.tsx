@@ -1,5 +1,5 @@
 import OrgsPage from "@/app/ui/snippets/OrgsPage";
-import {getUserByUsername } from "@/app/lib/user"
+import {getUserByUsername } from "@/app/lib/database"
 import { notFound } from "next/navigation";
 
 export default async function Page(props: any) {

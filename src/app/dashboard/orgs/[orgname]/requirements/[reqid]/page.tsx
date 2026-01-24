@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
-import { requirements, orgRequirementStatuses } from '@/app/lib/user';
+import { requirements, orgRequirementStatuses } from '@/app/lib/definitions';
 import { 
   getAssessmentByOrgAndReq, 
   Comment,
