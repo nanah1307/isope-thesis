@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { supabase } from '@/app/lib/database';
 import { useSearchParams } from "next/navigation";
 import OrgsRequirementArchive from "./orgs/OrgsRequirementsArchive";
-import OrgsRequirement from "./orgs/OrgsRequirements";
+import OrgsRequirement from "./orgs/OrgsRequirement";
 import OrgsMembers from "./orgs/OrgsMembers";
 
 type OrgsProp = {
