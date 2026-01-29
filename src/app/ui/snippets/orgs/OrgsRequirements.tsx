@@ -22,6 +22,7 @@ type OrgRequirementStatus = {
   due: string | null;
   score: number | null;
   grade: number | null;
+  year: number | null;
 };
 
 export default function OrgsRequirement({ username }: { username: string }) {
@@ -37,6 +38,7 @@ export default function OrgsRequirement({ username }: { username: string }) {
           .from('requirements')
           .select('*')
           .eq('active', true)
+          .eq('year','2025')
           .order('section',{ascending:true})
           .order('id',{ascending:true});
         if (reqError) throw reqError;

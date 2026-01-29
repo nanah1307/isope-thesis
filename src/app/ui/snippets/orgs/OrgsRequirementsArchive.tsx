@@ -22,6 +22,7 @@ type OrgRequirementStatus = {
   due: string | null;
   score: number | null;
   grade: number | null;
+  year: number | null;
 };
 
 export default function OrgsRequirement({ username }: { username: string }) {
