@@ -40,7 +40,7 @@ export default function OrgsRequirementArchive({ username }: { username: string 
 
       // 1️⃣ Fetch available years
       const { data: yearData, error: yearError } = await supabase
-        .from('requirements')
+        .from('org_requirement_status')
         .select('year')
         .order('year', { ascending: false });
 
@@ -62,7 +62,6 @@ export default function OrgsRequirementArchive({ username }: { username: string 
         .from('requirements')
         .select('*')
         .eq('active', true)
-        .eq('year', year)
         .order('section', { ascending: true })
         .order('id', { ascending: true });
 
@@ -71,6 +70,7 @@ export default function OrgsRequirementArchive({ username }: { username: string 
       const { data: statusData, error: statusError } = await supabase
         .from('org_requirement_status')
         .select('*')
+        .eq('year', year)
         .eq('orgUsername', username);
 
       if (statusError) throw statusError;
