@@ -36,7 +36,9 @@ export default function OrgsRequirement({ username }: { username: string }) {
         const { data: reqData, error: reqError } = await supabase
           .from('requirements')
           .select('*')
-          .eq('active', true);
+          .eq('active', true)
+          .order('section',{ascending:true})
+          .order('id',{ascending:true});
         if (reqError) throw reqError;
 
         const { data: statusData, error: statusError } = await supabase
