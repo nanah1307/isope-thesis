@@ -25,7 +25,7 @@ type OrgRequirementStatus = {
   year: number | null;
 };
 
-export default function OrgsRequirement({ username }: { username: string }) {
+export default function OrgsRequirementArchive({ username }: { username: string }) {
   const [requirements, setRequirements] = useState<Requirement[]>([]);
   const [statuses, setStatuses] = useState<OrgRequirementStatus[]>([]);
   const [loading, setLoading] = useState(true);
