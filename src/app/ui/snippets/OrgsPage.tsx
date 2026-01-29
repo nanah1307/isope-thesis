@@ -1,17 +1,13 @@
-// app/ui/snippets/OrgsPageOsas.tsx
 'use client';
 
-import Link from "next/link";
-import { useState } from "react";
-import { Orgs, Req, OrgRequirementStatus } from "@/app/lib/user";
-import { DocumentTextIcon } from '@heroicons/react/24/outline';
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { supabase } from '@/app/lib/database';
+import { useSearchParams } from "next/navigation";
+import OrgsRequirement from "./orgs/OrgsRequirements";
+import OrgsMembers from "./orgs/OrgsMembers";
 
 type OrgsProp = {
-  org: Orgs;
-  requirements: Req[];                 // ⬅ now received from Supabase
-  statuses: OrgRequirementStatus[];    // ⬅ now received from Supabase
+  org: any;
 };
 
 type LinkType = {
@@ -26,29 +22,25 @@ const links: LinkType[] = [
   { name: 'Archive', href: '/' },
 ];
 
-export default function OrgsPage({ org, requirements, statuses }: OrgsProp) {
-  const [active, setActive] = useState("Overview");
+export default function OrgsPage({ org }: OrgsProp) {
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get('tab');
 
-  // Get status for each requirement (per org)
-  const getStatus = (reqId: string) =>
-    statuses.find((s) => s.requirementId === reqId);
-
-  // Group by section
-  const groupedRequirements = requirements.reduce((acc, req) => {
-    if (!acc[req.section]) acc[req.section] = [];
-    acc[req.section].push(req);
-    return acc;
-  }, {} as Record<string, Req[]>);
+  const [active, setActive] = useState(
+    tabParam && links.some(l => l.name === tabParam)
+      ? tabParam
+      : 'Overview'
+  );
 
   const [isEditingOrg, setIsEditingOrg] = useState(false);
-  const [bio, setBio] = useState(org.bio);
-  const [bioDraft, setBioDraft] = useState(org.bio);
+  const [bio, setBio] = useState(org.bio ?? '');
+  const [bioDraft, setBioDraft] = useState(org.bio ?? '');
 
-  const [adviser, setAdviser] = useState(org.adviser);
-  const [adviserDraft, setAdviserDraft] = useState(org.adviser);
+  const [adviser, setAdviser] = useState(org.adviser ?? '');
+  const [adviserDraft, setAdviserDraft] = useState(org.adviser ?? '');
 
-  const [accreditlvl, setAccreditlvl] = useState(org.accreditlvl);
-  const [accreditlvlDraft, setAccreditlvlDraft] = useState(org.accreditlvl);
+  const [accreditlvl, setAccreditlvl] = useState(org.accreditlvl ?? 1);
+  const [accreditlvlDraft, setAccreditlvlDraft] = useState(org.accreditlvl ?? 1);
 
   const [saving, setSaving] = useState(false);
 
@@ -58,8 +50,8 @@ export default function OrgsPage({ org, requirements, statuses }: OrgsProp) {
     const { error } = await supabase
       .from('orgs')
       .update({
-        bio: bioDraft,
-        adviser: adviserDraft,
+        bio: bioDraft || null,
+        adviser: adviserDraft || null,
         accreditlvl: accreditlvlDraft,
       })
       .eq('username', org.username); 
@@ -77,148 +69,108 @@ export default function OrgsPage({ org, requirements, statuses }: OrgsProp) {
     setSaving(false);
   };
 
-
-
   const content: Record<string, React.ReactNode[]> = {
-  Overview: [
-    <div key="overview" className="relative">
-      {/* Edit Overview */}
-      <div className="absolute top-0 right-0 flex flex-col space-y-2">
-        {!isEditingOrg ? (
-          <button
-            className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-md cursor-pointer hover:bg-blue-700 transition-colors"
-            onClick={() => setIsEditingOrg(true)}
-          >
-            Edit
-          </button>
-        ) : (
-          <>
+    Overview: [
+      <div key="overview" className="relative">
+        {/* Edit Overview */}
+        <div className="absolute top-0 right-0 flex flex-col space-y-2">
+          {!isEditingOrg ? (
             <button
-              disabled={saving}
-              className="px-3 py-1.5 text-sm font-medium text-white bg-green-600 rounded-md cursor-pointer hover:bg-green-700 disabled:opacity-50 transition-colors"
-              onClick={saveOrg}
+              className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-md cursor-pointer hover:bg-blue-700 transition-colors"
+              onClick={() => setIsEditingOrg(true)}
             >
-              {saving ? 'Saving...' : 'Save'}
+              Edit
             </button>
-
-            <button
-              disabled={saving}
-              className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-200 rounded-md cursor-pointer hover:bg-gray-300 transition-colors"
-              onClick={() => {
-                setBioDraft(bio);
-                setAdviserDraft(adviser);
-                setAccreditlvlDraft(accreditlvl);
-                setIsEditingOrg(false);
-              }}
-            >
-              Cancel
-            </button>
-          </>
-        )}
-      </div>
-
-      {/* Editable Fields */}
-      <div className="space-y-3 pr-16">
-        {/* Bio */}
-        <div className="flex flex-col sm:flex-row sm:items-start gap-2">
-          {isEditingOrg && <span className="w-36 font-medium">Bio:</span>}
-          {isEditingOrg ? (
-            <textarea title="org-bio"
-              value={bioDraft}
-              onChange={(e) => setBioDraft(e.target.value)}
-              className="flex-1 min-h-[80px] p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
-            />
           ) : (
-            <p className="text-sm sm:text-base leading-relaxed">{bio}</p>
+            <>
+              <button
+                disabled={saving}
+                className="px-3 py-1.5 text-sm font-medium text-white bg-green-600 rounded-md cursor-pointer hover:bg-green-700 disabled:opacity-50 transition-colors"
+                onClick={saveOrg}
+              >
+                {saving ? 'Saving...' : 'Save'}
+              </button>
+
+              <button
+                disabled={saving}
+                className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-200 rounded-md cursor-pointer hover:bg-gray-300 transition-colors"
+                onClick={() => {
+                  setBioDraft(bio);
+                  setAdviserDraft(adviser);
+                  setAccreditlvlDraft(accreditlvl);
+                  setIsEditingOrg(false);
+                }}
+              >
+                Cancel
+              </button>
+            </>
           )}
         </div>
 
-        {/* Adviser */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-          {isEditingOrg && <span className="w-36 font-medium">Adviser:</span>}
-          {isEditingOrg ? (
-            <input title="org-adviser"
-              type="text"
-              value={adviserDraft}
-              onChange={(e) => setAdviserDraft(e.target.value)}
-              className="flex-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
-            />
-          ) : (
-            <p className="text-sm sm:text-base leading-relaxed">Adviser: {adviser}</p>
-          )}
-        </div>
+        {/* Editable Fields */}
+        <div className="space-y-3 pr-16">
+          {/* Bio */}
+          <div className="flex flex-col sm:flex-row sm:items-start gap-2">
+            {isEditingOrg && <span className="w-36 font-medium">Bio:</span>}
+            {isEditingOrg ? (
+              <textarea
+                value={bioDraft}
+                onChange={(e) => setBioDraft(e.target.value)}
+                className="flex-1 min-h-[80px] p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+              />
+            ) : (
+              <p className="text-sm sm:text-base leading-relaxed">{bio}</p>
+            )}
+          </div>
 
-        {/* Accreditation Level */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-          {isEditingOrg && <span className="w-36 font-medium">Accreditation Level:</span>}
-          {isEditingOrg ? (
-            <select title="org-accreditlvl"
-              value={accreditlvlDraft}
-              onChange={(e) => setAccreditlvlDraft(Number(e.target.value))}
-              className="flex-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
-            >
-              <option value={1}>1</option>
-              <option value={2}>2</option>
-              <option value={3}>3</option>
-            </select>
-          ) : (
-            <p className="text-sm sm:text-base leading-relaxed">Accreditation Level: {accreditlvl}</p>
-          )}
-        </div>
-      </div>
-    </div>
-  ],
-    Members: [
-     <p key="members-1" className="text-sm sm:text-base leading-relaxed  text-gray-600">placeholder</p>
-      ],
-    Requirements: [
-      <div key="requirements-1" className="overflow-x-auto">
-        <table className="min-w-full border border-gray-300 bg-white text-black text-xs sm:text-sm md:text-base">
-          <thead>
-            <tr className="bg-white text-black">
-              <th className="border border-gray-300 px-3 py-2 text-left w-2/3">Requirement</th>
-              <th className="border border-gray-300 px-3 py-2 text-left">View</th>
-              <th className="border border-gray-300 px-3 py-2 text-left">Start</th>
-              <th className="border border-gray-300 px-3 py-2 text-left">Due</th>
-              <th className="border border-gray-300 px-3 py-2 text-left">Submitted</th>
-              <th className="border border-gray-300 px-3 py-2 text-left">Graded</th>
-              <th className="border border-gray-300 px-3 py-2 text-left">Score</th>
-            </tr>
-          </thead>
-          <tbody>
-          {Object.entries(groupedRequirements).map(([section, reqs]) => (
-            <React.Fragment key={section}>
-              <tr className="bg-gray-200">
-                  <td colSpan={7} className="px-3 py-2 font-bold text-black">{section}</td>
-              </tr>
+          {/* Adviser */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+            {isEditingOrg && <span className="w-36 font-medium">Adviser:</span>}
+            {isEditingOrg ? (
+              <input
+                type="text"
+                value={adviserDraft}
+                onChange={(e) => setAdviserDraft(e.target.value)}
+                className="flex-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+              />
+            ) : (
+              <p className="text-sm sm:text-base leading-relaxed">Adviser: {adviser}</p>
+            )}
+          </div>
 
-              {reqs.map((req) => {
-                const status = getStatus(req.id);
-                return (
-                    <tr key={req.id} className="border-b border-gray-200">
-                    <td className="border px-3 py-2">{req.title}</td>
-                    <td className="border px-3 py-2">
-                      <Link
-                        href={`/dashboard/orgs/${org.username}/requirements/${req.id}`}
-                        className="text-blue-500 hover:underline"
-                      >
-                        <DocumentTextIcon className="w-4"/> View
-                      </Link>
-                    </td>
-                    <td className="border px-3 py-2">{status?.start ? new Date(status.start).toLocaleDateString() : "-"}</td>
-                    <td className="border px-3 py-2">{status?.due ? new Date(status.due).toLocaleDateString() : "-"}</td>
-                    <td className="border px-3 py-2">{status?.submitted ? "✅" : "❌"}</td>
-                    <td className="border px-3 py-2">{status?.graded ? "✅" : "❌"}</td>
-                    <td className="border px-3 py-2">{status?.graded ? status.score : "-"}</td>
-                  </tr>
-                );
-              })}
-            </React.Fragment>
-          ))}
-          </tbody>
-        </table>
+          {/* Accreditation Level */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+            {isEditingOrg && <span className="w-36 font-medium">Accreditation Level:</span>}
+            {isEditingOrg ? (
+              <select
+                value={accreditlvlDraft}
+                onChange={(e) => setAccreditlvlDraft(Number(e.target.value))}
+                className="flex-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+              >
+                <option value={1}>1</option>
+                <option value={2}>2</option>
+                <option value={3}>3</option>
+              </select>
+            ) : (
+              <p className="text-sm sm:text-base leading-relaxed">Accreditation Level: {accreditlvl}</p>
+            )}
+          </div>
+        </div>
       </div>
     ],
+
+    Members: [
+      <div key="members" className="w-full">
+        <OrgsMembers username={org.username} />
+      </div>
+    ],
+
+    Requirements: [
+      <div key="requirements" className="w-full">
+        <OrgsRequirement username={org.username} />
+      </div>
+    ],
+
     Archive: [
       <div className="overflow-x-auto" key="archive-1">
         <table className="min-w-full border border-gray-300 bg-white text-black text-xs sm:text-sm md:text-base">
@@ -237,8 +189,6 @@ export default function OrgsPage({ org, requirements, statuses }: OrgsProp) {
             </tr>
           </tbody>
         </table>
-        {/*if edit */}
-
       </div>
     ],
   };
@@ -246,11 +196,14 @@ export default function OrgsPage({ org, requirements, statuses }: OrgsProp) {
   return (
     <div className="min-h-screen bg-white p-4 sm:p-8">
       <div className="text-black flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-6 p-4 sm:p-6 rounded mx-auto max-w-xl">
-        <img src={org.avatar} className="w-16 h-16 sm:w-24 sm:h-24 rounded-full object-cover" alt={org.name}/>
+        <img
+          src={org.avatar}
+          alt={org.name}
+          className="w-16 h-16 sm:w-24 sm:h-24 rounded-full object-cover"
+        />
         <h1 className="text-2xl sm:text-3xl font-semibold text-center sm:text-left">{org.name}</h1>
       </div>
 
-      {/* Tabs */}
       <nav className="rounded mt-6 p-2 sm:p-4">
         <ul className="flex flex-wrap sm:flex-nowrap justify-start sm:justify-left gap-4 sm:space-x-8 overflow-x-auto pb-2">
           {links.map(({ name }) => (

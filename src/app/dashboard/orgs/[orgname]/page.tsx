@@ -1,24 +1,18 @@
-// app/dashboard/orgs/[orgname]/page.tsx
 import OrgsPage from "@/app/ui/snippets/OrgsPage";
-import { 
-  getUserByUsername, 
-  getRequirements, 
-  getOrgRequirementStatus, 
-} from "@/app/lib/user";
+import {getUserByUsername } from "@/app/lib/database"
+import { notFound } from "next/navigation";
 
-export default async function OrgPage({  params,}: { params: { orgname: string };}) {
+export default async function Page(props: any) {
+const { params } = props as { params: { orgname: string } };
   const org = await getUserByUsername(params.orgname);
 
-  if (!org) return <div>Org not found</div>;
-
-  const requirements = await getRequirements();
-  const statuses = await getOrgRequirementStatus(org.username);
-
+  if (!org) {
+    notFound();
+  }
+  
   return (
-    <OrgsPage 
-      org={org} 
-      requirements={requirements} 
-      statuses={statuses} 
-    />
+    <>
+      <OrgsPage org={org} />
+    </>
   );
 }
