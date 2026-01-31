@@ -38,7 +38,6 @@ export default function OrgsRequirement({ username }: { username: string }) {
           .from('requirements')
           .select('*')
           .eq('active', true)
-          //.eq('year','2025')
           .order('section',{ascending:true})
           .order('id',{ascending:true});
         if (reqError) throw reqError;
@@ -46,6 +45,7 @@ export default function OrgsRequirement({ username }: { username: string }) {
         const { data: statusData, error: statusError } = await supabase
           .from('org_requirement_status')
           .select('*')
+          //.eq('active',true)
           .eq('orgUsername', username);
         if (statusError) throw statusError;
 

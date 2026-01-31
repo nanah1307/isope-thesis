@@ -32,63 +32,75 @@ export default function OrgsRequirementArchive({ username }: { username: string 
   const [year, setYear] = useState<string>('2025');
   const [years, setYears] = useState<string[]>([]);
 
+    useEffect(() => {
+    const initData = async () => {
+      try {
+        setLoading(true);
+
+        // Fetch available years
+        const { data: yearData, error: yearError } = await supabase
+          .from('org_requirement_status')
+          .select('year')
+          .order('year', { ascending: false });
+
+        if (yearError) throw yearError;
+
+        const uniqueYears = Array.from(
+          new Set((yearData || []).map((y) => y.year))
+        );
+
+        setYears(uniqueYears);
+
+        // Default to latest year
+        if (uniqueYears.length > 0) {
+          setYear(uniqueYears[0]);
+        }
+
+        // Fetch requirements (static)
+        const { data: reqData, error: reqError } = await supabase
+          .from('requirements')
+          .select('*')
+          .eq('active', true)
+          .order('section', { ascending: true })
+          .order('id', { ascending: true });
+
+        if (reqError) throw reqError;
+
+        setRequirements(reqData || []);
+      } catch (err: any) {
+        console.error(err);
+        setRequirements([]);
+        setYears([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initData();
+  }, [username]);
 
   useEffect(() => {
-  const fetchData = async () => {
-    try {
-      setLoading(true);
+    if (!year) return;
 
-      // 1️⃣ Fetch available years
-      const { data: yearData, error: yearError } = await supabase
-        .from('org_requirement_status')
-        .select('year')
-        .order('year', { ascending: false });
+    const fetchStatuses = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('org_requirement_status')
+          .select('*')
+          .eq('year', year)
+          .eq('orgUsername', username);
 
-      if (yearError) throw yearError;
+        if (error) throw error;
 
-      const uniqueYears = Array.from(
-        new Set((yearData || []).map((y) => y.year))
-      );
-
-      setYears(uniqueYears);
-
-      // Default to latest year if current year not found
-      if (!uniqueYears.includes(year)) {
-        setYear(uniqueYears[0]);
+        setStatuses(data || []);
+      } catch (err) {
+        console.error(err);
+        setStatuses([]);
       }
+    };
 
-      // 2️⃣ Fetch requirements for selected year
-      const { data: reqData, error: reqError } = await supabase
-        .from('requirements')
-        .select('*')
-        .eq('active', true)
-        .order('section', { ascending: true })
-        .order('id', { ascending: true });
-
-      if (reqError) throw reqError;
-
-      const { data: statusData, error: statusError } = await supabase
-        .from('org_requirement_status')
-        .select('*')
-        .eq('year', year)
-        .eq('orgUsername', username);
-
-      if (statusError) throw statusError;
-
-      setRequirements(reqData || []);
-      setStatuses(statusData || []);
-    } catch (err: any) {
-      console.error('Error fetching requirements:', err.message ?? err);
-      setRequirements([]);
-      setStatuses([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  fetchData();
-}, [username, year]);
-
+    fetchStatuses();
+  }, [year, username]);
 
   const getStatus = (reqId: string) =>
     statuses.find((s) => s.requirementId === reqId);
@@ -110,19 +122,24 @@ export default function OrgsRequirementArchive({ username }: { username: string 
     
     <div className="overflow-x-auto" key="requirements-1">
       <div className="flex items-center gap-2 mb-4">
-  <label className="text-sm font-medium text-black">Year:</label>
-  <select
-    value={year}
-    onChange={(e) => setYear(e.target.value)}
-    className="border border-gray-300 rounded px-2 py-1 text-black text-sm"
-  >
-    {years.map((y) => (
-      <option key={y} value={y}>
-        {y}
-      </option>
-    ))}
-  </select>
-</div>
+        <label className="text-sm font-medium text-black">Year:</label>
+              <select
+          value={year}
+          onChange={(e) => setYear(e.target.value)}
+          className="border border-gray-300 rounded px-2 py-1 text-black text-sm"
+        >
+          {years.map((y) => {
+            const endYear = Number(y);
+            const startYear = endYear - 1;
+
+            return (
+              <option key={y} value={y}>
+                {startYear}–{endYear}
+              </option>
+            );
+          })}
+        </select>
+      </div>
 
       <table className="min-w-full border border-gray-300 bg-white text-black text-xs sm:text-sm md:text-base">
         <thead>
