@@ -58,8 +58,8 @@ const OrgCard: FC<{ org: any }> = ({ org }) => {
       </div>
 
       {/* Action Buttons */}
-      <div className="mt-5 pt-3 grid grid-cols-2 gap-2">
-        {/* Dues */}
+      <div className="mt-5 pt-3 grid grid-cols-[1fr_auto] gap-2">
+        {/* Requirements */}
         <button
           onClick={goToDues}
           className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-md text-sm font-medium transition cursor-pointer"
@@ -71,10 +71,9 @@ const OrgCard: FC<{ org: any }> = ({ org }) => {
         {/* Notifications */}
         <button
           onClick={(e) => e.stopPropagation()}
-          className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-md text-sm font-medium transition cursor-pointer"
+          className="flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-md transition cursor-pointer"
         >
           <BellIcon className="w-5 h-5" />
-          <span>Notifications</span>
         </button>
       </div>
     </div>
@@ -182,13 +181,68 @@ const OrgsDashboard: FC = () => {
 
   useEffect(() => {
     const fetchOrgs = async () => {
-      const { data, error } = await supabase.from('orgs').select('*');
-      if (error) console.error('Error fetching orgs:', error.message);
-      else setOrgs(data);
-      setLoading(false);
+      if (status === 'loading') return;
+      try {
+        const role = (((session?.user as any)?.role) || '').toString().toLowerCase();
+        const name = (session?.user as any)?.name;
+
+        if (role === 'osas') {
+          const { data, error } = await supabase.from('orgs').select('*');
+          if (error) throw error;
+          setOrgs(data || []);
+        } else if (role === 'adviser' || role === 'member') {
+          // find the member record and include the linked org if relation exists
+          const { data: memberData, error: memberError } = await supabase
+            .from('member')
+            .select('*, orgs(*)')
+            .eq('student_name', name)
+            .maybeSingle();
+
+          if (memberError) throw memberError;
+
+          if (memberData?.orgs) {
+            setOrgs([memberData.orgs]);
+          } else if (memberData?.org_id) {
+            const { data: org, error: orgError } = await supabase
+              .from('orgs')
+              .select('*')
+              .eq('id', memberData.org_id)
+              .maybeSingle();
+            if (orgError) throw orgError;
+            if (org) setOrgs([org]);
+            else setOrgs([]);
+          } else {
+            setOrgs([]);
+          }
+        } else if (role === 'org') {
+          // session should contain org identifier (try common fields)
+          const orgIdentifier = (session?.user as any)?.username || session?.user?.name || (session?.user as any)?.org;
+          if (orgIdentifier) {
+            const { data, error } = await supabase
+              .from('orgs')
+              .select('*')
+              .or(`username.eq.${orgIdentifier},name.eq.${orgIdentifier}`)
+              .maybeSingle();
+            if (error) throw error;
+            if (data) setOrgs([data]);
+            else setOrgs([]);
+          } else {
+            setOrgs([]);
+          }
+        } else {
+          // default: no orgs
+          setOrgs([]);
+        }
+      } catch (err: any) {
+        console.error('Error fetching orgs:', err?.message ?? err);
+        setOrgs([]);
+      } finally {
+        setLoading(false);
+      }
     };
+
     fetchOrgs();
-  }, []);
+  }, [status, session]);
 
 const handleCreateOrg = async (name: string, email: string) => {
   if (!name.trim() || !email.trim()) {
