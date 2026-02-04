@@ -55,11 +55,18 @@ export default function UserPage() {
             {/* Current Organizations */}
             <div className="bg-white shadow-md rounded-lg p-6 sm:p-8 w-full break-words">
                 <h1 className="text-gray-800 text-2xl sm:text-3xl font-bold"> Current Organizations </h1>
-                <ul className="text-gray-600 mt-2 text-sm sm:text-base list-disc list-inside space-y-1 max-h-[50vh] overflow-y-auto">
+
+                {organizations.length === 0 ? (
+                  <p className="text-gray-600 mt-2 text-sm sm:text-base">
+                    You are not part of any organizations
+                  </p>
+                ) : (
+                  <ul className="text-gray-600 mt-2 text-sm sm:text-base list-disc list-inside space-y-1 max-h-[50vh] overflow-y-auto">
                     {organizations.map((org, idx) => (
                       <li key={idx}>{org}</li>
                     ))}
-                </ul>
+                  </ul>
+                )}
             </div>
         </div>
 
