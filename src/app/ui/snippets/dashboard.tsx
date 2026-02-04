@@ -7,7 +7,9 @@ import { useRouter } from "next/navigation";
 
 const OrgCard: FC<{ org: any }> = ({ org }) => {
   const router = useRouter();
-  const [progress] = useState(() => Math.floor(Math.random() * 80) + 10);
+
+  // Use real progress from org object
+  const progress = org.progress ?? 0;
 
   // Navigate to org dashboard
   const goToOrg = () => router.push(`./dashboard/orgs/${org.username}`);
@@ -175,8 +177,8 @@ const OrgsDashboard: FC = () => {
   const [search, setSearch] = useState('');
 
   const filteredOrgs = orgs.filter((org) =>
-  org.name.toLowerCase().includes(search.toLowerCase()) ||
-  org.username.toLowerCase().includes(search.toLowerCase())
+    org.name.toLowerCase().includes(search.toLowerCase()) ||
+    org.username.toLowerCase().includes(search.toLowerCase())
   );
 
   useEffect(() => {
@@ -186,53 +188,53 @@ const OrgsDashboard: FC = () => {
         const role = (((session?.user as any)?.role) || '').toString().toLowerCase();
         const name = (session?.user as any)?.name;
 
+        let fetchedOrgs: any[] = [];
+
         if (role === 'osas') {
-          const { data, error } = await supabase.from('orgs').select('*');
-          if (error) throw error;
-          setOrgs(data || []);
+          const { data } = await supabase.from('orgs').select('*');
+          fetchedOrgs = data || [];
         } else if (role === 'adviser' || role === 'member') {
-          // find the member record and include the linked org if relation exists
-          const { data: memberData, error: memberError } = await supabase
+          const { data: memberData } = await supabase
             .from('member')
             .select('*, orgs(*)')
             .eq('student_name', name)
             .maybeSingle();
 
-          if (memberError) throw memberError;
-
-          if (memberData?.orgs) {
-            setOrgs([memberData.orgs]);
-          } else if (memberData?.org_id) {
-            const { data: org, error: orgError } = await supabase
-              .from('orgs')
-              .select('*')
-              .eq('id', memberData.org_id)
-              .maybeSingle();
-            if (orgError) throw orgError;
-            if (org) setOrgs([org]);
-            else setOrgs([]);
-          } else {
-            setOrgs([]);
-          }
+          if (memberData?.orgs) fetchedOrgs = [memberData.orgs];
         } else if (role === 'org') {
-          // session should contain org identifier (try common fields)
-          const orgIdentifier = (session?.user as any)?.username || session?.user?.name || (session?.user as any)?.org;
+          const orgIdentifier = (session?.user as any)?.username || session?.user?.name;
           if (orgIdentifier) {
-            const { data, error } = await supabase
+            const { data } = await supabase
               .from('orgs')
               .select('*')
               .or(`username.eq.${orgIdentifier},name.eq.${orgIdentifier}`)
               .maybeSingle();
-            if (error) throw error;
-            if (data) setOrgs([data]);
-            else setOrgs([]);
-          } else {
-            setOrgs([]);
+            if (data) fetchedOrgs = [data];
           }
-        } else {
-          // default: no orgs
-          setOrgs([]);
         }
+
+        if (fetchedOrgs.length === 0) {
+          setOrgs([]);
+          return;
+        }
+
+        // Fetch requirement status for all orgs
+        const usernames = fetchedOrgs.map((o) => o.username);
+        const { data: reqStatus } = await supabase
+          .from('org_requirement_status')
+          .select('orgUsername, submitted')
+          .in('orgUsername', usernames)
+          .eq('active', true);
+
+        const orgsWithProgress = fetchedOrgs.map((org) => {
+          const rows = reqStatus?.filter((r) => r.orgUsername === org.username) || [];
+          const total = rows.length;
+          const submitted = rows.filter((r) => r.submitted).length;
+          const progress = total === 0 ? 0 : Math.round((submitted / total) * 100);
+          return { ...org, progress };
+        });
+
+        setOrgs(orgsWithProgress);
       } catch (err: any) {
         console.error('Error fetching orgs:', err?.message ?? err);
         setOrgs([]);
@@ -244,62 +246,59 @@ const OrgsDashboard: FC = () => {
     fetchOrgs();
   }, [status, session]);
 
-const handleCreateOrg = async (name: string, email: string) => {
-  if (!name.trim() || !email.trim()) {
-    alert(
-      'Failed to create organization. Organization not made due to existing or invalid input.'
-    );
-    return;
-  }
+  const handleCreateOrg = async (name: string, email: string) => {
+    if (!name.trim() || !email.trim()) {
+      alert(
+        'Failed to create organization. Organization not made due to existing or invalid input.'
+      );
+      return;
+    }
 
-  const username = name
-    .toLowerCase()
-    .replace(/\s+/g, '-')
-    .replace(/[^a-z0-9-]/g, '');
+    const username = name
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-]/g, '');
 
-  const { data: existingOrg } = await supabase
-    .from('orgs')
-    .select('username')
-    .or(`email.eq.${email},username.eq.${username}`)
-    .maybeSingle();
+    const { data: existingOrg } = await supabase
+      .from('orgs')
+      .select('username')
+      .or(`email.eq.${email},username.eq.${username}`)
+      .maybeSingle();
 
-  if (existingOrg) {
-    alert(
-      'Failed to create organization. Organization not made due to existing or invalid input.'
-    );
-    return;
-  }
+    if (existingOrg) {
+      alert(
+        'Failed to create organization. Organization not made due to existing or invalid input.'
+      );
+      return;
+    }
 
+    const { data, error } = await supabase
+      .from('orgs')
+      .insert([
+        {
+          username,
+          name,
+          email,
+          bio: null,
+          adviser: null,
+          accreditlvl: null,
+          avatar: null,
+        },
+      ])
+      .select()
+      .single();
 
-  const { data, error } = await supabase
-    .from('orgs')
-    .insert([
-      {
-        username,
-        name,
-        email,
-        bio: null,
-        adviser: null,
-        accreditlvl: null,
-        avatar: null,
-      },
-    ])
-    .select()
-    .single();
+    if (error) {
+      alert(
+        'Failed to create organization. Organization not made due to existing or invalid input.'
+      );
+      console.error('Error creating org:', error);
+      return;
+    }
 
-  if (error) {
-    alert(
-      'Failed to create organization. Organization not made due to existing or invalid input.'
-    );
-    console.error('Error creating org:', error);
-    return;
-  }
-
-
-  setOrgs((prev) => [...prev, data]);
-  setShowModal(false);
-};
-
+    setOrgs((prev) => [...prev, data]);
+    setShowModal(false);
+  };
 
   if (loading) return <div className="p-4 text-black">Loading organizations...</div>;
   
@@ -332,7 +331,6 @@ const handleCreateOrg = async (name: string, email: string) => {
           </button>
         </div>
       </div>
-
 
       {filteredOrgs.length === 0 ? (
       <p className="text-black">No organizations found.</p>
