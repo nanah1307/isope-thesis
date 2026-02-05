@@ -1,7 +1,15 @@
-export default function NavOrgsPage() {
+"use client";
+
+import OrgsDashboard from '@/app/ui/snippets/orgsdash';
+import NotificationSidebar from '../ui/notifbar';
+
+export default function DashboardPage() {
   return (
-    <div className="flex h-screen overflow-hidden bg-gradient-to-br from-blue-50 to-indigo-100">
-      this is the navorgs page. this will contain the list of orgs in detail similar to dashboard
+    <div className="flex min-h-screen">
+      {/* Main Dashboard */}
+      <div className="flex-1">
+        <OrgsDashboard />
+      </div>
     </div>
   );
 }
