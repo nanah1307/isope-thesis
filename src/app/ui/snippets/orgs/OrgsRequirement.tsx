@@ -100,6 +100,7 @@ export default function OrgsRequirement({ username }: { username: string }) {
     );
 
     alert('All requirement statuses have been deactivated.');
+    window.location.reload();
   } catch (err: any) {
     console.error('Failed to deactivate statuses:', err.message ?? err);
     alert('Something went wrong while deactivating statuses.');
