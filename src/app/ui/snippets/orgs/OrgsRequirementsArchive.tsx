@@ -23,6 +23,7 @@ type OrgRequirementStatus = {
   score: number | null;
   grade: number | null;
   year: number | null;
+  active: boolean;
 };
 
 export default function OrgsRequirementArchive({ username }: { username: string }) {
@@ -88,7 +89,8 @@ export default function OrgsRequirementArchive({ username }: { username: string 
           .from('org_requirement_status')
           .select('*')
           .eq('year', year)
-          .eq('orgUsername', username);
+          .eq('orgUsername', username)
+          .eq('active',false);
 
         if (error) throw error;
 

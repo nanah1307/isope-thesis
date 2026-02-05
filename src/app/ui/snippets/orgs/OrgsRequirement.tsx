@@ -23,6 +23,7 @@ type OrgRequirementStatus = {
   score: number | null;
   grade: number | null;
   year: number | null;
+  active: boolean;
 };
 
 export default function OrgsRequirement({ username }: { username: string }) {
@@ -45,7 +46,7 @@ export default function OrgsRequirement({ username }: { username: string }) {
         const { data: statusData, error: statusError } = await supabase
           .from('org_requirement_status')
           .select('*')
-          //.eq('active',true)
+          .eq('active',true)
           .eq('orgUsername', username);
         if (statusError) throw statusError;
 
@@ -79,8 +80,44 @@ export default function OrgsRequirement({ username }: { username: string }) {
 
   if (requirements.length === 0) return <div className="p-4 text-black">No requirements found.</div>;
 
+  const deactivateAllStatuses = async () => {
+  const confirmed = confirm(
+    'Are you sure you want to archive ALL requirements for this organization?'
+  );
+  if (!confirmed) return;
+
+  try {
+    const { error } = await supabase
+      .from('org_requirement_status')
+      .update({ active: false })
+      .eq('orgUsername', username);
+
+    if (error) throw error;
+
+    // Update local state so UI reflects the change immediately
+    setStatuses((prev) =>
+      prev.map((s) => ({ ...s, active: false }))
+    );
+
+    alert('All requirement statuses have been deactivated.');
+  } catch (err: any) {
+    console.error('Failed to deactivate statuses:', err.message ?? err);
+    alert('Something went wrong while deactivating statuses.');
+  }
+};
+
+
   return (
     <div className="overflow-x-auto" key="requirements-1">
+      <div className="mb-4 flex justify-end">
+  <button
+    onClick={deactivateAllStatuses}
+    className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 text-sm"
+  >
+    Archive All Requirements
+  </button>
+</div>
+
       <table className="min-w-full border border-gray-300 bg-white text-black text-xs sm:text-sm md:text-base">
         <thead>
           <tr className="bg-white text-black">
