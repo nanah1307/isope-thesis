@@ -4,6 +4,7 @@ import { BellIcon, DocumentIcon } from '@heroicons/react/24/outline';
 import { supabase } from '@/app/lib/database';
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation"; 
+import { Orgs } from '@/app/lib/definitions';
 
 const OrgCard: FC<{ org: any }> = ({ org }) => {
   const router = useRouter();
@@ -188,7 +189,7 @@ const OrgsDashboard: FC = () => {
         const role = (((session?.user as any)?.role) || '').toString().toLowerCase();
         const name = (session?.user as any)?.name;
 
-        let fetchedOrgs: any[] = [];
+        let fetchedOrgs: Orgs[] = [];
 
         if (role === 'osas') {
           const { data } = await supabase.from('orgs').select('*');
@@ -198,9 +199,10 @@ const OrgsDashboard: FC = () => {
             .from('member')
             .select('*, orgs(*)')
             .eq('student_name', name)
-            .maybeSingle();
 
-          if (memberData?.orgs) fetchedOrgs = [memberData.orgs];
+            //extracts orgs from memberdata
+          fetchedOrgs = memberData?.map((m) => m.orgs) ?? [];
+
         } else if (role === 'org') {
           const orgIdentifier = (session?.user as any)?.username || session?.user?.name;
           if (orgIdentifier) {
