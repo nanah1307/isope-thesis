@@ -128,7 +128,7 @@ export default function OrgsRequirementArchive({ username }: { username: string 
               <select
           value={year}
           onChange={(e) => setYear(e.target.value)}
-          className="border border-gray-300 rounded px-2 py-1 text-black text-sm"
+          className="border border-gray-300 rounded px-2 py-1 text-black text-sm cursor-pointer"
         >
           {years.map((y) => {
             const endYear = Number(y);
