@@ -23,12 +23,15 @@ type OrgRequirementStatus = {
   score: number | null;
   grade: number | null;
   year: number | null;
+  active: boolean;
 };
 
 export default function OrgsRequirement({ username }: { username: string }) {
   const [requirements, setRequirements] = useState<Requirement[]>([]);
   const [statuses, setStatuses] = useState<OrgRequirementStatus[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editMode, setEditMode] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   // Fetch data from Supabase on client
   useEffect(() => {
@@ -45,7 +48,7 @@ export default function OrgsRequirement({ username }: { username: string }) {
         const { data: statusData, error: statusError } = await supabase
           .from('org_requirement_status')
           .select('*')
-          //.eq('active',true)
+          .eq('active',true)
           .eq('orgUsername', username);
         if (statusError) throw statusError;
 
@@ -75,12 +78,112 @@ export default function OrgsRequirement({ username }: { username: string }) {
     {} as Record<string, Requirement[]>
   );
 
+  // calculate total score per section
+  const getSectionTotal = (reqs: Requirement[]) =>
+    reqs.reduce((total, req) => {
+      const status = getStatus(req.id);
+      if (status?.graded && typeof status.grade === 'number') {
+        return total + status.grade;
+      }
+      return total;
+    }, 0);
+
+  // calculate grand total of all graded requirements
+  const getGrandTotal = () =>
+    statuses.reduce((total, status) => {
+      if (status.graded && typeof status.grade === 'number') {
+        return total + status.grade;
+      }
+      return total;
+    }, 0);
+
   if (loading) return <div className="p-4 text-black">Loading requirements...</div>;
 
   if (requirements.length === 0) return <div className="p-4 text-black">No requirements found.</div>;
 
+  const deactivateAllStatuses = async () => {
+    const confirmed = confirm(
+      'Are you sure you want to archive ALL requirements for this organization?'
+    );
+    if (!confirmed) return;
+
+    try {
+      const { error } = await supabase
+        .from('org_requirement_status')
+        .update({ active: false })
+        .eq('orgUsername', username);
+
+      if (error) throw error;
+
+      // Update local state so UI reflects the change immediately
+      setStatuses((prev) =>
+        prev.map((s) => ({ ...s, active: false }))
+      );
+
+      alert('All requirement statuses have been deactivated.');
+      window.location.reload();
+    } catch (err: any) {
+      console.error('Failed to deactivate statuses:', err.message ?? err);
+      alert('Something went wrong while deactivating statuses.');
+    }
+  };
+
+  const saveScores = async () => {
+    setSaving(true);
+
+    try {
+      const updates = statuses.map((status) => ({
+        id: status.id,
+        grade: status.grade,
+        graded: typeof status.grade === 'number'
+      }));
+
+      const { error } = await supabase
+        .from('org_requirement_status')
+        .upsert(updates, { onConflict: 'id' });
+
+      if (error) throw error;
+
+      alert('Scores saved successfully.');
+      setEditMode(false);
+    } catch (err: any) {
+      console.error('Failed to save scores:', err.message ?? err);
+      alert('Failed to save scores.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="overflow-x-auto" key="requirements-1">
+      <div className="mb-4 flex justify-between">
+        <div className="flex gap-2">
+          <button
+            onClick={() => setEditMode((prev) => !prev)}
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm cursor-pointer"
+          >
+            {editMode ? 'Exit Edit Mode' : 'Edit Scores'}
+          </button>
+
+          {editMode && (
+            <button
+              onClick={saveScores}
+              disabled={saving}
+              className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 text-sm cursor-pointer disabled:opacity-50"
+            >
+              {saving ? 'Saving...' : 'Save Scores'}
+            </button>
+          )}
+        </div>
+
+        <button
+          onClick={deactivateAllStatuses}
+          className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 text-sm cursor-pointer"
+        >
+          Archive All Requirements
+        </button>
+      </div>
+
       <table className="min-w-full border border-gray-300 bg-white text-black text-xs sm:text-sm md:text-base">
         <thead>
           <tr className="bg-white text-black">
@@ -117,12 +220,82 @@ export default function OrgsRequirement({ username }: { username: string }) {
                     <td className="border px-3 py-2">{status?.due ? new Date(status.due).toLocaleDateString() : '-'}</td>
                     <td className="border px-3 py-2">{status?.submitted ? '✅' : '❌'}</td>
                     <td className="border px-3 py-2">{status?.graded ? '✅' : '❌'}</td>
-                    <td className="border px-3 py-2">{status?.graded ? status.grade : '-'}</td>
+                    <td className="border px-3 py-2">
+                      {editMode ? (
+                        <input
+                          type="number"
+                          min={0}
+                          max={status?.score ?? undefined}
+                          value={status?.grade ?? ''}
+                          onChange={(e) => {
+                            if (e.target.value === '') {
+                              setStatuses((prev) =>
+                                prev.map((s) =>
+                                  s.requirementId === req.id
+                                    ? { ...s, grade: null }
+                                    : s
+                                )
+                              );
+                              return;
+                            }
+
+                            const value = Number(e.target.value);
+
+                            // do not allow negative numbers
+                            if (value < 0) return;
+
+                            // do not allow values greater than score
+                            if (
+                              status?.score !== null &&
+                              status?.score !== undefined &&
+                              value > status.score
+                            ) {
+                              return;
+                            }
+
+                            setStatuses((prev) =>
+                              prev.map((s) =>
+                                s.requirementId === req.id
+                                  ? { ...s, grade: value }
+                                  : s
+                              )
+                            );
+                          }}
+                          className="w-20 border border-gray-300 rounded px-2 py-1 text-black"
+                        />
+                      ) : status?.graded ? (
+                        status.grade
+                      ) : (
+                        '-'
+                      )}
+                    </td>
                   </tr>
                 );
               })}
+
+              {/* Section Total row */}
+              <tr className="bg-gray-100 font-semibold">
+                <td colSpan={6} className="border px-3 py-2 text-right">
+                  Section Total:
+                </td>
+                <td className="border px-3 py-2">
+                  {getSectionTotal(reqs)}
+                </td>
+              </tr>
+
             </React.Fragment>
           ))}
+
+          {/* Grand Total row */}
+          <tr className="bg-gray-300 font-bold">
+            <td colSpan={6} className="border px-3 py-3 text-right">
+              Final Total Score:
+            </td>
+            <td className="border px-3 py-3">
+              {getGrandTotal()}
+            </td>
+          </tr>
+
         </tbody>
       </table>
     </div>

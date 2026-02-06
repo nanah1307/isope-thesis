@@ -1,6 +1,10 @@
 'use client';
 
-import { FC, useState } from 'react';
+import Link from 'next/link';
+import { FC, useEffect, useState } from 'react';
+import { supabase } from '@/app/lib/database';
+import { BellIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { CheckCircleIcon } from '@heroicons/react/24/solid';
 
 interface Notification {
   id: number;
@@ -8,26 +12,43 @@ interface Notification {
   date: string;
 }
 
-interface Task {
-  id: number;
-  text: string;
-  checked: boolean;
-}
-
 const NotificationSidebar: FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([
-    { id: 1, title: 'New Event', date: '9/17' },
-    { id: 2, title: 'New Event', date: '9/17' },
-    { id: 3, title: 'New Event', date: '9/17' }
+    { id: 1, title: 'General Assembly', date: '9/17' },
+    { id: 2, title: 'Workshop', date: '10/1' },
+    { id: 3, title: 'Webinar', date: '11/5' }
   ]);
 
-  const [tasks] = useState<Task[]>([
-    { id: 1, text: 'CWTS - Instructional Activity', checked: false },
-    { id: 2, text: 'Compile - Year End Report', checked: false },
-    { id: 3, text: 'Optics - Proposed Activities', checked: false },
-    { id: 4, text: 'CSO - Liquidation Report', checked: false }
-  ]);
+  const [requirements, setRequirements] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchRequirements = async () => {
+      setLoading(true);
+
+      const { data, error } = await supabase
+        .from('org_requirement_status')
+        .select(`
+          *,
+          requirements ( title ),
+          orgs ( name )
+        `)
+        .eq('graded', false)
+        .eq('active', true);
+
+
+      if (error) {
+        console.error('Error fetching requirements:', error);
+      } else {
+        setRequirements(data || []);
+      }
+
+      setLoading(false);
+    };
+
+    fetchRequirements();
+  }, []);
 
   const removeNotification = (id: number) => {
     setNotifications(notifications.filter(notif => notif.id !== id));
@@ -41,9 +62,7 @@ const NotificationSidebar: FC = () => {
         className="fixed top-4 right-4 z-50 lg:hidden bg-blue-700 text-white p-3 rounded-full shadow-lg hover:bg-blue-800 transition-colors"
         aria-label="Toggle notifications"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
-        </svg>
+        <BellIcon className="w-6 h-6" />
         {notifications.length > 0 && (
           <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">
             {notifications.length}
@@ -73,42 +92,34 @@ const NotificationSidebar: FC = () => {
           className="lg:hidden absolute top-4 right-4 text-white hover:text-red-300 transition-colors cursor-pointer"
           aria-label="Close notifications"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
+          <XMarkIcon className="w-6 h-6" />
         </button>
 
         {/* Notifications Header */}
         <div className="flex items-center gap-2 mb-6 mt-8 lg:mt-0">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
-          </svg>
+          <BellIcon className="w-6 h-6" />
           <h2 className="font-bold text-base sm:text-lg">NOTIFICATIONS</h2>
         </div>
 
         {/* Notification Items */}
         <div className="space-y-3 mb-6">
           {notifications.map((notif) => (
-            <div 
+            <div
               key={notif.id}
               className="bg-blue-800 rounded-lg p-3 flex items-center justify-between hover:bg-blue-900 transition-colors"
             >
               <div className="flex items-center gap-3">
-                <div className="w-6 h-6 bg-red-500 rounded flex items-center justify-center flex-shrink-0">
-                </div>
+                <div className="w-6 h-6 bg-red-500 rounded flex items-center justify-center flex-shrink-0" />
                 <div>
                   <p className="text-sm font-medium">{notif.title}</p>
                   <p className="text-xs text-blue-200">{notif.date}</p>
                 </div>
               </div>
-              <button 
+              <button
                 onClick={() => removeNotification(notif.id)}
                 className="text-white hover:text-red-300 transition-colors ml-2 flex-shrink-0 cursor-pointer"
-                aria-label="Remove notification"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <XMarkIcon className="w-6 h-6" />
               </button>
             </div>
           ))}
@@ -121,28 +132,54 @@ const NotificationSidebar: FC = () => {
 
         {/* To Grade Section */}
         <div className="flex-1">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
-              <span className="text-white text-xs font-bold">✓</span>
-            </div>
+          <div className="flex items-center gap-2 mb-2">
+            <CheckCircleIcon className="w-6 h-6 text-green-500 flex-shrink-0" />
             <h3 className="font-bold text-base sm:text-lg">TO GRADE</h3>
           </div>
 
+          {/* Counter */}
+          {!loading && (
+            <h4 className="text-md text-blue-200 mb-4">
+              {requirements.length} item{requirements.length === 1 ? '' : 's'}
+            </h4>
+          )}
+
           {/* Task Checkboxes */}
           <div className="space-y-3">
-            {tasks.map((task) => (
-              <label 
-                key={task.id}
+            {loading && (
+              <p className="text-sm text-blue-200 italic">
+                Loading notifications...
+              </p>
+            )}
+
+            {!loading && requirements.length === 0 && (
+              <p className="text-sm text-blue-200 italic">
+                No requirements to grade.
+              </p>
+            )}
+
+            {!loading && requirements.map((req) => (
+              <label
+                key={req.id}
                 className="flex items-start gap-3 cursor-pointer group"
               >
-                <input 
-                  type="checkbox" 
-                  className="mt-1 w-4 h-4 rounded border-2 border-white bg-transparent checked:bg-white checked:border-white cursor-pointer flex-shrink-0"
-                  defaultChecked={task.checked}
+                <input
+                  type="checkbox"
+                  className="mt-1 w-4 h-4 rounded border-2 border-white bg-transparent cursor-pointer flex-shrink-0"
+                  checked={req.submitted}
+                  readOnly
                 />
-                <span className="text-sm leading-tight group-hover:text-blue-200 transition-colors">
-                  {task.text}
-                </span>
+
+                <Link
+                  href={`/dashboard/orgs/${req.orgUsername}/requirements/${req.requirementId}`}
+                  className="text-sm leading-tight group-hover:text-blue-200 transition-colors"
+                >
+                  {req.orgs?.name} - {req.requirements?.title}
+                  <br />
+                  <span className="text-xs text-blue-200">
+                    Due: {req.due}
+                  </span>
+                </Link>
               </label>
             ))}
           </div>
