@@ -1,26 +1,42 @@
 "use client";
 
 import { signIn, signOut, useSession } from "next-auth/react";
-import { useSearchParams } from "next/navigation";
-import { Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
 
 export default function Home() {
   const { data: session } = useSession();
+  const router = useRouter();
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+
+  const handleCredentialsLogin = async () => {
+    const res = await signIn("credentials", {
+      redirect: false,
+      username,
+      password,
+    } as any);
+    if (res && (res as any).error) {
+      alert((res as any).error || "Login failed");
+      return;
+    }
+    router.push("/dashboard");
+  };
+
   return (
     <div className="bg-white min-h-screen">
       <header className="bg-[#014FB3] text-white flex items-center justify-center py-6 shadow-md">
-          <img
-            src="/img/iaclogolong.png"
-            alt="Logo"
-            className="w-48 h-auto object-contain items-center"
-          />
+        <img
+          src="/img/iaclogolong.png"
+          alt="Logo"
+          className="w-48 h-auto object-contain items-center"
+        />
 
-          <h1 className="text-2xl md:text-3xl font-bold">iSOPE Online</h1>
+        <h1 className="text-2xl md:text-3xl font-bold">iSOPE Online</h1>
       </header>
-     
 
-      <div className="flex flex-col items-center justify-center h-64 space-y-2justify-center">
-        <div className="mt-50 border-8 border-blue-500 px-10 py-10 rounded-lg space-y-2 text-center">
+      <div className="flex flex-col items-center justify-center h-64 my-5">
+        <div className="mt-50 border-8 border-blue-500 px-10 py-10 rounded-lg space-y-2 text-center w-full max-w-md">
           <p className="text-black font-bold">iACADEMY</p>
           <p className="text-black font-bold">iSOPE Online</p>
           <Suspense fallback={null}>
@@ -28,12 +44,45 @@ export default function Home() {
           </Suspense>
           <div className="w-full h-px bg-blue-500 my-4"></div>
           <p className="text-black text-3xl">Sign in</p>
-          <p className="text-black">Please use your domain account to login.</p>
-          <button onClick={() => signIn("google")} className="bg-red-500 text-white px-4 py-2 rounded cursor-pointer">Sign in with Google</button>
+
+
+          <div className="space-y-2 mt-4 text-left">
+            <input
+              className="w-full border px-3 py-2 rounded"
+              placeholder="Username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+            />
+            <input
+              className="w-full border px-3 py-2 rounded"
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
+
+          <div className="flex gap-2 mt-3">
+            <button
+              onClick={handleCredentialsLogin}
+              className="bg-blue-600 text-white px-4 py-2 rounded w-1/2 cursor-pointer hover:bg-gray-800"
+            >
+              Login
+            </button>
+
+            <button
+              onClick={() => router.push("/signup")}
+              className="bg-gray-200 text-black px-4 py-2 rounded w-1/2 cursor-pointer hover:bg-gray-500"
+            >
+              Create account
+            </button>
+          </div>
+
+          <div className="my-3 text-black">or</div>
+          <button onClick={() => signIn("google")} className="bg-red-500 text-white px-4 py-2 rounded cursor-pointer w-full hover:bg-red-700">Sign in with Google</button>
         </div>
       </div>
     </div>
-    
   );
 }
 
