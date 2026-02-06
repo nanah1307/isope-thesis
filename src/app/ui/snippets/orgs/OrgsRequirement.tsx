@@ -76,36 +76,55 @@ export default function OrgsRequirement({ username }: { username: string }) {
     {} as Record<string, Requirement[]>
   );
 
+  // calculate total score per section
+  const getSectionTotal = (reqs: Requirement[]) =>
+    reqs.reduce((total, req) => {
+      const status = getStatus(req.id);
+      if (status?.graded && typeof status.grade === 'number') {
+        return total + status.grade;
+      }
+      return total;
+    }, 0);
+
+  // calculate grand total of all graded requirements
+  const getGrandTotal = () =>
+    statuses.reduce((total, status) => {
+      if (status.graded && typeof status.grade === 'number') {
+        return total + status.grade;
+      }
+      return total;
+    }, 0);
+
   if (loading) return <div className="p-4 text-black">Loading requirements...</div>;
 
   if (requirements.length === 0) return <div className="p-4 text-black">No requirements found.</div>;
 
   const deactivateAllStatuses = async () => {
-  const confirmed = confirm(
-    'Are you sure you want to archive ALL requirements for this organization?'
-  );
-  if (!confirmed) return;
-
-  try {
-    const { error } = await supabase
-      .from('org_requirement_status')
-      .update({ active: false })
-      .eq('orgUsername', username);
-
-    if (error) throw error;
-
-    // Update local state so UI reflects the change immediately
-    setStatuses((prev) =>
-      prev.map((s) => ({ ...s, active: false }))
+    const confirmed = confirm(
+      'Are you sure you want to archive ALL requirements for this organization?'
     );
+    if (!confirmed) return;
 
-    alert('All requirement statuses have been deactivated.');
-    window.location.reload();
-  } catch (err: any) {
-    console.error('Failed to deactivate statuses:', err.message ?? err);
-    alert('Something went wrong while deactivating statuses.');
-  }
-};
+    try {
+      const { error } = await supabase
+        .from('org_requirement_status')
+        .update({ active: false })
+        .eq('orgUsername', username);
+
+      if (error) throw error;
+
+      // Update local state so UI reflects the change immediately
+      setStatuses((prev) =>
+        prev.map((s) => ({ ...s, active: false }))
+      );
+
+      alert('All requirement statuses have been deactivated.');
+      window.location.reload();
+    } catch (err: any) {
+      console.error('Failed to deactivate statuses:', err.message ?? err);
+      alert('Something went wrong while deactivating statuses.');
+    }
+  };
 
 
   return (
@@ -159,8 +178,30 @@ export default function OrgsRequirement({ username }: { username: string }) {
                   </tr>
                 );
               })}
+
+              {/* Section Total row */}
+              <tr className="bg-gray-100 font-semibold">
+                <td colSpan={6} className="border px-3 py-2 text-right">
+                  Section Total:
+                </td>
+                <td className="border px-3 py-2">
+                  {getSectionTotal(reqs)}
+                </td>
+              </tr>
+
             </React.Fragment>
           ))}
+
+          {/* Grand Total row */}
+          <tr className="bg-gray-300 font-bold">
+            <td colSpan={6} className="border px-3 py-3 text-right">
+              Final Total Score:
+            </td>
+            <td className="border px-3 py-3">
+              {getGrandTotal()}
+            </td>
+          </tr>
+
         </tbody>
       </table>
     </div>
