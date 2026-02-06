@@ -5,8 +5,10 @@ import { getToken } from "next-auth/jwt";
 export async function middleware(req: NextRequest) {
   const token = (await getToken({ req, secret: process.env.NEXTAUTH_SECRET })) as any;
 
-  // Not logged in
-  if (!token && req.nextUrl.pathname !== "/login") {
+  const pathname = req.nextUrl.pathname;
+
+  // Not logged in: only allow /login and /signup
+  if (!token && pathname !== "/login" && pathname !== "/signup") {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
@@ -15,8 +17,8 @@ export async function middleware(req: NextRequest) {
   //   return NextResponse.redirect(new URL("/no-access", req.url));
   // }
 
-  // Logged in users shouldn't see login page
-  if (token && req.nextUrl.pathname === "/login") {
+  // Logged in users shouldn't see login or signup pages
+  if (token && (pathname === "/login" || pathname === "/signup")) {
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
   return NextResponse.next();
