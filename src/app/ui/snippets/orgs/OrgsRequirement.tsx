@@ -30,6 +30,8 @@ export default function OrgsRequirement({ username }: { username: string }) {
   const [requirements, setRequirements] = useState<Requirement[]>([]);
   const [statuses, setStatuses] = useState<OrgRequirementStatus[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editMode, setEditMode] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   // Fetch data from Supabase on client
   useEffect(() => {
@@ -126,17 +128,61 @@ export default function OrgsRequirement({ username }: { username: string }) {
     }
   };
 
+  const saveScores = async () => {
+    setSaving(true);
+
+    try {
+      const updates = statuses.map((status) => ({
+        id: status.id,
+        grade: status.grade,
+        graded: typeof status.grade === 'number'
+      }));
+
+      const { error } = await supabase
+        .from('org_requirement_status')
+        .upsert(updates, { onConflict: 'id' });
+
+      if (error) throw error;
+
+      alert('Scores saved successfully.');
+      setEditMode(false);
+    } catch (err: any) {
+      console.error('Failed to save scores:', err.message ?? err);
+      alert('Failed to save scores.');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="overflow-x-auto" key="requirements-1">
-      <div className="mb-4 flex justify-end">
-  <button
-    onClick={deactivateAllStatuses}
-    className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 text-sm cursor-pointer"
-  >
-    Archive All Requirements
-  </button>
-</div>
+      <div className="mb-4 flex justify-between">
+        <div className="flex gap-2">
+          <button
+            onClick={() => setEditMode((prev) => !prev)}
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm cursor-pointer"
+          >
+            {editMode ? 'Exit Edit Mode' : 'Edit Scores'}
+          </button>
+
+          {editMode && (
+            <button
+              onClick={saveScores}
+              disabled={saving}
+              className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 text-sm cursor-pointer disabled:opacity-50"
+            >
+              {saving ? 'Saving...' : 'Save Scores'}
+            </button>
+          )}
+        </div>
+
+        <button
+          onClick={deactivateAllStatuses}
+          className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 text-sm cursor-pointer"
+        >
+          Archive All Requirements
+        </button>
+      </div>
 
       <table className="min-w-full border border-gray-300 bg-white text-black text-xs sm:text-sm md:text-base">
         <thead>
@@ -174,7 +220,55 @@ export default function OrgsRequirement({ username }: { username: string }) {
                     <td className="border px-3 py-2">{status?.due ? new Date(status.due).toLocaleDateString() : '-'}</td>
                     <td className="border px-3 py-2">{status?.submitted ? '✅' : '❌'}</td>
                     <td className="border px-3 py-2">{status?.graded ? '✅' : '❌'}</td>
-                    <td className="border px-3 py-2">{status?.graded ? status.grade : '-'}</td>
+                    <td className="border px-3 py-2">
+                      {editMode ? (
+                        <input
+                          type="number"
+                          min={0}
+                          max={status?.score ?? undefined}
+                          value={status?.grade ?? ''}
+                          onChange={(e) => {
+                            if (e.target.value === '') {
+                              setStatuses((prev) =>
+                                prev.map((s) =>
+                                  s.requirementId === req.id
+                                    ? { ...s, grade: null }
+                                    : s
+                                )
+                              );
+                              return;
+                            }
+
+                            const value = Number(e.target.value);
+
+                            // do not allow negative numbers
+                            if (value < 0) return;
+
+                            // do not allow values greater than score
+                            if (
+                              status?.score !== null &&
+                              status?.score !== undefined &&
+                              value > status.score
+                            ) {
+                              return;
+                            }
+
+                            setStatuses((prev) =>
+                              prev.map((s) =>
+                                s.requirementId === req.id
+                                  ? { ...s, grade: value }
+                                  : s
+                              )
+                            );
+                          }}
+                          className="w-20 border border-gray-300 rounded px-2 py-1 text-black"
+                        />
+                      ) : status?.graded ? (
+                        status.grade
+                      ) : (
+                        '-'
+                      )}
+                    </td>
                   </tr>
                 );
               })}
