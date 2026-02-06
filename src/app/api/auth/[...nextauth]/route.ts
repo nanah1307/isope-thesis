@@ -72,8 +72,10 @@ const handler = NextAuth({
         } else {
           token.role = data.Role; 
         }
-        if(token.role != "member" || token.role != "admin" || token.role != "osas" || token.role != "org"){
-          token.role = "member"
+        // Ensure token.role is one of the allowed string roles; otherwise default to "member"
+        const validRoles = ["member", "admin", "osas", "org"];
+        if (!validRoles.includes(String(token.role))) {
+          token.role = "member";
         }
       }
       return token;
