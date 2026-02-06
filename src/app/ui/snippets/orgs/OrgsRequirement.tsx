@@ -222,51 +222,54 @@ export default function OrgsRequirement({ username }: { username: string }) {
                     <td className="border px-3 py-2">{status?.graded ? '✅' : '❌'}</td>
                     <td className="border px-3 py-2">
                       {editMode ? (
-                        <input
-                          type="number"
-                          min={0}
-                          max={status?.score ?? undefined}
-                          value={status?.grade ?? ''}
-                          onChange={(e) => {
-                            if (e.target.value === '') {
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="number"
+                            min={0}
+                            max={status?.score ?? undefined}
+                            value={status?.grade ?? ''}
+                            onChange={(e) => {
+                              if (e.target.value === '') {
+                                setStatuses((prev) =>
+                                  prev.map((s) =>
+                                    s.requirementId === req.id
+                                      ? { ...s, grade: null }
+                                      : s
+                                  )
+                                );
+                                return;
+                              }
+
+                              const value = Number(e.target.value);
+
+                              // do not allow negative numbers
+                              if (value < 0) return;
+
+                              // do not allow values greater than score
+                              if (
+                                status?.score !== null &&
+                                status?.score !== undefined &&
+                                value > status.score
+                              ) {
+                                return;
+                              }
+
                               setStatuses((prev) =>
                                 prev.map((s) =>
                                   s.requirementId === req.id
-                                    ? { ...s, grade: null }
+                                    ? { ...s, grade: value }
                                     : s
                                 )
                               );
-                              return;
-                            }
-
-                            const value = Number(e.target.value);
-
-                            // do not allow negative numbers
-                            if (value < 0) return;
-
-                            // do not allow values greater than score
-                            if (
-                              status?.score !== null &&
-                              status?.score !== undefined &&
-                              value > status.score
-                            ) {
-                              return;
-                            }
-
-                            setStatuses((prev) =>
-                              prev.map((s) =>
-                                s.requirementId === req.id
-                                  ? { ...s, grade: value }
-                                  : s
-                              )
-                            );
-                          }}
-                          className="w-20 border border-gray-300 rounded px-2 py-1 text-black"
-                        />
+                            }}
+                            className="w-16 border border-gray-300 rounded px-2 py-1 text-black"
+                          />
+                          <span>/ {status?.score ?? '-'}</span>
+                        </div>
                       ) : status?.graded ? (
-                        status.grade
+                        `${status.grade}/${status.score ?? '-'}`
                       ) : (
-                        '-'
+                        `-/${status?.score ?? '-'}`
                       )}
                     </td>
                   </tr>
