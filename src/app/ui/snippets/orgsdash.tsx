@@ -44,6 +44,10 @@ const OrgCard: FC<{ org: any }> = ({ org }) => {
         <h2 className="text-xl font-bold text-gray-900 mb-4 group-hover:underline line-clamp-2">
           {org.name}
         </h2>
+
+        <h2 className="text-l text-gray-900 mb-4 line-clamp-2">
+          {org.bio}
+        </h2>
       </div>
 
       {/* Progress Bar */}
@@ -303,7 +307,7 @@ const OrgsDashboard: FC = () => {
   if (loading) return <div className="p-4 text-black">Loading organizations...</div>;
   
   return (
-    <div className="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen p-6 overflow-y-scroll">
+    <div className="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen p-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <div>
@@ -335,7 +339,8 @@ const OrgsDashboard: FC = () => {
       {filteredOrgs.length === 0 ? (
       <p className="text-black">No organizations found.</p>
       ) : (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6">
+
         {filteredOrgs.map((org) => (
         <OrgCard key={org.username} org={org} />
         ))}

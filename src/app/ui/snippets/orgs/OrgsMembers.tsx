@@ -13,7 +13,7 @@ export default function OrgsMembers({ username }: {username:string}){
 
     useEffect(() => {
   const fetchmembers = async () => {
-    const { data, error } = await supabase.from('member').select('*');
+    const { data, error } = await supabase.from('member').select('*').eq("organizations",username);
     if (error) console.error('Error fetching member:', error.message);
     else setMembers(data);  // Stores orgs in state
   };

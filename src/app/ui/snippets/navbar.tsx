@@ -16,7 +16,7 @@ interface LinkType {
 
 const links: LinkType[] = [
   { name: 'Home', href: '/dashboard', icon: HomeIcon },
-  { name: 'Orgs', href: '/dashboard/invoices', icon: UserGroupIcon },
+  { name: 'Orgs', href: '/navorgs', icon: UserGroupIcon },
   { name: 'User', href: '/user', icon: UserIcon },
   { name: 'Log Out', icon: ArrowRightStartOnRectangleIcon, onClick: ()=> signOut({ callbackUrl: "/login" })},  
 ];

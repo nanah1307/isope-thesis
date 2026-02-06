@@ -22,42 +22,87 @@ type OrgRequirementStatus = {
   due: string | null;
   score: number | null;
   grade: number | null;
+  year: number | null;
+  active: boolean;
 };
 
-export default function OrgsRequirement({ username }: { username: string }) {
+export default function OrgsRequirementArchive({ username }: { username: string }) {
   const [requirements, setRequirements] = useState<Requirement[]>([]);
   const [statuses, setStatuses] = useState<OrgRequirementStatus[]>([]);
   const [loading, setLoading] = useState(true);
+  const [year, setYear] = useState<string>('2025');
+  const [years, setYears] = useState<string[]>([]);
 
-  // Fetch data from Supabase on client
-  useEffect(() => {
-    const fetchData = async () => {
+    useEffect(() => {
+    const initData = async () => {
       try {
+        setLoading(true);
+
+        // Fetch available years
+        const { data: yearData, error: yearError } = await supabase
+          .from('org_requirement_status')
+          .select('year')
+          .order('year', { ascending: false });
+
+        if (yearError) throw yearError;
+
+        const uniqueYears = Array.from(
+          new Set((yearData || []).map((y) => y.year))
+        );
+
+        setYears(uniqueYears);
+
+        // Default to latest year
+        if (uniqueYears.length > 0) {
+          setYear(uniqueYears[0]);
+        }
+
+        // Fetch requirements (static)
         const { data: reqData, error: reqError } = await supabase
           .from('requirements')
           .select('*')
-          .eq('active', true);
+          .eq('active', true)
+          .order('section', { ascending: true })
+          .order('id', { ascending: true });
+
         if (reqError) throw reqError;
 
-        const { data: statusData, error: statusError } = await supabase
-          .from('org_requirement_status')
-          .select('*')
-          .eq('orgUsername', username);
-        if (statusError) throw statusError;
-
         setRequirements(reqData || []);
-        setStatuses(statusData || []);
       } catch (err: any) {
-        console.error('Error fetching requirements:', err.message ?? err);
+        console.error(err);
         setRequirements([]);
-        setStatuses([]);
+        setYears([]);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchData();
+    initData();
   }, [username]);
+
+  useEffect(() => {
+    if (!year) return;
+
+    const fetchStatuses = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('org_requirement_status')
+          .select('*')
+          .eq('year', year)
+          .eq('orgUsername', username)
+          .eq('active',false);
+
+        if (error) throw error;
+
+        setStatuses(data || []);
+      } catch (err) {
+        console.error(err);
+        setStatuses([]);
+      }
+    };
+
+    fetchStatuses();
+  }, [year, username]);
 
   const getStatus = (reqId: string) =>
     statuses.find((s) => s.requirementId === reqId);
@@ -76,7 +121,28 @@ export default function OrgsRequirement({ username }: { username: string }) {
   if (requirements.length === 0) return <div className="p-4 text-black">No requirements found.</div>;
 
   return (
+    
     <div className="overflow-x-auto" key="requirements-1">
+      <div className="flex items-center gap-2 mb-4">
+        <label className="text-sm font-medium text-black">Year:</label>
+              <select
+          value={year}
+          onChange={(e) => setYear(e.target.value)}
+          className="border border-gray-300 rounded px-2 py-1 text-black text-sm"
+        >
+          {years.map((y) => {
+            const endYear = Number(y);
+            const startYear = endYear - 1;
+
+            return (
+              <option key={y} value={y}>
+                {startYear}–{endYear}
+              </option>
+            );
+          })}
+        </select>
+      </div>
+
       <table className="min-w-full border border-gray-300 bg-white text-black text-xs sm:text-sm md:text-base">
         <thead>
           <tr className="bg-white text-black">

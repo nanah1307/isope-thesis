@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from '@/app/lib/database';
 import { useSearchParams } from "next/navigation";
-import OrgsRequirement from "./orgs/OrgsRequirements";
+import OrgsRequirementArchive from "./orgs/OrgsRequirementsArchive";
+import OrgsRequirement from "./orgs/OrgsRequirement";
 import OrgsMembers from "./orgs/OrgsMembers";
 
 type OrgsProp = {
@@ -172,23 +173,8 @@ export default function OrgsPage({ org }: OrgsProp) {
     ],
 
     Archive: [
-      <div className="overflow-x-auto" key="archive-1">
-        <table className="min-w-full border border-gray-300 bg-white text-black text-xs sm:text-sm md:text-base">
-          <thead>
-            <tr className="bg-white text-black">
-              <th className="border border-gray-300 px-3 py-2 text-left w-2/3">School Year</th>
-              <th className="border border-gray-300 px-3 py-2 text-left">View</th>
-              <th className="border border-gray-300 px-3 py-2 text-left">Submitted</th>
-              <th className="border border-gray-300 px-3 py-2 text-left">Graded</th>
-              <th className="border border-gray-300 px-3 py-2 text-left">Score</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr className="border-b border-gray-200">
-              {/* DATA HERE */}
-            </tr>
-          </tbody>
-        </table>
+      <div key="archive-1" className="w-full">
+        <OrgsRequirementArchive username={org.username} />
       </div>
     ],
   };
