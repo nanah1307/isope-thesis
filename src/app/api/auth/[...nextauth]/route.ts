@@ -34,6 +34,12 @@ const handler = NextAuth({
           Name:user.name,
           Role:"member"
         });
+        
+          await supabase.auth.signUp({
+            email: email,
+            password: 'iAcademy'
+          })
+
 
         if (error) {
           console.error("❌ Supabase insert failed:", error);
@@ -66,8 +72,10 @@ const handler = NextAuth({
         } else {
           token.role = data.Role; 
         }
+        if(token.role != "member" || token.role != "admin" || token.role != "osas" || token.role != "org"){
+          token.role = "member"
+        }
       }
-      console.log(token);
       return token;
     },
       
@@ -84,14 +92,12 @@ const handler = NextAuth({
       // },
       
        async session({ session, token }) {
-      console.log(" Current Token:",);
       session.user = session.user ?? {
         name: token.name ?? null,
         email: token.email ?? null,
         image: token.picture??null
       };
       (session.user as any).role = token.role ?? "member";
-      console.log(session)
       return session;
     }
       
