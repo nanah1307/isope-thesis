@@ -48,7 +48,6 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
     isEditingInstructions: false,
     isEditingGrade: false,
     instructions: '',
-    questionType: 'freeform' as 'freeform' | 'pdf',
     isLoading: true,
     error: null as string | null,
     uploadedPdf: null as string | null,
@@ -58,7 +57,9 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
     pdfZoom: 1.0,
     userRole: null as 'osas' | 'member' | null,
     currentUserEmail: null as string | null,
-    
+
+    submissiontype: null as 'freeform' | 'pdf' | null,
+
     requirement: null as ({
       id: string;
       title: string;
@@ -93,7 +94,7 @@ const loadRequirementFromSupabase = async () => {
 
     const { data, error } = await supabase
       .from('requirements')
-      .select('id, title, section, active, instructions')
+      .select('id, title, section, active, instructions, submissiontype')
       .eq('id', reqid)
       .eq('active', true)
       .single();
@@ -102,7 +103,8 @@ const loadRequirementFromSupabase = async () => {
 
     updateState({
       requirement: data,
-      instructions: data.instructions || `Accomplish evaluation by ${formattedDueDate}.`
+      instructions: data.instructions || `Accomplish evaluation by ${formattedDueDate}.`,
+      submissiontype: data.submissiontype as 'freeform' | 'pdf'
     });
   } catch (err: any) {
     console.error(err);
@@ -335,10 +337,24 @@ const loadRequirementFromSupabase = async () => {
 };
 
 
-  const handleQuestionTypeChange = (type: 'freeform' | 'pdf') => {
-    if (!checkPermission('osas', 'change question type')) return;
-    updateState({ questionType: type });
-  };
+  const handleSubmissionTypeChange = async (type: 'freeform' | 'pdf') => {
+  if (!checkPermission('osas', 'change submission type')) return;
+
+  try {
+    const { error } = await supabase
+      .from('requirements')
+      .update({ submissiontype: type })
+      .eq('id', reqid);
+
+    if (error) throw error;
+
+    updateState({ submissiontype: type });
+  } catch (err) {
+    console.error(err);
+    setError('Failed to update submission type');
+  }
+};
+
 
   // Components
   const AnswersDisplay = () => (
@@ -483,7 +499,7 @@ const loadRequirementFromSupabase = async () => {
                     <div className="flex justify-between items-center mb-8">
                       <h2 className="text-red-600 font-bold text-2xl">Instructions:</h2>
                       <div className="flex items-center gap-2">
-                        {isMember && state.questionType === 'pdf' && !state.isEditingInstructions && (
+                        {isMember && state.submissiontype === 'pdf' && !state.isEditingInstructions && (
                           <>
                             {state.uploadedPdf && (
                               <button onClick={handleRemovePdf}
@@ -530,12 +546,12 @@ const loadRequirementFromSupabase = async () => {
                           placeholder="Enter instructions here..." />
                         
                         <div className="mt-8 pt-8 border-t border-gray-200">
-                          <h3 className="text-gray-900 font-bold text-lg mb-4">Question Type:</h3>
+                          <h3 className="text-gray-900 font-bold text-lg mb-4">Submission Type:</h3>
                           <div className="flex gap-6">
                             {(['freeform', 'pdf'] as const).map(type => (
                               <label key={type} className="flex items-center gap-3 cursor-pointer">
-                                <input type="radio" name="questionType" value={type} checked={state.questionType === type}
-                                  onChange={() => handleQuestionTypeChange(type)}
+                                <input type="radio" name="submissiontype" value={type} checked={state.submissiontype === type}
+                                  onChange={() => handleSubmissionTypeChange(type)}
                                   className="w-5 h-5 text-blue-600 focus:ring-2 focus:ring-blue-500 cursor-pointer" />
                                 <span className="text-gray-900 font-medium text-lg">{type === 'freeform' ? 'Freeform Answer' : 'PDF Submission'}</span>
                               </label>
@@ -553,9 +569,9 @@ const loadRequirementFromSupabase = async () => {
                   <div>
                     <h2 className="text-gray-900 font-bold mb-8 text-2xl">Grading</h2>
                     
-                    {state.questionType === 'pdf' && state.uploadedPdf ? (
+                    {state.submissiontype === 'pdf' && state.uploadedPdf ? (
                       <PDFViewer />
-                    ) : state.questionType === 'pdf' && !state.uploadedPdf ? (
+                    ) : state.submissiontype === 'pdf' && !state.uploadedPdf ? (
                       <div className="flex items-center justify-center h-[600px] bg-gray-100 rounded-lg border-2 border-dashed border-gray-300">
                         <div className="text-center">
                           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-16 h-16 mx-auto text-gray-400 mb-4">
