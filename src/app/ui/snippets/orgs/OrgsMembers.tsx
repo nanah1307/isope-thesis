@@ -1,6 +1,5 @@
 import Link from "next/link";
 
-import { Orgs,requirements, OrgRequirementStatus, orgRequirementStatuses,Req } from "@/app/lib/definitions";
 import { DocumentTextIcon  } from '@heroicons/react/24/outline';
 import {useEffect, useState, FC} from 'react';
 import React from "react";
