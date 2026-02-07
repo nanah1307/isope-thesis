@@ -51,7 +51,7 @@ export type OrgRequirementStatus = {
 };
 
 
-//not hard coded change soon
+/* NOTES ON REQ STATUS
 export const orgRequirementStatuses: OrgRequirementStatus[] = [
   {
     orgUsername: "CSO",
@@ -81,8 +81,9 @@ export const orgRequirementStatuses: OrgRequirementStatus[] = [
     score: 0,
   },
 ]
+*/
 
-//change soon
+/* NOTES ON REQUIREMENTS
 export const requirements: Req[] = [
   { key:1,
     id: "req011", 
@@ -149,3 +150,4 @@ export const requirements: Req[] = [
     active: true 
   },
 ];
+*/

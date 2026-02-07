@@ -1,15 +1,7 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
-import { requirements, orgRequirementStatuses } from '@/app/lib/definitions';
-import { 
-  getAssessmentByOrgAndReq, 
-  Comment,
-  saveCommentsToLocalStorage,
-  loadCommentsFromLocalStorage,
-  formatTimestamp,
-  formatName
-} from '@/app/lib/assessments';
+import { getAssessmentByOrgAndReq, Comment, saveCommentsToLocalStorage, loadCommentsFromLocalStorage, formatTimestamp, formatName } from '@/app/lib/assessments';
 import { supabase } from '@/app/lib/database';
 import { useSession } from "next-auth/react";
 
@@ -65,11 +57,18 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
     totalPages: 1,
     pdfZoom: 1.0,
     userRole: null as 'osas' | 'member' | null,
-    currentUserEmail: null as string | null
+    currentUserEmail: null as string | null,
+    
+    requirement: null as ({
+      id: string;
+      title: string;
+      section: string;
+      active: boolean;
+    } | null),
   });
 
-  const requirement = requirements.find(r => r.id === reqid);
-  const requirementName = requirement?.title || reqid;
+  const requirementName = state.requirement?.title || reqid;
+
   const formattedDueDate = state.dueDate?.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) || 'TBD';
 
   const isOSAS = state.userRole === 'osas';
@@ -93,6 +92,32 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
   const setStorage = (key: string, value: string) => localStorage.setItem(getStorageKey(key), value);
   const removeStorage = (key: string) => localStorage.removeItem(getStorageKey(key));
 
+
+  const loadRequirementFromSupabase = async () => {
+  try {
+    updateState({ isLoading: true, error: null });
+
+    const { data, error } = await supabase
+      .from('requirements')
+      .select('id, title, section, active')
+      .eq('id', reqid)
+      .eq('active', true)
+      .single();
+
+    if (error) {
+      console.error('Error fetching requirement:', error);
+      setError(error.message);
+      return;
+    }
+
+    updateState({ requirement: data });
+  } catch (err) {
+    console.error(err);
+    setError('Failed to load requirement');
+  } finally {
+    updateState({ isLoading: false });
+  }
+};
   // Load grade from Supabase
   const loadGradeFromSupabase = async () => {
     try {
@@ -218,9 +243,10 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
 
       if (rawRole === 'osas' || rawRole === 'member') {
         updateState({ userRole: rawRole as 'osas' | 'member' });
-        console.log('✅ Role set from session:', rawRole);
+        loadRequirementFromSupabase();
         loadGradeFromSupabase();
-      } else {
+      }
+      else {
         console.error('❌ Invalid role from session:', rawRole);
         setError(`Invalid role: "${rawRole}". Must be "osas" or "member".`);
       }
@@ -240,11 +266,6 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
         evaluationAnswer: assessment.answers['evaluation_ld_q1'] || ''
       });
     }
-
-    const reqStatus = orgRequirementStatuses.find(
-      (status) => status.orgUsername === orgname && status.requirementId === reqid
-    );
-    if (reqStatus) updateState({ dueDate: reqStatus.due });
 
     const savedInstructions = getStorage('instructions');
     const savedQuestionType = getStorage('questionType');
