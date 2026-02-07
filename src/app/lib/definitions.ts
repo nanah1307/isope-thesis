@@ -8,6 +8,9 @@ export type orgProp = {
   rightNotifications: number;
   members: number;
 };
+export enum Roles{
+  osas, org, admin, member
+}
 
 export type Cart = {
   CartItems: Array<{
