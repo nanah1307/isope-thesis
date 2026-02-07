@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
-import { Comment, saveCommentsToLocalStorage, loadCommentsFromLocalStorage, formatTimestamp, formatName } from '@/app/lib/assessments';
+import { Comment, saveCommentsToLocalStorage, formatTimestamp, formatName } from '@/app/lib/assessments';
 import { supabase } from '@/app/lib/database';
 import { useSession } from "next-auth/react";
 
@@ -207,35 +207,106 @@ const loadRequirementFromSupabase = async () => {
     }
   };
 
-
-
   // Handle PDF upload
-  const handlePdfUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePdfUpload = async (
+  event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     if (!checkPermission('member', 'upload PDFs')) return;
 
     const file = event.target.files?.[0];
     if (!file) return;
 
     if (file.type !== 'application/pdf') {
-      setError('Please upload a PDF file only');
+      setError('Only PDF files are allowed');
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const result = e.target?.result as string;
-      updateState({ uploadedPdf: result, pdfFileName: file.name });
+    try {
+      updateState({ isLoading: true, error: null });
 
-    };
-    reader.readAsDataURL(file);
+      const filePath = `${orgname}/${reqid}.pdf`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('requirement-pdfs')
+        .upload(filePath, file, {
+          upsert: true,
+          contentType: 'application/pdf',
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Mark submission as submitted
+      await supabase
+        .from('org_requirement_status')
+        .update({
+          submitted: true,
+        })
+        .eq('orgUsername', orgname)
+        .eq('requirementId', reqid);
+
+      // Create signed URL for preview
+      const { data } = await supabase.storage
+        .from('requirement-pdfs')
+        .createSignedUrl(filePath, 60 * 60);
+
+      updateState({
+        uploadedPdf: data?.signedUrl ?? null,
+        pdfFileName: file.name,
+        hasSubmitted: true,
+      });
+    } catch (err: any) {
+      console.error(err);
+      setError('Failed to upload PDF');
+    } finally {
+      updateState({ isLoading: false });
+    }
   };
+
+  const loadPdfFromSupabase = async () => {
+  try {
+    const filePath = `${orgname}/${reqid}.pdf`;
+
+    const { data, error } = await supabase.storage
+      .from('requirement-pdfs')
+      .createSignedUrl(filePath, 60 * 60);
+
+    if (error) return; // PDF may not exist yet
+
+    updateState({
+      uploadedPdf: data.signedUrl,
+      pdfFileName: `${reqid}.pdf`,
+    });
+  } catch (err) {
+    console.warn('No PDF uploaded yet');
+  }
+};
+
+
 
   // Remove PDF
-  const handleRemovePdf = () => {
+  const handleRemovePdf = async () => {
     if (!checkPermission('member', 'remove PDFs')) return;
-    updateState({ uploadedPdf: null, pdfFileName: '', currentPage: 1 });
 
+    const filePath = `${orgname}/${reqid}.pdf`;
+
+    await supabase.storage
+      .from('requirement-pdfs')
+      .remove([filePath]);
+
+    await supabase
+      .from('org_requirement_status')
+      .update({ submitted: false })
+      .eq('orgUsername', orgname)
+      .eq('requirementId', reqid);
+
+    updateState({
+      uploadedPdf: null,
+      pdfFileName: '',
+      currentPage: 1,
+      hasSubmitted: false,
+    });
   };
+
 
   // Session effect
   useEffect(() => {

@@ -169,40 +169,6 @@ export type GradeData = {
   gradedAt: string;
 };
 
-export function saveGradeToLocalStorage(
-  orgUsername: string,
-  requirementId: string,
-  score: number,
-  feedback: string
-): void {
-  const gradeKey = `grade_${orgUsername}_${requirementId}`;
-  const gradeData: GradeData = {
-    score,
-    feedback,
-    gradedAt: new Date().toISOString()
-  };
-  localStorage.setItem(gradeKey, JSON.stringify(gradeData));
-}
-
-export function loadGradeFromLocalStorage(
-  orgUsername: string,
-  requirementId: string
-): GradeData | null {
-  const gradeKey = `grade_${orgUsername}_${requirementId}`;
-  const savedGrade = localStorage.getItem(gradeKey);
-  
-  if (!savedGrade) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(savedGrade);
-  } catch (e) {
-    console.error('Error loading grade:', e);
-    return null;
-  }
-}
-
 export function saveCommentsToLocalStorage(
   orgUsername: string,
   requirementId: string,
@@ -210,28 +176,6 @@ export function saveCommentsToLocalStorage(
 ): void {
   const storageKey = `comments_${orgUsername}_${requirementId}`;
   localStorage.setItem(storageKey, JSON.stringify(comments));
-}
-
-export function loadCommentsFromLocalStorage(
-  orgUsername: string,
-  requirementId: string
-): Comment[] {
-  const storageKey = `comments_${orgUsername}_${requirementId}`;
-  const savedComments = localStorage.getItem(storageKey);
-  
-  if (!savedComments) {
-    return [];
-  }
-
-  try {
-    return JSON.parse(savedComments, (key, value) => {
-      if (key === 'timestamp') return new Date(value);
-      return value;
-    });
-  } catch (e) {
-    console.error('Error loading comments:', e);
-    return [];
-  }
 }
 
 export function validateAndCorrectScore(value: string | number): number {
