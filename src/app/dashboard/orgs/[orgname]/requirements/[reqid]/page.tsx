@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
-import { getAssessmentByOrgAndReq, Comment, saveCommentsToLocalStorage, loadCommentsFromLocalStorage, formatTimestamp, formatName } from '@/app/lib/assessments';
+import { Comment, saveCommentsToLocalStorage, loadCommentsFromLocalStorage, formatTimestamp, formatName } from '@/app/lib/assessments';
 import { supabase } from '@/app/lib/database';
 import { useSession } from "next-auth/react";
 
@@ -39,7 +39,6 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
     hasSubmitted: false,
     membershipAnswer: '',
     evaluationAnswer: '',
-    attemptCount: 0,
     score: 0,
     submittedScore: 0,
     maxScore: 100,
@@ -103,7 +102,7 @@ const loadRequirementFromSupabase = async () => {
 
     updateState({
       requirement: data,
-      instructions: data.instructions || `Accomplish evaluation by ${formattedDueDate}.`,
+      instructions: data.instructions || '',
       submissiontype: data.submissiontype as 'freeform' | 'pdf'
     });
   } catch (err: any) {
@@ -187,6 +186,29 @@ const loadRequirementFromSupabase = async () => {
     }
   };
 
+  //Display due date
+  const loadDueDateFromSupabase = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('org_requirement_status')
+        .select('due')
+        .eq('orgUsername', orgname)
+        .eq('requirementId', reqid)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      updateState({
+        dueDate: data?.due ? new Date(data.due) : null
+      });
+    } catch {
+      console.warn('No due date found yet');
+      updateState({ dueDate: null });
+    }
+  };
+
+
+
   // Handle PDF upload
   const handlePdfUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!checkPermission('member', 'upload PDFs')) return;
@@ -237,8 +259,10 @@ const loadRequirementFromSupabase = async () => {
 
       if (rawRole === 'osas' || rawRole === 'member') {
         updateState({ userRole: rawRole as 'osas' | 'member' });
+
         loadRequirementFromSupabase();
         loadGradeFromSupabase();
+        loadDueDateFromSupabase();
       }
       else {
         console.error('❌ Invalid role from session:', rawRole);
@@ -251,20 +275,27 @@ const loadRequirementFromSupabase = async () => {
 
   // Initial data load
   useEffect(() => {
-    const assessment = getAssessmentByOrgAndReq(orgname, reqid);
-    if (assessment) {
-      updateState({
-        hasSubmitted: assessment.submittedAt !== null,
-        attemptCount: assessment.submittedAt ? 1 : 0,
-        membershipAnswer: assessment.answers['membership'] || '',
-        evaluationAnswer: assessment.answers['evaluation_ld_q1'] || ''
-      });
-    }
+    const loadSubmissionStatus = async () => {
+      const { data, error } = await supabase
+        .from('org_requirement_status')
+        .select('submitted')
+        .eq('orgUsername', orgname)
+        .eq('requirementId', reqid)
+        .maybeSingle();
 
-    updateState({
-      comments: loadCommentsFromLocalStorage(orgname, reqid)
-    });
-  }, [orgname, reqid, formattedDueDate]);
+      if (error) {
+        console.error('Failed to load submission status:', error);
+        return;
+      }
+
+      updateState({
+        hasSubmitted: data?.submitted ?? false
+      });
+    };
+
+    loadSubmissionStatus();
+  }, [orgname, reqid]);
+
 
   // Save comments
   useEffect(() => {
@@ -600,10 +631,6 @@ const loadRequirementFromSupabase = async () => {
                 <div className="flex justify-between">
                   <span className="text-gray-600">Due by:</span>
                   <span className="text-gray-900 font-medium">{formattedDueDate}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Attempts:</span>
-                  <span className="text-gray-900 font-medium">{state.attemptCount}</span>
                 </div>
               </div>
             </div>
