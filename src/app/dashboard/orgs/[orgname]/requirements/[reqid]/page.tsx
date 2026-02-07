@@ -4,6 +4,7 @@ import { useState, useEffect, use } from 'react';
 import { Comment, saveCommentsToLocalStorage, formatTimestamp, formatName } from '@/app/lib/assessments';
 import { supabase } from '@/app/lib/database';
 import { useSession } from "next-auth/react";
+import { UserCircleIcon, ChevronLeftIcon, ChevronRightIcon, MagnifyingGlassMinusIcon, MagnifyingGlassPlusIcon, ArrowDownTrayIcon, TrashIcon, ArrowUpTrayIcon, PencilSquareIcon, DocumentIcon, } from '@heroicons/react/24/outline';
 
 const QuestionHeader = ({ title, icon }: { title: string; icon?: boolean }) => (
   <div className={`bg-gradient-to-r from-yellow-100 to-yellow-50 rounded-lg p-4 mb-4 ${
@@ -11,9 +12,7 @@ const QuestionHeader = ({ title, icon }: { title: string; icon?: boolean }) => (
   }`}>
     {icon && (
       <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="white" className="w-5 h-5">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
-        </svg>
+        <UserCircleIcon className="w-5 h-5 text-white" />
       </div>
     )}
     <h3 className={`text-gray-900 font-bold ${icon ? 'text-lg' : 'text-base'} uppercase`}>{title}</h3>
@@ -524,9 +523,7 @@ const loadRequirementFromSupabase = async () => {
         <div className="bg-gray-800 px-4 py-3 flex items-center justify-between border-b border-gray-700">
           <div className="flex items-center gap-4">
             <IconButton onClick={() => updateState({ currentPage: Math.max(1, state.currentPage - 1) })} disabled={state.currentPage === 1}>
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="white" className="w-5 h-5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
-              </svg>
+              <ChevronLeftIcon className="w-5 h-5 text-white" />
             </IconButton>
             
             <div className="flex items-center gap-2">
@@ -541,32 +538,24 @@ const loadRequirementFromSupabase = async () => {
             </div>
 
             <IconButton onClick={() => updateState({ currentPage: Math.min(state.totalPages, state.currentPage + 1) })} disabled={state.currentPage === state.totalPages}>
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="white" className="w-5 h-5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
-              </svg>
+              <ChevronRightIcon className="w-5 h-5 text-white" />
             </IconButton>
           </div>
 
           <div className="flex items-center gap-2">
             <IconButton onClick={() => updateState({ pdfZoom: Math.max(0.5, state.pdfZoom - 0.1) })}>
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="white" className="w-5 h-5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607ZM13.5 10.5h-6" />
-              </svg>
+              <MagnifyingGlassMinusIcon className="w-5 h-5 text-white" />
             </IconButton>
             <span className="text-white text-sm min-w-[60px] text-center">{Math.round(state.pdfZoom * 100)}%</span>
             <IconButton onClick={() => updateState({ pdfZoom: Math.min(2, state.pdfZoom + 0.1) })}>
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="white" className="w-5 h-5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607ZM10.5 7.5v6m3-3h-6" />
-              </svg>
+              <MagnifyingGlassPlusIcon className="w-5 h-5 text-white" />
             </IconButton>
           </div>
 
           <div className="flex items-center gap-2">
             <span className="text-white text-sm mr-2">{state.pdfFileName}</span>
             <a href={state.uploadedPdf} download={state.pdfFileName} className="p-2 hover:bg-gray-700 rounded transition-colors" title="Download PDF">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="white" className="w-5 h-5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
-              </svg>
+              <ArrowDownTrayIcon className="w-5 h-5 text-white" />
             </a>
           </div>
         </div>
@@ -637,16 +626,12 @@ const loadRequirementFromSupabase = async () => {
                             {state.uploadedPdf && (
                               <button onClick={handleRemovePdf}
                                 className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors cursor-pointer">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-                                </svg>
+                                <TrashIcon className="w-5 h-5" />
                                 Remove PDF
                               </button>
                             )}
                             <label className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors cursor-pointer">
-                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m6.75 12-3-3m0 0-3 3m3-3v6m-1.5-15H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
-                              </svg>
+                              <ArrowUpTrayIcon className="w-5 h-5" />
                               {state.uploadedPdf ? 'Replace PDF' : 'Upload PDF'}
                               <input type="file" accept="application/pdf" onChange={handlePdfUpload} className="hidden" />
                             </label>
@@ -658,9 +643,7 @@ const loadRequirementFromSupabase = async () => {
                             className={`flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors ${
                               state.isEditingGrade ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
                             }`}>
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
-                            </svg>
+                            <PencilSquareIcon className="w-5 h-5" />
                             Edit Instructions
                           </button>
                         ) : isOSAS && state.isEditingInstructions ? (
@@ -707,9 +690,7 @@ const loadRequirementFromSupabase = async () => {
                     ) : state.submissiontype === 'pdf' && !state.uploadedPdf ? (
                       <div className="flex items-center justify-center h-[600px] bg-gray-100 rounded-lg border-2 border-dashed border-gray-300">
                         <div className="text-center">
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-16 h-16 mx-auto text-gray-400 mb-4">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
-                          </svg>
+                          <DocumentIcon className="w-16 h-16 mx-auto text-gray-400 mb-4" />
                           <p className="text-gray-500 text-lg">No PDF submission uploaded yet</p>
                           {isOSAS && <p className="text-gray-400 text-sm mt-2">Student needs to upload PDF in the Instructions tab</p>}
                         </div>
