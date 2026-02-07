@@ -87,37 +87,31 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
     return true;
   };
 
-  const getStorageKey = (key: string) => `${key}_${orgname}_${reqid}`;
-  const getStorage = (key: string) => localStorage.getItem(getStorageKey(key));
-  const setStorage = (key: string, value: string) => localStorage.setItem(getStorageKey(key), value);
-  const removeStorage = (key: string) => localStorage.removeItem(getStorageKey(key));
-
-
-  const loadRequirementFromSupabase = async () => {
+const loadRequirementFromSupabase = async () => {
   try {
     updateState({ isLoading: true, error: null });
 
     const { data, error } = await supabase
       .from('requirements')
-      .select('id, title, section, active')
+      .select('id, title, section, active, instructions')
       .eq('id', reqid)
       .eq('active', true)
       .single();
 
-    if (error) {
-      console.error('Error fetching requirement:', error);
-      setError(error.message);
-      return;
-    }
+    if (error) throw error;
 
-    updateState({ requirement: data });
-  } catch (err) {
+    updateState({
+      requirement: data,
+      instructions: data.instructions || `Accomplish evaluation by ${formattedDueDate}.`
+    });
+  } catch (err: any) {
     console.error(err);
     setError('Failed to load requirement');
   } finally {
     updateState({ isLoading: false });
   }
 };
+
   // Load grade from Supabase
   const loadGradeFromSupabase = async () => {
     try {
@@ -207,8 +201,7 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
     reader.onload = (e) => {
       const result = e.target?.result as string;
       updateState({ uploadedPdf: result, pdfFileName: file.name });
-      setStorage('pdf', result);
-      setStorage('pdf_name', file.name);
+
     };
     reader.readAsDataURL(file);
   };
@@ -217,8 +210,7 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
   const handleRemovePdf = () => {
     if (!checkPermission('member', 'remove PDFs')) return;
     updateState({ uploadedPdf: null, pdfFileName: '', currentPage: 1 });
-    removeStorage('pdf');
-    removeStorage('pdf_name');
+
   };
 
   // Session effect
@@ -267,16 +259,7 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
       });
     }
 
-    const savedInstructions = getStorage('instructions');
-    const savedQuestionType = getStorage('questionType');
-    const savedPdf = getStorage('pdf');
-    const savedPdfName = getStorage('pdf_name');
-
     updateState({
-      instructions: savedInstructions || `Accomplish evaluation by ${formattedDueDate}.`,
-      questionType: (savedQuestionType as 'freeform' | 'pdf') || 'freeform',
-      uploadedPdf: savedPdf,
-      pdfFileName: savedPdfName || '',
       comments: loadCommentsFromLocalStorage(orgname, reqid)
     });
   }, [orgname, reqid, formattedDueDate]);
@@ -325,24 +308,36 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
     if (success) updateState({ isEditingGrade: false });
   };
 
-  const handleSaveInstructions = () => {
-    if (!checkPermission('osas', 'edit instructions')) return;
-    setStorage('instructions', state.instructions);
-    updateState({ isEditingInstructions: false });
-  };
+  const handleSaveInstructions = async () => {
+  if (!checkPermission('osas', 'edit instructions')) return;
 
-  const handleCancelEditInstructions = () => {
-    const saved = getStorage('instructions');
-    updateState({
-      instructions: saved || `Accomplish evaluation by ${formattedDueDate}.`,
-      isEditingInstructions: false
-    });
-  };
+  try {
+    setError(null);
+
+    const { error } = await supabase
+      .from('requirements')
+      .update({ instructions: state.instructions })
+      .eq('id', reqid);
+
+    if (error) throw error;
+
+    updateState({ isEditingInstructions: false });
+  } catch (err: any) {
+    console.error(err);
+    setError('Failed to save instructions');
+  }
+};
+
+
+  const handleCancelEditInstructions = async () => {
+  await loadRequirementFromSupabase();
+  updateState({ isEditingInstructions: false });
+};
+
 
   const handleQuestionTypeChange = (type: 'freeform' | 'pdf') => {
     if (!checkPermission('osas', 'change question type')) return;
     updateState({ questionType: type });
-    setStorage('questionType', type);
   };
 
   // Components
