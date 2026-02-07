@@ -47,7 +47,6 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
     isEditingInstructions: false,
     isEditingGrade: false,
     instructions: '',
-    isLoading: true,
     error: null as string | null,
     uploadedPdf: null as string | null,
     pdfFileName: '',
@@ -57,6 +56,14 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
     userRole: null as 'osas' | 'member' | null,
     currentUserEmail: null as string | null,
 
+    
+    loading: {
+      page: true,
+      requirement: false,
+      grade: false,
+      pdf: false,
+    },
+    
     submissiontype: null as 'freeform' | 'pdf' | null,
 
     requirement: null as ({
@@ -87,9 +94,26 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
     return true;
   };
 
+  const setLoading = (
+  key: keyof typeof state.loading,
+  value: boolean
+) => {
+  setState(prev => ({
+    ...prev,
+    loading: {
+      ...prev.loading,
+      [key]: value,
+    },
+  }));
+};
+
+
+  
+
 const loadRequirementFromSupabase = async () => {
   try {
-    updateState({ isLoading: true, error: null });
+    setError(null);
+    setLoading('requirement', true);
 
     const { data, error } = await supabase
       .from('requirements')
@@ -109,14 +133,15 @@ const loadRequirementFromSupabase = async () => {
     console.error(err);
     setError('Failed to load requirement');
   } finally {
-    updateState({ isLoading: false });
+    setLoading('requirement', false);
   }
 };
 
   // Load grade from Supabase
   const loadGradeFromSupabase = async () => {
     try {
-      updateState({ isLoading: true, error: null });
+      setError(null);
+      setLoading('grade', true);
       const { data, error: fetchError } = await supabase
         .from('org_requirement_status')
         .select('grade, score')
@@ -141,7 +166,7 @@ const loadRequirementFromSupabase = async () => {
       console.error('Error loading grade:', err);
       setError('Failed to load grade data');
     } finally {
-      updateState({ isLoading: false });
+      setLoading('grade', false);
     }
   };
 
@@ -222,7 +247,9 @@ const loadRequirementFromSupabase = async () => {
     }
 
     try {
-      updateState({ isLoading: true, error: null });
+      setError(null);
+      setLoading('pdf', true);
+
 
       const filePath = `${orgname}/${reqid}.pdf`;
 
@@ -258,7 +285,7 @@ const loadRequirementFromSupabase = async () => {
       console.error(err);
       setError('Failed to upload PDF');
     } finally {
-      updateState({ isLoading: false });
+      setLoading('pdf', false);
     }
   };
 
@@ -311,38 +338,41 @@ const loadRequirementFromSupabase = async () => {
   // Session effect
   useEffect(() => {
     if (status === 'loading') {
-      updateState({ isLoading: true });
+      setLoading('page', true);
       return;
     }
 
     if (status === 'unauthenticated') {
       setError('User not authenticated');
-      updateState({ isLoading: false });
+      setLoading('page', false);
       return;
     }
 
-    if (session?.user) {
+    if (status === 'authenticated' && session?.user) {
       const email = session.user.email || '';
-      const rawRole = ((session.user as any)?.role || '').toString().trim().toLowerCase();
-      
+      const rawRole = ((session.user as any)?.role || '')
+        .toString()
+        .trim()
+        .toLowerCase();
+
       updateState({ currentUserEmail: email });
-      console.log('🔍 Session user:', email, 'Role:', rawRole);
 
       if (rawRole === 'osas' || rawRole === 'member') {
         updateState({ userRole: rawRole as 'osas' | 'member' });
 
+        // kick off initial data loads
         loadRequirementFromSupabase();
         loadGradeFromSupabase();
         loadDueDateFromSupabase();
+      } else {
+        setError(`Invalid role: "${rawRole}"`);
       }
-      else {
-        console.error('❌ Invalid role from session:', rawRole);
-        setError(`Invalid role: "${rawRole}". Must be "osas" or "member".`);
-      }
-      
-      updateState({ isLoading: false });
+
+      // page is now ready to render
+      setLoading('page', false);
     }
   }, [status, session]);
+
 
   // Initial data load
   useEffect(() => {
@@ -549,7 +579,7 @@ const loadRequirementFromSupabase = async () => {
     );
   };
 
-  if (state.isLoading) {
+  if (state.loading.page) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -559,6 +589,7 @@ const loadRequirementFromSupabase = async () => {
       </div>
     );
   }
+
 
   return (
     <div className="min-h-screen bg-gray-50 p-8 relative">
@@ -710,9 +741,9 @@ const loadRequirementFromSupabase = async () => {
               <div className="flex justify-between items-center mb-4">
                 <h3 className="font-semibold text-gray-900">Grade</h3>
                 {isOSAS && !state.isEditingGrade ? (
-                  <button onClick={() => updateState({ isEditingGrade: true })} disabled={state.isEditingInstructions || state.isLoading}
+                  <button onClick={() => updateState({ isEditingGrade: true })} disabled={state.isEditingInstructions || state.loading.grade}
                     className={`flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors ${
-                      state.isEditingInstructions || state.isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                      state.isEditingInstructions || state.loading.requirement ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
                     }`}>
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
                       <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
@@ -727,7 +758,7 @@ const loadRequirementFromSupabase = async () => {
                 ) : null}
               </div>
               
-              {state.isLoading ? (
+              {state.loading.grade ? (
                 <div className="flex justify-center items-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                 </div>
