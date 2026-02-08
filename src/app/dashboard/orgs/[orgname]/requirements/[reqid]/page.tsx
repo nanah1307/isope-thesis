@@ -27,7 +27,7 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
 
   // State consolidation
   const [state, setState] = useState({
-    activeTab: 'instructions' as 'instructions' | 'grading',
+    activeTab: 'instructions' as 'instructions' | 'submission',
     hasSubmitted: false,
     score: 0, //max score
     submittedScore: 0,
@@ -534,9 +534,9 @@ const loadRequirementFromSupabase = async () => {
           <div className="lg:col-span-3">
             <div className="bg-white rounded-lg shadow-sm">
               <div className="border-b-2 border-gray-300 flex">
-                {(['instructions', 'grading'] as const).map(tab => (
-                  (tab === 'grading' && !state.hasSubmitted) ? null : (
-                    <button key={tab} onClick={() => !isEditing && updateState({ activeTab: tab })} disabled={isEditing}
+                {(['instructions', 'submission'] as const).map(tab => (
+                  (tab === 'submission' && !state.hasSubmitted) ? null : (
+                    <button key={tab} onClick={() => !isEditing && updateState({ activeTab: tab as any })} disabled={isEditing}
                       className={`px-6 py-4 font-medium ${isEditing ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'} ${
                         state.activeTab === tab ? 'text-gray-900 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'
                       }`}>
@@ -559,7 +559,7 @@ const loadRequirementFromSupabase = async () => {
                   />
                 )}
 
-                {state.activeTab === 'grading' && state.hasSubmitted && (
+                {state.activeTab === 'submission' && state.hasSubmitted && (
                   <GradingTab
                     state={state}
                     updateState={updateState}
