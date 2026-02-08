@@ -1,11 +1,7 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
-import { Comments, saveCommentsToLocalStorage, formatTimestamp, formatName } from '@/app/lib/assessments';
-import { supabase } from '@/app/lib/database';
-import { useSession } from "next-auth/react";
-import { UserCircleIcon, ChevronLeftIcon, ChevronRightIcon, MagnifyingGlassMinusIcon, MagnifyingGlassPlusIcon, ArrowDownTrayIcon, TrashIcon, ArrowUpTrayIcon, PencilSquareIcon, DocumentIcon, } from '@heroicons/react/24/outline';
-import { instructions,defaultPageState} from '@/app/lib/definitions';
+
+import {TrashIcon, ArrowUpTrayIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
 
 
 // Reusable InstructionsBlock component

@@ -1,0 +1,106 @@
+'use client';
+
+import { PencilSquareIcon } from '@heroicons/react/24/outline';
+
+export function SubmissionInfo({
+  state,
+  updateState,
+  isOSAS,
+  formattedDueDate,
+  isEditing,
+  handleSubmitGrade,
+}: {
+  state: any;
+  updateState: (updates: any) => void;
+  isOSAS: boolean;
+  formattedDueDate: string;
+  isEditing: boolean;
+  handleSubmitGrade: () => void;
+}) {
+  return (
+    <>
+      <div className="bg-white rounded-lg shadow-sm p-6">
+        <h3 className="font-semibold text-gray-900 mb-4">Submission Info</h3>
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between">
+            <span className="text-gray-600">Due by:</span>
+            <span className="text-gray-900 font-medium">{formattedDueDate}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-lg shadow-sm p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="font-semibold text-gray-900">Grade</h3>
+          {isOSAS && !state.isEditingGrade ? (
+            <button onClick={() => updateState({ isEditingGrade: true })} disabled={state.isEditingInstructions || state.loading.grade}
+              className={`flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors ${
+                state.isEditingInstructions || state.loading.requirement ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+              }`}>
+              <PencilSquareIcon className="w-5 h-5" />
+              Edit
+            </button>
+          ) : isOSAS && state.isEditingGrade ? (
+            <button onClick={() => updateState({ score: state.submittedScore, isEditingGrade: false })}
+              className="px-3 py-1.5 bg-gray-500 hover:bg-gray-600 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer">
+              Cancel
+            </button>
+          ) : null}
+        </div>
+
+        {state.loading.grade ? (
+          <div className="flex justify-center items-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          </div>
+        ) : state.isEditingGrade && isOSAS ? (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Score (out of {state.maxScore})</label>
+              <input type="text" value={state.score}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === '') { updateState({ score: 0 }); return; }
+                  if (!/^\d+$/.test(val)) return;
+                  const num = parseInt(val, 10);
+                  if (num >= 0 && num <= state.maxScore) updateState({ score: num });
+                }}
+                onKeyDown={(e) => {
+                  const allowed = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'];
+                  if (!allowed.includes(e.key) && !/^\d$/.test(e.key)) e.preventDefault();
+                }}
+                placeholder={state.maxScore.toString()}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900" />
+            </div>
+            <button onClick={handleSubmitGrade}
+              className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-3 rounded-lg transition-colors cursor-pointer">
+              Submit Grade
+            </button>
+          </div>
+        ) : (
+          <div className="flex justify-center">
+            <div className="relative w-32 h-32">
+              <svg className="w-32 h-32 transform -rotate-90">
+                <circle cx="64" cy="64" r="56" stroke="#e5e7eb" strokeWidth="12" fill="none" />
+                <circle cx="64" cy="64" r="56" stroke={state.submittedScore > 0 ? "#3b82f6" : "#d1d5db"}
+                  strokeWidth="12" fill="none" strokeDasharray="351.858"
+                  strokeDashoffset={351.858 - (351.858 * state.submittedScore / state.maxScore)}
+                  strokeLinecap="round" />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-3xl font-bold text-gray-900">{state.submittedScore}/{state.maxScore}</span>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="bg-white rounded-lg shadow-sm p-6">
+        <h3 className="font-semibold text-gray-900 mb-4">Adviser's Feedback</h3>
+        <div className="flex items-center gap-3">
+          <div className="w-6 h-6 border-2 border-gray-300 rounded" />
+          <span className="font-semibold text-gray-900">Approved!</span>
+        </div>
+      </div>
+    </>
+  );
+}

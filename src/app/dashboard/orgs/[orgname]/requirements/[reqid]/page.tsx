@@ -6,6 +6,9 @@ import { supabase } from '@/app/lib/database';
 import { useSession } from "next-auth/react";
 import { UserCircleIcon, ChevronLeftIcon, ChevronRightIcon, MagnifyingGlassMinusIcon, MagnifyingGlassPlusIcon, ArrowDownTrayIcon, TrashIcon, ArrowUpTrayIcon, PencilSquareIcon, DocumentIcon, } from '@heroicons/react/24/outline';
 import { InstructionsBlock } from '@/app/ui/snippets/submission/instruction';
+import { SubmissionInfo } from '@/app/ui/snippets/submission/submission-info';
+import { PDFViewer } from '@/app/ui/snippets/submission/pdf-viewer';
+import { GradingTab } from '@/app/ui/snippets/submission/grading-tab';
 
 const QuestionHeader = ({ title, icon }: { title: string; icon?: boolean }) => (
   <div className={`bg-gradient-to-r from-yellow-100 to-yellow-50 rounded-lg p-4 mb-4 ${
@@ -510,64 +513,7 @@ const loadRequirementFromSupabase = async () => {
     </>
   );
 
-  const PDFViewer = () => {
-    if (!state.uploadedPdf) {
-      return (
-        <div className="flex items-center justify-center h-[600px] bg-gray-100 rounded-lg border-2 border-dashed border-gray-300">
-          <p className="text-gray-500 text-lg">No PDF uploaded</p>
-        </div>
-      );
-    }
 
-    return (
-      <div className="bg-gray-900 rounded-lg overflow-hidden">
-        <div className="bg-gray-800 px-4 py-3 flex items-center justify-between border-b border-gray-700">
-          <div className="flex items-center gap-4">
-            <IconButton onClick={() => updateState({ currentPage: Math.max(1, state.currentPage - 1) })} disabled={state.currentPage === 1}>
-              <ChevronLeftIcon className="w-5 h-5 text-white" />
-            </IconButton>
-            
-            <div className="flex items-center gap-2">
-              <input type="number" value={state.currentPage}
-                onChange={(e) => {
-                  const val = parseInt(e.target.value);
-                  if (val >= 1 && val <= state.totalPages) updateState({ currentPage: val });
-                }}
-                className="w-16 px-2 py-1 bg-gray-700 text-white text-center rounded border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <span className="text-white text-sm">of {state.totalPages}</span>
-            </div>
-
-            <IconButton onClick={() => updateState({ currentPage: Math.min(state.totalPages, state.currentPage + 1) })} disabled={state.currentPage === state.totalPages}>
-              <ChevronRightIcon className="w-5 h-5 text-white" />
-            </IconButton>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <IconButton onClick={() => updateState({ pdfZoom: Math.max(0.5, state.pdfZoom - 0.1) })}>
-              <MagnifyingGlassMinusIcon className="w-5 h-5 text-white" />
-            </IconButton>
-            <span className="text-white text-sm min-w-[60px] text-center">{Math.round(state.pdfZoom * 100)}%</span>
-            <IconButton onClick={() => updateState({ pdfZoom: Math.min(2, state.pdfZoom + 0.1) })}>
-              <MagnifyingGlassPlusIcon className="w-5 h-5 text-white" />
-            </IconButton>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span className="text-white text-sm mr-2">{state.pdfFileName}</span>
-            <a href={state.uploadedPdf} download={state.pdfFileName} className="p-2 hover:bg-gray-700 rounded transition-colors" title="Download PDF">
-              <ArrowDownTrayIcon className="w-5 h-5 text-white" />
-            </a>
-          </div>
-        </div>
-
-        <div className="overflow-auto max-h-[700px] bg-gray-700 flex justify-center p-4">
-          <iframe src={`${state.uploadedPdf}#page=${state.currentPage}&zoom=${state.pdfZoom * 100}`}
-            className="w-full min-h-[600px] bg-white rounded" title="PDF Viewer" />
-        </div>
-      </div>
-    );
-  };
 
   if (state.loading.page) {
     return (
@@ -630,114 +576,21 @@ const loadRequirementFromSupabase = async () => {
                 )}
 
                 {state.activeTab === 'grading' && state.hasSubmitted && (
-                  <div>
-                    <h2 className="text-gray-900 font-bold mb-8 text-2xl">Grading</h2>
-                    
-                    {state.submissiontype === 'pdf' && state.uploadedPdf ? (
-                      <PDFViewer />
-                    ) : state.submissiontype === 'pdf' && !state.uploadedPdf ? (
-                      <div className="flex items-center justify-center h-[600px] bg-gray-100 rounded-lg border-2 border-dashed border-gray-300">
-                        <div className="text-center">
-                          <DocumentIcon className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-                          <p className="text-gray-500 text-lg">No PDF submission uploaded yet</p>
-                          {isOSAS && <p className="text-gray-400 text-sm mt-2">Student needs to upload PDF in the Instructions tab</p>}
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="mb-8 bg-gray-50 rounded-lg p-6 border border-gray-200">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Submitted Answers</h3>
-                        <AnswersDisplay />
-                      </div>
-                    )}
-                  </div>
+                  <GradingTab state={state} updateState={updateState} isOSAS={isOSAS} AnswersDisplay={AnswersDisplay} />
                 )}
               </div>
             </div>
           </div>
           
           <div className="lg:col-span-1 space-y-6">
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h3 className="font-semibold text-gray-900 mb-4">Submission Info</h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Due by:</span>
-                  <span className="text-gray-900 font-medium">{formattedDueDate}</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="font-semibold text-gray-900">Grade</h3>
-                {isOSAS && !state.isEditingGrade ? (
-                  <button onClick={() => updateState({ isEditingGrade: true })} disabled={state.isEditingInstructions || state.loading.grade}
-                    className={`flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors ${
-                      state.isEditingInstructions || state.loading.requirement ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-                    }`}>
-                    <PencilSquareIcon className="w-5 h-5" />
-                    Edit
-                  </button>
-                ) : isOSAS && state.isEditingGrade ? (
-                  <button onClick={() => updateState({ score: state.submittedScore, isEditingGrade: false })}
-                    className="px-3 py-1.5 bg-gray-500 hover:bg-gray-600 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer">
-                    Cancel
-                  </button>
-                ) : null}
-              </div>
-              
-              {state.loading.grade ? (
-                <div className="flex justify-center items-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                </div>
-              ) : state.isEditingGrade && isOSAS ? (
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Score (out of {state.maxScore})</label>
-                    <input type="text" value={state.score}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        if (val === '') { updateState({ score: 0 }); return; }
-                        if (!/^\d+$/.test(val)) return;
-                        const num = parseInt(val, 10);
-                        if (num >= 0 && num <= state.maxScore) updateState({ score: num });
-                      }}
-                      onKeyDown={(e) => {
-                        const allowed = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'];
-                        if (!allowed.includes(e.key) && !/^\d$/.test(e.key)) e.preventDefault();
-                      }}
-                      placeholder={state.maxScore.toString()}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900" />
-                  </div>
-                  <button onClick={handleSubmitGrade}
-                    className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-3 rounded-lg transition-colors cursor-pointer">
-                    Submit Grade
-                  </button>
-                </div>
-              ) : (
-                <div className="flex justify-center">
-                  <div className="relative w-32 h-32">
-                    <svg className="w-32 h-32 transform -rotate-90">
-                      <circle cx="64" cy="64" r="56" stroke="#e5e7eb" strokeWidth="12" fill="none" />
-                      <circle cx="64" cy="64" r="56" stroke={state.submittedScore > 0 ? "#3b82f6" : "#d1d5db"}
-                        strokeWidth="12" fill="none" strokeDasharray="351.858" 
-                        strokeDashoffset={351.858 - (351.858 * state.submittedScore / state.maxScore)}
-                        strokeLinecap="round" />
-                    </svg>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-3xl font-bold text-gray-900">{state.submittedScore}/{state.maxScore}</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h3 className="font-semibold text-gray-900 mb-4">Adviser's Feedback</h3>
-              <div className="flex items-center gap-3">
-                <div className="w-6 h-6 border-2 border-gray-300 rounded" />
-                <span className="font-semibold text-gray-900">Approved!</span>
-              </div>
-            </div>
+            <SubmissionInfo
+              state={state}
+              updateState={updateState}
+              isOSAS={isOSAS}
+              formattedDueDate={formattedDueDate}
+              isEditing={isEditing}
+              handleSubmitGrade={handleSubmitGrade}
+            />
 
             {/* <div className="bg-white rounded-lg shadow-sm p-6">
               <h3 className="font-semibold text-gray-900 mb-4">Comments</h3>
