@@ -4,31 +4,12 @@ import { useState, useEffect, use } from 'react';
 import { formatName } from '@/app/lib/assessments';
 import { supabase } from '@/app/lib/database';
 import { useSession } from "next-auth/react";
-import { UserCircleIcon } from '@heroicons/react/24/outline';
 import { InstructionsBlock } from '@/app/ui/snippets/submission/instruction';
 import { SubmissionInfo } from '@/app/ui/snippets/submission/submission-info';
 import { PDFViewer } from '@/app/ui/snippets/submission/pdf-viewer';
 import { GradingTab } from '@/app/ui/snippets/submission/grading-tab';
 
-const QuestionHeader = ({ title, icon }: { title: string; icon?: boolean }) => (
-  <div className={`bg-gradient-to-r from-yellow-100 to-yellow-50 rounded-lg p-4 mb-4 ${
-    icon ? 'border-2 border-yellow-400 flex items-center gap-3' : ''
-  }`}>
-    {icon && (
-      <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-        <UserCircleIcon className="w-5 h-5 text-white" />
-      </div>
-    )}
-    <h3 className={`text-gray-900 font-bold ${icon ? 'text-lg' : 'text-base'} uppercase`}>{title}</h3>
-  </div>
-);
 
-const IconButton = ({ onClick, disabled, className, children, title }: any) => (
-  <button onClick={onClick} disabled={disabled} title={title}
-    className={`p-2 hover:bg-gray-700 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${className}`}>
-    {children}
-  </button>
-);
 
 export default function RequirementPage({ params }: { params: Promise<{ orgname: string; reqid: string }> }) {
   const { orgname, reqid } = use(params);
@@ -38,13 +19,10 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
   const [state, setState] = useState({
     activeTab: 'instructions' as 'instructions' | 'grading',
     hasSubmitted: false,
-    membershipAnswer: '',
-    evaluationAnswer: '',
     score: 0, //max score
     submittedScore: 0,
     maxScore: 100,
     dueDate: null as Date | null,
-    currentTime: Date.now(),
     isEditingInstructions: false,
     isEditingGrade: false,
     instructions: '',
@@ -449,31 +427,6 @@ const loadRequirementFromSupabase = async () => {
   }
 };
 
-
-  // Components
-  const AnswersDisplay = () => (
-    <>
-      <div className="mb-8">
-        <QuestionHeader title="TYPE OF MEMBERSHIP" icon />
-        <div className="bg-gray-50 border border-gray-300 rounded-lg p-4">
-          <p className="text-gray-900 font-medium">{state.membershipAnswer || 'No answer provided'}</p>
-        </div>
-      </div>
-      <div className="mb-8">
-        <QuestionHeader title="EVALUATION - Leadership Development (LD)" />
-        <p className="text-gray-900 mb-4">
-          1. The organization's structure, system and processes allows for and encourage 
-          transfer of knowledge skills and attitude from present leaders to the next set of leaders.
-        </p>
-        <div className="bg-gray-50 border border-gray-300 rounded-lg p-4">
-          <p className="text-gray-900 font-medium">{state.evaluationAnswer || 'No answer provided'}</p>
-        </div>
-      </div>
-    </>
-  );
-
-
-
   if (state.loading.page) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -535,7 +488,11 @@ const loadRequirementFromSupabase = async () => {
                 )}
 
                 {state.activeTab === 'grading' && state.hasSubmitted && (
-                  <GradingTab state={state} updateState={updateState} isOSAS={isOSAS} AnswersDisplay={AnswersDisplay} />
+                  <GradingTab
+                    state={state}
+                    updateState={updateState}
+                    isOSAS={isOSAS}
+                  />
                 )}
               </div>
             </div>
