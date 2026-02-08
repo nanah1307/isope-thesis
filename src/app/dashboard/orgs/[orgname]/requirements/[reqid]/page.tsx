@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
-import { Comments, formatName } from '@/app/lib/assessments';
+import { formatName } from '@/app/lib/assessments';
 import { supabase } from '@/app/lib/database';
 import { useSession } from "next-auth/react";
 import { UserCircleIcon } from '@heroicons/react/24/outline';
@@ -36,13 +36,11 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
 
   // State consolidation
   const [state, setState] = useState({
-    comments: [] as Comment[],
-    newComment: '',
     activeTab: 'instructions' as 'instructions' | 'grading',
     hasSubmitted: false,
     membershipAnswer: '',
     evaluationAnswer: '',
-    score: 0,
+    score: 0, //max score
     submittedScore: 0,
     maxScore: 100,
     dueDate: null as Date | null,

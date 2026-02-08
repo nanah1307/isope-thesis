@@ -1,10 +1,3 @@
-export type Comments = {
-  id: string;
-  text: string;
-  timestamp: Date;
-  author: string;
-};
-
 export type Assessment = {
   id: string;
   orgUsername: string;
