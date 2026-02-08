@@ -8,12 +8,21 @@ import { InstructionsBlock } from '@/app/ui/snippets/submission/instruction';
 import { SubmissionInfo } from '@/app/ui/snippets/submission/submission-info';
 import { PDFViewer } from '@/app/ui/snippets/submission/pdf-viewer';
 import { GradingTab } from '@/app/ui/snippets/submission/grading-tab';
+import { ArrowUturnLeftIcon } from '@heroicons/react/24/solid';
+import { useRouter } from 'next/navigation';
 
 
 
 export default function RequirementPage({ params }: { params: Promise<{ orgname: string; reqid: string }> }) {
   const { orgname, reqid } = use(params);
   const { data: session, status } = useSession();
+  
+  const router = useRouter();
+
+  const goToDues = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    router.push(`/dashboard/orgs/${orgname}?tab=Requirements`);
+  };
 
   // State consolidation
   const [state, setState] = useState({
@@ -454,7 +463,11 @@ const loadRequirementFromSupabase = async () => {
 
       <div className="max-w-7xl mx-auto relative z-50">
         <div className="flex items-center gap-3 mb-8">
-          <div className="w-12 h-12 bg-blue-900 rounded-full" />
+          <div className="w-12 h-12 flex items-center justify-center">
+            <button onClick={goToDues} className="text-blue-900 hover:text-blue-700">
+              <ArrowUturnLeftIcon className="w-6 h-6 cursor-pointer" />
+            </button>
+          </div>
           <h1 className="text-3xl font-bold text-gray-900">{formatName(orgname)} - {requirementName}</h1>
         </div>
 
