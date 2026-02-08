@@ -8,11 +8,14 @@ export function GradingTab({
   state,
   updateState,
   isOSAS,
+  handleSubmitFreeform,
 }: {
   state: any;
   updateState: (updates: any) => void;
   isOSAS: boolean;
+  handleSubmitFreeform: () => void;
 }) {
+
   return (
     <div>
       <h2 className="text-gray-900 font-bold mb-8 text-2xl">Grading</h2>
@@ -46,16 +49,26 @@ export function GradingTab({
           </h3>
 
           <textarea
-            className={`w-full h-[300px] rounded-lg border border-gray-300 p-4 text-gray-900 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              isOSAS ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'
-            }`}
-            placeholder={isOSAS ? 'No response submitted yet' : 'Enter your response here...'}
-            value={state.freeformAnswer || ''}
-            readOnly={isOSAS}
-            onChange={(e) =>
-              !isOSAS && updateState({ freeformAnswer: e.target.value })
-            }
-          />
+          className={`w-full h-[300px] rounded-lg border border-gray-300 p-4 text-gray-900 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+            isOSAS ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'
+          }`}
+          placeholder={isOSAS ? 'No response submitted yet' : 'Enter your response here...'}
+          value={state.freeformAnswer || ''}
+          readOnly={isOSAS}
+          onChange={(e) =>
+            !isOSAS && updateState({ freeformAnswer: e.target.value })
+          }
+        />
+
+        {!isOSAS && (
+          <button
+            onClick={handleSubmitFreeform}
+            disabled={!state.freeformAnswer}
+            className="mt-4 w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-medium px-6 py-3 rounded-lg transition-colors"
+          >
+            Submit Response
+          </button>
+        )}
         </div>
       )}
     </div>

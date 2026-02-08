@@ -1,15 +1,3 @@
-export type Assessment = {
-  id: string;
-  orgUsername: string;
-  requirementId: string;
-  submittedAt: Date | null;
-  answers: Record<string, string>;
-  comments: Comment[];
-  score: number;
-  graded: boolean;
-  feedback?: string;
-};
-
 export function formatTimestamp(date: Date): string {
   const diff = Math.floor((Date.now() - date.getTime()) / 1000);
   if (diff < 60) return 'Just now';

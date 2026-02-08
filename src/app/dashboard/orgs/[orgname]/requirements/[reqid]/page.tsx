@@ -10,6 +10,8 @@ import { PDFViewer } from '@/app/ui/snippets/submission/pdf-viewer';
 import { GradingTab } from '@/app/ui/snippets/submission/grading-tab';
 import { ArrowUturnLeftIcon } from '@heroicons/react/24/solid';
 import { useRouter } from 'next/navigation';
+import { text } from 'stream/consumers';
+import { stringify } from 'querystring';
 
 
 
@@ -43,6 +45,7 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
     pdfZoom: 1.0,
     userRole: null as 'osas' | 'member' | null,
     currentUserEmail: null as string | null,
+    freeformAnswer: '',
 
     
     loading: {
@@ -72,6 +75,7 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
 
   // Helper functions
   const updateState = (updates: Partial<typeof state>) => setState(prev => ({ ...prev, ...updates }));
+  
   const setError = (error: string | null) => updateState({ error });
   
   const checkPermission = (role: 'osas' | 'member', action: string) => {
@@ -132,10 +136,10 @@ const loadRequirementFromSupabase = async () => {
       setLoading('grade', true);
       const { data, error: fetchError } = await supabase
         .from('org_requirement_status')
-        .select('grade, score')
+        .select('grade, score, freeformans')
         .eq('orgUsername', orgname)
         .eq('requirementId', reqid)
-        .maybeSingle();
+        .maybeSingle() as any;
 
       if (fetchError) {
         console.error('Error fetching grade:', fetchError);
@@ -147,7 +151,8 @@ const loadRequirementFromSupabase = async () => {
         updateState({
           maxScore: data.score || 100,
           score: data.grade || 0,
-          submittedScore: data.grade || 0
+          submittedScore: data.grade || 0,
+          freeformAnswer: data.freeformans || '',
         });
       }
     } catch (err) {
@@ -321,6 +326,61 @@ const loadRequirementFromSupabase = async () => {
       hasSubmitted: false,
     });
   };
+
+  const handleSubmitFreeform = async () => {
+  if (!checkPermission('member', 'submit freeform answers')) return;
+
+  try {
+    setError(null);
+
+    // Check if a submission already exists
+    const { data: existing, error: fetchError } = await supabase
+      .from('org_requirement_status')
+      .select('id')
+      .eq('orgUsername', orgname)
+      .eq('requirementId', reqid)
+      .maybeSingle();
+
+    if (fetchError) throw fetchError;
+
+    if (existing) {
+      // Update existing submission
+      const { error: updateError } = await supabase
+        .from('org_requirement_status')
+        .update({
+          freeformans: state.freeformAnswer,
+          submitted: true,
+        })
+        .eq('id', existing.id);
+
+      if (updateError) throw updateError;
+    } else {
+      // Insert new submission
+      const { error: insertError } = await supabase
+        .from('org_requirement_status')
+        .insert({
+          orgUsername: orgname,
+          requirementId: reqid,
+          submissiontype: 'freeform',
+          freeformans: state.freeformAnswer,
+          submitted: true,
+          graded: false,
+          score: state.maxScore || 100,
+          start: new Date().toISOString().split('T')[0],
+          active: true,
+        });
+
+      if (insertError) throw insertError;
+    }
+
+    updateState({ hasSubmitted: true });
+  } catch (err: any) {
+    console.error(err);
+    setError('Failed to submit freeform response');
+  }
+};
+
+
 
 
   // Session effect
@@ -505,6 +565,7 @@ const loadRequirementFromSupabase = async () => {
                     state={state}
                     updateState={updateState}
                     isOSAS={isOSAS}
+                    handleSubmitFreeform={handleSubmitFreeform}
                   />
                 )}
               </div>
