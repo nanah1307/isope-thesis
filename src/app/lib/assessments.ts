@@ -45,15 +45,6 @@ export function formatName(name: string): string {
     .toUpperCase();
 }
 
-export function saveCommentsToLocalStorage(
-  orgUsername: string,
-  requirementId: string,
-  comments: Comment[]
-): void {
-  const storageKey = `comments_${orgUsername}_${requirementId}`;
-  localStorage.setItem(storageKey, JSON.stringify(comments));
-}
-
 export function validateAndCorrectScore(value: string | number): number {
   const num = typeof value === 'string' ? parseInt(value, 10) : value;
   if (isNaN(num)) return 0;

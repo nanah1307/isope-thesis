@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
-import { Comments, saveCommentsToLocalStorage, formatTimestamp, formatName } from '@/app/lib/assessments';
+import { Comments, formatName } from '@/app/lib/assessments';
 import { supabase } from '@/app/lib/database';
 import { useSession } from "next-auth/react";
-import { UserCircleIcon, ChevronLeftIcon, ChevronRightIcon, MagnifyingGlassMinusIcon, MagnifyingGlassPlusIcon, ArrowDownTrayIcon, TrashIcon, ArrowUpTrayIcon, PencilSquareIcon, DocumentIcon, } from '@heroicons/react/24/outline';
+import { UserCircleIcon } from '@heroicons/react/24/outline';
 import { InstructionsBlock } from '@/app/ui/snippets/submission/instruction';
 import { SubmissionInfo } from '@/app/ui/snippets/submission/submission-info';
 import { PDFViewer } from '@/app/ui/snippets/submission/pdf-viewer';
@@ -400,45 +400,6 @@ const loadRequirementFromSupabase = async () => {
     loadSubmissionStatus();
   }, [orgname, reqid]);
 
-
-  // Save comments
-  useEffect(() => {
-    if (orgname && reqid) saveCommentsToLocalStorage(orgname, reqid, state.comments);
-  }, [state.comments, orgname, reqid]);
-
-  // Time update
-  useEffect(() => {
-    const interval = setInterval(() => updateState({ currentTime: Date.now() }), 60000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Event handlers
-  // const handleAddComment = () => {
-  //   if (!state.newComment.trim()) return;
-  //   const authorName = isOSAS ? 'OSAS' : 'Member';
-  //   updateState({
-  //     comments: [...state.comments, {
-  //       id: `comment${Date.now()}`,
-  //       text: state.newComment,
-  //       timestamp: new Date(),
-  //       author: authorName
-  //     }],
-  //     newComment: ''
-  //   });
-  // };
-
-  // const handleDeleteComment = (commentId: string) => {
-  //   const comment = state.comments.find(c => c.id === commentId);
-  //   const currentUserType = isOSAS ? 'OSAS' : 'Member';
-    
-  //   if (comment?.author !== currentUserType) {
-  //     setError('You can only delete your own comments');
-  //     return;
-  //   }
-    
-  //   updateState({ comments: state.comments.filter(c => c.id !== commentId) });
-  // };
-
   const handleSubmitGrade = async () => {
     if (!checkPermission('osas', 'submit grades')) return;
     const success = await saveGradeToSupabase(state.score);
@@ -591,45 +552,9 @@ const loadRequirementFromSupabase = async () => {
               isEditing={isEditing}
               handleSubmitGrade={handleSubmitGrade}
             />
-
-            {/* <div className="bg-white rounded-lg shadow-sm p-6">
-              <h3 className="font-semibold text-gray-900 mb-4">Comments</h3>
-              <div className="mb-4">
-                <textarea value={state.newComment} onChange={(e) => updateState({ newComment: e.target.value })}
-                  placeholder="Add a comment..." disabled={isEditing}
-                  className={`w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none text-sm placeholder:text-gray-400 ${
-                    isEditing ? 'opacity-50 cursor-not-allowed' : ''
-                  }`} rows={3} />
-                <button onClick={handleAddComment} disabled={isEditing}
-                  className={`mt-2 w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-medium px-4 py-2 rounded-lg transition-colors text-sm ${
-                    isEditing ? '' : 'cursor-pointer'
-                  }`}>
-                  Add Comment
-                </button>
-              </div>
-              <div className="space-y-3 max-h-[400px] overflow-y-auto"> */}
-                {/* {state.comments.map(c => (
-                  <div key={c.id} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <span className="text-xs text-gray-500" key={state.currentTime}>{formatTimestamp(c.timestamp)}</span>
-                        <span className="text-xs text-gray-400 ml-2">• {c.author}</span>
-                      </div>
-                      <button onClick={() => handleDeleteComment(c.id)} disabled={isEditing}
-                        className={`text-gray-400 hover:text-red-600 transition-colors ${
-                          isEditing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-                        }`}>
-                        <TrashIcon className="w-5 h-5" />
-                      </button>
-                    </div>
-                    <p className="text-sm text-gray-700 break-words">{c.text}</p>
-                  </div>
-                ))} */}
               </div>
             </div>
           </div>
         </div>
-    //   </div>
-    // </div>
   );
 }
