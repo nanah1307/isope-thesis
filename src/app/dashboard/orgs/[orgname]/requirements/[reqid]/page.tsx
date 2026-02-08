@@ -360,7 +360,6 @@ const loadRequirementFromSupabase = async () => {
         .insert({
           orgUsername: orgname,
           requirementId: reqid,
-          submissiontype: 'freeform',
           freeformans: state.freeformAnswer,
           submitted: true,
           graded: false,
