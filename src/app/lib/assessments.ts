@@ -1,4 +1,4 @@
-export type Comment = {
+export type Comments = {
   id: string;
   text: string;
   timestamp: Date;

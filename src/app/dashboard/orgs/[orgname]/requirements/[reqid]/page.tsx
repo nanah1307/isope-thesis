@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
-import { Comment, saveCommentsToLocalStorage, formatTimestamp, formatName } from '@/app/lib/assessments';
+import { Comments, saveCommentsToLocalStorage, formatTimestamp, formatName } from '@/app/lib/assessments';
 import { supabase } from '@/app/lib/database';
 import { useSession } from "next-auth/react";
 import { UserCircleIcon, ChevronLeftIcon, ChevronRightIcon, MagnifyingGlassMinusIcon, MagnifyingGlassPlusIcon, ArrowDownTrayIcon, TrashIcon, ArrowUpTrayIcon, PencilSquareIcon, DocumentIcon, } from '@heroicons/react/24/outline';
+import { InstructionsBlock } from '@/app/ui/snippets/submission/instruction';
 
 const QuestionHeader = ({ title, icon }: { title: string; icon?: boolean }) => (
   <div className={`bg-gradient-to-r from-yellow-100 to-yellow-50 rounded-lg p-4 mb-4 ${
@@ -409,31 +410,31 @@ const loadRequirementFromSupabase = async () => {
   }, []);
 
   // Event handlers
-  const handleAddComment = () => {
-    if (!state.newComment.trim()) return;
-    const authorName = isOSAS ? 'OSAS' : 'Member';
-    updateState({
-      comments: [...state.comments, {
-        id: `comment${Date.now()}`,
-        text: state.newComment,
-        timestamp: new Date(),
-        author: authorName
-      }],
-      newComment: ''
-    });
-  };
+  // const handleAddComment = () => {
+  //   if (!state.newComment.trim()) return;
+  //   const authorName = isOSAS ? 'OSAS' : 'Member';
+  //   updateState({
+  //     comments: [...state.comments, {
+  //       id: `comment${Date.now()}`,
+  //       text: state.newComment,
+  //       timestamp: new Date(),
+  //       author: authorName
+  //     }],
+  //     newComment: ''
+  //   });
+  // };
 
-  const handleDeleteComment = (commentId: string) => {
-    const comment = state.comments.find(c => c.id === commentId);
-    const currentUserType = isOSAS ? 'OSAS' : 'Member';
+  // const handleDeleteComment = (commentId: string) => {
+  //   const comment = state.comments.find(c => c.id === commentId);
+  //   const currentUserType = isOSAS ? 'OSAS' : 'Member';
     
-    if (comment?.author !== currentUserType) {
-      setError('You can only delete your own comments');
-      return;
-    }
+  //   if (comment?.author !== currentUserType) {
+  //     setError('You can only delete your own comments');
+  //     return;
+  //   }
     
-    updateState({ comments: state.comments.filter(c => c.id !== commentId) });
-  };
+  //   updateState({ comments: state.comments.filter(c => c.id !== commentId) });
+  // };
 
   const handleSubmitGrade = async () => {
     if (!checkPermission('osas', 'submit grades')) return;
@@ -617,68 +618,15 @@ const loadRequirementFromSupabase = async () => {
 
               <div className="p-12 min-h-[500px]">
                 {state.activeTab === 'instructions' && (
-                  <div>
-                    <div className="flex justify-between items-center mb-8">
-                      <h2 className="text-red-600 font-bold text-2xl">Instructions:</h2>
-                      <div className="flex items-center gap-2">
-                        {isMember && state.submissiontype === 'pdf' && !state.isEditingInstructions && (
-                          <>
-                            {state.uploadedPdf && (
-                              <button onClick={handleRemovePdf}
-                                className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors cursor-pointer">
-                                <TrashIcon className="w-5 h-5" />
-                                Remove PDF
-                              </button>
-                            )}
-                            <label className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors cursor-pointer">
-                              <ArrowUpTrayIcon className="w-5 h-5" />
-                              {state.uploadedPdf ? 'Replace PDF' : 'Upload PDF'}
-                              <input type="file" accept="application/pdf" onChange={handlePdfUpload} className="hidden" />
-                            </label>
-                          </>
-                        )}
-                        
-                        {isOSAS && !state.isEditingInstructions ? (
-                          <button onClick={() => updateState({ isEditingInstructions: true })} disabled={state.isEditingGrade}
-                            className={`flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors ${
-                              state.isEditingGrade ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-                            }`}>
-                            <PencilSquareIcon className="w-5 h-5" />
-                            Edit Instructions
-                          </button>
-                        ) : isOSAS && state.isEditingInstructions ? (
-                          <div className="flex gap-2">
-                            <button onClick={handleSaveInstructions} className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors cursor-pointer">Save</button>
-                            <button onClick={handleCancelEditInstructions} className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white font-medium rounded-lg transition-colors cursor-pointer">Cancel</button>
-                          </div>
-                        ) : null}
-                      </div>
-                    </div>
-
-                    {state.isEditingInstructions && isOSAS ? (
-                      <>
-                        <textarea value={state.instructions} onChange={(e) => updateState({ instructions: e.target.value })}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 text-xl font-medium min-h-[200px]"
-                          placeholder="Enter instructions here..." />
-                        
-                        <div className="mt-8 pt-8 border-t border-gray-200">
-                          <h3 className="text-gray-900 font-bold text-lg mb-4">Submission Type:</h3>
-                          <div className="flex gap-6">
-                            {(['freeform', 'pdf'] as const).map(type => (
-                              <label key={type} className="flex items-center gap-3 cursor-pointer">
-                                <input type="radio" name="submissiontype" value={type} checked={state.submissiontype === type}
-                                  onChange={() => handleSubmissionTypeChange(type)}
-                                  className="w-5 h-5 text-blue-600 focus:ring-2 focus:ring-blue-500 cursor-pointer" />
-                                <span className="text-gray-900 font-medium text-lg">{type === 'freeform' ? 'Freeform Answer' : 'PDF Submission'}</span>
-                              </label>
-                            ))}
-                          </div>
-                        </div>
-                      </>
-                    ) : (
-                      <p className="text-gray-900 mb-10 leading-relaxed text-xl max-w-4xl font-medium">{state.instructions}</p>
-                    )}
-                  </div>
+                  <InstructionsBlock
+                    state={state}
+                    updateState={updateState}
+                    handlePdfUpload={handlePdfUpload}
+                    handleRemovePdf={handleRemovePdf}
+                    handleSaveInstructions={handleSaveInstructions}
+                    handleCancelEditInstructions={handleCancelEditInstructions}
+                    handleSubmissionTypeChange={handleSubmissionTypeChange}
+                  />
                 )}
 
                 {state.activeTab === 'grading' && state.hasSubmitted && (
@@ -791,7 +739,7 @@ const loadRequirementFromSupabase = async () => {
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm p-6">
+            {/* <div className="bg-white rounded-lg shadow-sm p-6">
               <h3 className="font-semibold text-gray-900 mb-4">Comments</h3>
               <div className="mb-4">
                 <textarea value={state.newComment} onChange={(e) => updateState({ newComment: e.target.value })}
@@ -806,8 +754,8 @@ const loadRequirementFromSupabase = async () => {
                   Add Comment
                 </button>
               </div>
-              <div className="space-y-3 max-h-[400px] overflow-y-auto">
-                {state.comments.map(c => (
+              <div className="space-y-3 max-h-[400px] overflow-y-auto"> */}
+                {/* {state.comments.map(c => (
                   <div key={c.id} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
                     <div className="flex justify-between items-start mb-2">
                       <div>
@@ -823,12 +771,12 @@ const loadRequirementFromSupabase = async () => {
                     </div>
                     <p className="text-sm text-gray-700 break-words">{c.text}</p>
                   </div>
-                ))}
+                ))} */}
               </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
+    //   </div>
+    // </div>
   );
 }
