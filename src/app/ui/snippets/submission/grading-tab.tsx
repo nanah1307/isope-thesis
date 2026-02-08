@@ -2,7 +2,6 @@
 
 import { DocumentIcon } from '@heroicons/react/24/outline';
 import { PDFViewer } from './pdf-viewer';
-import type { ReactNode } from 'react';
 
 export function GradingTab({
   state,
@@ -18,8 +17,6 @@ export function GradingTab({
 
   return (
     <div>
-      <h2 className="text-gray-900 font-bold mb-8 text-2xl">Grading</h2>
-
       {/* PDF submission */}
       {state.submissiontype === 'pdf' && (
         <>
@@ -64,9 +61,9 @@ export function GradingTab({
           <button
             onClick={handleSubmitFreeform}
             disabled={!state.freeformAnswer}
-            className="mt-4 w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-medium px-6 py-3 rounded-lg transition-colors"
+            className="mt-4 w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-medium px-6 py-3 rounded-lg transition-colors cursor-pointer"
           >
-            Submit Response
+            Submit
           </button>
         )}
         </div>
