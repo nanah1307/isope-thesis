@@ -39,7 +39,7 @@ export function InstructionsBlock({
                       <span className="text-gray-900 truncate">{pdf.filepath.split('/').pop()}</span>
                       <button
                         onClick={() => handleRemovePdf(pdf.id)}
-                        className="text-red-600 hover:text-red-800 transition-colors"
+                        className="text-red-600 hover:text-red-800 transition-colors cursor-pointer"
                       >
                         <TrashIcon className="w-5 h-5" />
                       </button>
