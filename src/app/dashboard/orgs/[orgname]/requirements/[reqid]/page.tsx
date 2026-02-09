@@ -283,30 +283,31 @@ const loadRequirementFromSupabase = async () => {
   };
 
   const loadRequirementPdfs = async () => {
-  const { data } = await supabase
-    .from('requirement_pdfs')
-    .select('*')
-    .eq('orgUsername', orgname)
-    .eq('requirementId', reqid)
-    .order('uploadedat', { ascending: true });
+    try {
+      setError(null);
 
-    if (!data) return;
+      const res = await fetch(
+        `/api/requirements/pdfs?orgname=${encodeURIComponent(orgname)}&reqid=${encodeURIComponent(reqid)}`
+      );
 
-    const pdfs = await Promise.all(
-      data.map(async (pdf) => {
-        const { data: signed } = await supabase.storage
-          .from('requirement-pdfs')
-          .createSignedUrl(pdf.filepath, 60 * 60);
+      const json = await res.json();
 
-        return {
-          ...pdf,
-          signedUrl: signed?.signedUrl,
-        };
-      })
-    );
+      if (!res.ok) {
+        throw new Error(json?.error || 'Failed to load PDFs');
+      }
 
-    updateState({ uploadedPdfs: pdfs });
+      setState((prev: any) => ({
+        ...prev,
+        uploadedPdfs: json.pdfs || [],
+        selectedPdfId: prev.selectedPdfId || ((json.pdfs && json.pdfs.length > 0) ? json.pdfs[0].id : null),
+      }));
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || 'Failed to load PDFs');
+    }
   };
+
+
 
 
 
@@ -333,16 +334,32 @@ const loadRequirementFromSupabase = async () => {
 
   // Remove PDF
   const handleRemovePdf = async (pdfId: string) => {
-    await supabase
-      .from('requirement_pdfs')
-      .delete()
-      .eq('id', pdfId);
+    try {
+      setError(null);
 
-    setState((prev: any) => ({
-      ...prev,
-      uploadedPdfs: prev.uploadedPdfs.filter((pdf: any) => pdf.id !== pdfId),
-    }));
+      const res = await fetch('/api/requirements/pdfs', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filepath: pdfId }),
+      });
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        throw new Error(json?.error || 'Failed to delete PDF');
+      }
+
+      setState((prev: any) => ({
+        ...prev,
+        uploadedPdfs: prev.uploadedPdfs.filter((pdf: any) => pdf.id !== pdfId),
+        selectedPdfId: prev.selectedPdfId === pdfId ? null : prev.selectedPdfId,
+      }));
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || 'Failed to delete PDF');
+    }
   };
+
 
   const handleSubmitFreeform = async () => {
   if (!checkPermission('member', 'submit freeform answers')) return;
