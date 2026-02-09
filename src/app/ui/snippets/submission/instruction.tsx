@@ -17,7 +17,7 @@ export function InstructionsBlock({
   state: any;
   updateState: (updates: any) => void;
   handlePdfUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  handleRemovePdf: () => void;
+  handleRemovePdf: (pdfId: string) => void;
   handleSaveInstructions: () => void;
   handleCancelEditInstructions: () => void;
   handleSubmissionTypeChange: (type: 'freeform' | 'pdf') => void;
@@ -32,20 +32,37 @@ export function InstructionsBlock({
         <div className="flex items-center gap-2">
           {isMember && state.submissiontype === 'pdf' && !state.isEditingInstructions && (
             <>
-              {state.uploadedPdf && (
-                <button onClick={handleRemovePdf}
-                  className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors cursor-pointer">
-                  <TrashIcon className="w-5 h-5" />
-                  Remove PDF
-                </button>
+              {state.uploadedPdfs && state.uploadedPdfs.length > 0 && (
+                <div className="space-y-2 mb-4">
+                  {state.uploadedPdfs.map((pdf: any, idx: number) => (
+                    <div key={pdf.id} className="flex items-center justify-between bg-gray-100 p-2 rounded-lg border border-gray-300">
+                      <span className="text-gray-900 truncate">{pdf.filepath.split('/').pop()}</span>
+                      <button
+                        onClick={() => handleRemovePdf(pdf.id)}
+                        className="text-red-600 hover:text-red-800 transition-colors"
+                      >
+                        <TrashIcon className="w-5 h-5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
               )}
+
               <label className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors cursor-pointer">
                 <ArrowUpTrayIcon className="w-5 h-5" />
-                {state.uploadedPdf ? 'Replace PDF' : 'Upload PDF'}
-                <input type="file" accept="application/pdf" onChange={handlePdfUpload} className="hidden" />
+                Upload PDF
+                <input
+                  type="file"
+                  accept="application/pdf"
+                  multiple
+                  onChange={handlePdfUpload}
+                  className="hidden"
+                />
               </label>
             </>
           )}
+
+
 
           {isOSAS && !state.isEditingInstructions ? (
             <button onClick={() => updateState({ isEditingInstructions: true })} disabled={state.isEditingGrade}

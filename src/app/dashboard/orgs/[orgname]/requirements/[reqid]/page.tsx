@@ -2,7 +2,7 @@
 
 import { useState, useEffect, use } from 'react';
 import { formatName } from '@/app/lib/assessments';
-import { supabase } from '@/app/lib/database';
+import { supabaseAdmin, supabase } from '@/app/lib/database';
 import { useSession } from "next-auth/react";
 import { InstructionsBlock } from '@/app/ui/snippets/submission/instruction';
 import { SubmissionInfo } from '@/app/ui/snippets/submission/submission-info';
@@ -62,6 +62,14 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
       section: string;
       active: boolean;
     } | null),
+
+    uploadedPdfs: [] as {
+      id: string;
+      filepath: string;
+      signedUrl: string;
+      uploadedby: string;
+      uploadedat: string;
+    }[],
   });
 
   const requirementName = state.requirement?.title || reqid;
@@ -226,60 +234,81 @@ const loadRequirementFromSupabase = async () => {
 
   // Handle PDF upload
   const handlePdfUpload = async (
-  event: React.ChangeEvent<HTMLInputElement>
+    event: React.ChangeEvent<HTMLInputElement>
   ) => {
     if (!checkPermission('member', 'upload PDFs')) return;
 
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    if (file.type !== 'application/pdf') {
-      setError('Only PDF files are allowed');
-      return;
-    }
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
 
     try {
       setError(null);
       setLoading('pdf', true);
 
+      for (const file of Array.from(files)) {
+        if (file.type !== 'application/pdf') continue;
 
-      const filePath = `${orgname}/${reqid}.pdf`;
+        const filePath = `${orgname}/${reqid}/${crypto.randomUUID()}.pdf`;
 
-      const { error: uploadError } = await supabase.storage
-        .from('requirement-pdfs')
-        .upload(filePath, file, {
-          upsert: true,
-          contentType: 'application/pdf',
+        const { error: uploadError } = await supabaseAdmin.storage
+          .from('requirement-pdfs')
+          .upload(filePath, file, {
+            contentType: 'application/pdf',
+          });
+
+        if (uploadError) throw uploadError;
+
+        await supabase.from('requirement_pdfs').insert({
+          orgUsername: orgname,
+          requirementId: reqid,
+          filepath: filePath,
+          uploadedby: state.currentUserEmail,
         });
+      }
 
-      if (uploadError) throw uploadError;
-
-      // Mark submission as submitted
       await supabase
         .from('org_requirement_status')
-        .update({
-          submitted: true,
-        })
+        .update({ submitted: true })
         .eq('orgUsername', orgname)
         .eq('requirementId', reqid);
 
-      // Create signed URL for preview
-      const { data } = await supabase.storage
-        .from('requirement-pdfs')
-        .createSignedUrl(filePath, 60 * 60);
-
-      updateState({
-        uploadedPdf: data?.signedUrl ?? null,
-        pdfFileName: file.name,
-        hasSubmitted: true,
-      });
-    } catch (err: any) {
+      updateState({ hasSubmitted: true });
+      loadRequirementPdfs();
+    } catch (err) {
       console.error(err);
-      setError('Failed to upload PDF');
+      setError('Failed to upload PDFs');
     } finally {
       setLoading('pdf', false);
     }
   };
+
+  const loadRequirementPdfs = async () => {
+  const { data } = await supabase
+    .from('requirement_pdfs')
+    .select('*')
+    .eq('orgUsername', orgname)
+    .eq('requirementId', reqid)
+    .order('uploadedat', { ascending: true });
+
+    if (!data) return;
+
+    const pdfs = await Promise.all(
+      data.map(async (pdf) => {
+        const { data: signed } = await supabase.storage
+          .from('requirement-pdfs')
+          .createSignedUrl(pdf.filepath, 60 * 60);
+
+        return {
+          ...pdf,
+          signedUrl: signed?.signedUrl,
+        };
+      })
+    );
+
+    updateState({ uploadedPdfs: pdfs });
+  };
+
+
 
   const loadPdfFromSupabase = async () => {
   try {
@@ -303,27 +332,16 @@ const loadRequirementFromSupabase = async () => {
 
 
   // Remove PDF
-  const handleRemovePdf = async () => {
-    if (!checkPermission('member', 'remove PDFs')) return;
-
-    const filePath = `${orgname}/${reqid}.pdf`;
-
-    await supabase.storage
-      .from('requirement-pdfs')
-      .remove([filePath]);
-
+  const handleRemovePdf = async (pdfId: string) => {
     await supabase
-      .from('org_requirement_status')
-      .update({ submitted: false })
-      .eq('orgUsername', orgname)
-      .eq('requirementId', reqid);
+      .from('requirement_pdfs')
+      .delete()
+      .eq('id', pdfId);
 
-    updateState({
-      uploadedPdf: null,
-      pdfFileName: '',
-      currentPage: 1,
-      hasSubmitted: false,
-    });
+    setState((prev: any) => ({
+      ...prev,
+      uploadedPdfs: prev.uploadedPdfs.filter((pdf: any) => pdf.id !== pdfId),
+    }));
   };
 
   const handleSubmitFreeform = async () => {
@@ -403,6 +421,16 @@ const loadRequirementFromSupabase = async () => {
 
       updateState({ currentUserEmail: email });
 
+      const checkSupabaseAuth = async () => {
+      const { data, error } = await supabase.auth.getSession();
+
+      console.log('SUPABASE SESSION:', data?.session);
+      if (error) console.error('Supabase auth error:', error);
+    };
+
+    checkSupabaseAuth();
+
+
       if (rawRole === 'osas' || rawRole === 'member') {
         updateState({ userRole: rawRole as 'osas' | 'member' });
 
@@ -441,6 +469,7 @@ const loadRequirementFromSupabase = async () => {
     };
 
     loadSubmissionStatus();
+    loadRequirementPdfs();
   }, [orgname, reqid]);
 
   const handleSubmitGrade = async () => {

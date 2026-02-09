@@ -20,8 +20,15 @@ export function GradingTab({
       {/* PDF submission */}
       {state.submissiontype === 'pdf' && (
         <>
-          {state.uploadedPdf ? (
-            <PDFViewer state={state} updateState={updateState} />
+          {state.uploadedPdfs && state.uploadedPdfs.length > 0 ? (
+            <PDFViewer
+              state={{
+                ...state,
+                uploadedPdf: state.uploadedPdfs[0].signedUrl,
+                pdfFileName: state.uploadedPdfs[0].filepath.split('/').pop(),
+              }}
+              updateState={updateState}
+            />
           ) : (
             <div className="flex items-center justify-center h-[600px] bg-gray-100 rounded-lg border-2 border-dashed border-gray-300">
               <div className="text-center">
