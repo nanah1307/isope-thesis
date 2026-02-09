@@ -44,8 +44,6 @@ export default function Home() {
           </Suspense>
           <div className="w-full h-px bg-blue-500 my-4"></div>
           <p className="text-black text-3xl">Sign in</p>
-
-
           <div className="space-y-2 mt-4 text-left">
             <input
               className="w-full border px-3 py-2 rounded"

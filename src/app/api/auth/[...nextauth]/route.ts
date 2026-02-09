@@ -21,11 +21,13 @@ const handler = NextAuth({
       
       if (domain === allowedDomain) {
          //Check if user exists
+
       const { data: existingUser } = await supabase
         .from("users")
         .select("id")
         .eq("Email", email)
         .maybeSingle();
+        supabase.auth.signInWithOAuth({ provider: 'google' })
 
       //Insert only if it doesn't exist
       if (!existingUser) {
