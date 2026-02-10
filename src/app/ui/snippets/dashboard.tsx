@@ -6,6 +6,11 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation"; 
 import { Orgs } from '@/app/lib/definitions';
 
+
+const [hasMoreOrgs, setHasMoreOrgs] = useState(false);
+const ORG_SLICE_LIMIT = 6;
+
+
 const OrgCard: FC<{ org: any }> = ({ org }) => {
   const router = useRouter();
 
@@ -215,8 +220,11 @@ const OrgsDashboard: FC = () => {
           }
         }
 
+      // check if there are more orgs than the slice limit
+      setHasMoreOrgs(fetchedOrgs.length > ORG_SLICE_LIMIT);
+
         // limit to first 3 orgs
-      fetchedOrgs = fetchedOrgs.slice(0, 3);
+      fetchedOrgs = fetchedOrgs.slice(0, ORG_SLICE_LIMIT);
 
         if (fetchedOrgs.length === 0) {
           setOrgs([]);
@@ -347,13 +355,14 @@ const OrgsDashboard: FC = () => {
             ))}
           </div>
 
-          {/* See More Button */}
-          <a
-            href="/navorgs"
-            className="bg-[#014fb3] hover:bg-[#013db3] text-white px-6 py-2 rounded-md font-medium transition"
-          >
-            See More
-          </a>
+          {hasMoreOrgs && (
+            <a
+              href="/navorgs"
+              className="bg-[#014fb3] hover:bg-[#013db3] text-white px-6 py-2 rounded-md font-medium transition"
+            >
+              See More
+            </a>
+          )}
         </div>
       )}
 
