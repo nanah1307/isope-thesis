@@ -413,9 +413,6 @@ const loadRequirementFromSupabase = async () => {
   }
 };
 
-
-
-
   // Session effect
   useEffect(() => {
     if (status === 'loading') {
