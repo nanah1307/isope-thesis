@@ -5,6 +5,7 @@ import { supabase } from '@/app/lib/database';
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation"; 
 import { Orgs } from '@/app/lib/definitions';
+import { fetchAccessibleOrgs } from '@/app/lib/access-control';
 
 const OrgCard: FC<{ org: any }> = ({ org }) => {
   const router = useRouter();
@@ -189,31 +190,15 @@ const OrgsDashboard: FC = () => {
         const role = (((session?.user as any)?.role) || '').toString().toLowerCase();
         const name = (session?.user as any)?.name;
 
-        let fetchedOrgs: Orgs[] = [];
+        const orgIdentifier = (session?.user as any)?.username || session?.user?.name;
 
-        if (role === 'osas') {
-          const { data } = await supabase.from('orgs').select('*');
-          fetchedOrgs = data || [];
-        } else if (role === 'adviser' || role === 'member') {
-          const { data: memberData } = await supabase
-            .from('member')
-            .select('*, orgs(*)')
-            .eq('student_name', name)
+        const fetchedOrgs: Orgs[] = await fetchAccessibleOrgs({
+          role,
+          name,
+          orgIdentifier,
+        });
 
-            //extracts orgs from memberdata
-          fetchedOrgs = memberData?.map((m) => m.orgs) ?? [];
 
-        } else if (role === 'org') {
-          const orgIdentifier = (session?.user as any)?.username || session?.user?.name;
-          if (orgIdentifier) {
-            const { data } = await supabase
-              .from('orgs')
-              .select('*')
-              .or(`username.eq.${orgIdentifier},name.eq.${orgIdentifier}`)
-              .maybeSingle();
-            if (data) fetchedOrgs = [data];
-          }
-        }
 
         if (fetchedOrgs.length === 0) {
           setOrgs([]);
