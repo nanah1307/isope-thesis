@@ -89,6 +89,19 @@ export default function Home() {
 
 function LoginErrorMessage() {
   const error = useSearchParams().get("error");
-  if (error !== "unauthorized") return null;
-  return <p className="text-red-500">Only iAcademy accounts are allowed.</p>;
+  if (!error) return null;
+  
+  // Handle signup-specific errors
+  if (error === "Username already exists") {
+    return <p className="text-red-500">Username already exists</p>;
+  }
+  if (error === "User already exists") {
+    return <p className="text-red-500">User already exists</p>;
+  }
+  if (error === "unauthorized") {
+    return <p className="text-red-500">Only iAcademy accounts are allowed.</p>;
+  }
+  
+  // Generic error message
+  return <p className="text-red-500">{decodeURIComponent(error)}</p>;
 }

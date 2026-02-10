@@ -11,6 +11,28 @@ export async function POST(req: Request) {
       return new NextResponse("Missing fields", { status: 400 });
     }
 
+    // check if username already exists
+    const { data: existingUsername } = await supabase
+      .from("users")
+      .select("id")
+      .eq("Username", username)
+      .maybeSingle();
+
+    if (existingUsername) {
+      return new NextResponse("Username already exists", { status: 400 });
+    }
+
+    // check if email already has a username (signup already completed)
+    const { data: emailWithUsername } = await supabase
+      .from("users")
+      .select("Username")
+      .eq("Email", email)
+      .maybeSingle();
+
+    if (emailWithUsername?.Username) {
+      return new NextResponse("User already exists", { status: 400 });
+    }
+
     // bcrypt the password on the server
     const hashed = await bcrypt.hash(password, 10);
 

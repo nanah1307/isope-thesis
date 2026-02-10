@@ -41,9 +41,11 @@ export default function SignupCompletePage() {
           router.push("/dashboard");
         } else {
           const text = await res.text();
-          // clear temp and ensure user is signed out so they can't access the app
+          // clear temp, sign out, and redirect to login with error
           document.cookie = "signup_temp=; path=/; max-age=0";
-          await signOut({ callbackUrl: "/login" });
+          await signOut({ redirect: false });
+          // Use router instead of signOut's callbackUrl to avoid redirect loops
+          router.push(`/login?error=${encodeURIComponent(text)}`);
           setStatus("Failed: " + text);
         }
       } catch (err: any) {

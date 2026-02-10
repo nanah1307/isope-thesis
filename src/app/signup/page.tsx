@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 
 export default function SignUpPage() {
@@ -8,6 +9,7 @@ export default function SignUpPage() {
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
   const [name, setName] = useState("");
+  const router = useRouter();
 
   return (
     <div className="bg-white min-h-screen">
@@ -54,9 +56,17 @@ export default function SignUpPage() {
               // start OAuth flow and return to /signup/complete where we'll finalize
               signIn("google", { callbackUrl: `${window.location.origin}/signup/complete` });
             }}
-            className="bg-blue-600 text-white px-4 py-2 rounded mt-3 w-full"
+            className="bg-blue-600 text-white px-4 py-2 rounded mt-3 w-full cursor-pointer
+            hover:bg-blue-700"
           >
             Create Account
+          </button>
+          <button
+            onClick={() => router.push("/login")}
+            className="bg-gray-200 text-black px-4 py-2 rounded mt-3 w-full cursor-pointer
+            hover:bg-gray-300"
+          >
+            Already have an account? Sign in
           </button>
         </div>
       </div>
