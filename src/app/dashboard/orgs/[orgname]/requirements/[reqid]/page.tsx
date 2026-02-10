@@ -39,9 +39,6 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
     error: null as string | null,
     uploadedPdf: null as string | null,
     pdfFileName: '',
-    currentPage: 1,
-    totalPages: 1,
-    pdfZoom: 1.0,
     userRole: null as 'osas' | 'member' | null,
     currentUserEmail: null as string | null,
     freeformAnswer: '',
@@ -257,13 +254,6 @@ const loadRequirementFromSupabase = async () => {
           });
 
         if (uploadError) throw uploadError;
-
-        await supabase.from('requirement_pdfs').insert({
-          orgUsername: orgname,
-          requirementId: reqid,
-          filepath: filePath,
-          uploadedby: state.currentUserEmail,
-        });
       }
 
       await supabase
