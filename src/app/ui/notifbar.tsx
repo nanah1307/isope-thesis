@@ -59,7 +59,7 @@ const NotificationSidebar: FC = () => {
       {/* Mobile Toggle Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed top-4 right-4 z-50 lg:hidden bg-blue-700 text-white p-3 rounded-full shadow-lg hover:bg-blue-800 transition-colors"
+        className="fixed top-4 right-4 z-50 lg:hidden bg- text-white p-3 rounded-full shadow-lg hover:bg-blue-800 transition-colors"
         aria-label="Toggle notifications"
       >
         <BellIcon className="w-6 h-6" />
@@ -80,7 +80,7 @@ const NotificationSidebar: FC = () => {
 
       {/* Sidebar */}
       <div className={`
-        fixed right-0 top-0 bg-blue-700 h-screen p-4 sm:p-6 text-white flex flex-col shadow-2xl z-50 overflow-y-auto
+        fixed right-0 top-0 bg-[#014fb3] h-screen p-4 sm:p-6 text-white flex flex-col shadow-2xl z-50 overflow-y-auto
         w-full sm:w-96 md:w-80
         transform transition-transform duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : 'translate-x-full'}
