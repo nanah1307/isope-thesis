@@ -115,28 +115,50 @@ export default function OrgsRequirement({
   if (requirements.length === 0) return <div className="p-4 text-black">No requirements found.</div>;
 
   const deactivateAllStatuses = async () => {
+  console.log('[Archive] Action triggered');
+
   const confirmed = confirm(
     'Are you sure you want to archive ALL requirements for this organization?'
   );
-  if (!confirmed) return;
+  console.log('[Archive] User confirmation:', confirmed);
+
+  if (!confirmed) {
+    console.log('[Archive] Action cancelled by user');
+    return;
+  }
 
   try {
     const currentYear = new Date().getFullYear();
+    console.log('[Archive] Current year:', currentYear);
 
     // 1. Fetch current active statuses
+    console.log('[Archive][1] Fetching active requirement statuses…');
+
     const { data: currentStatuses, error: fetchError } = await supabase
       .from('org_requirement_status')
       .select('*')
       .eq('orgUsername', username)
       .eq('active', true);
 
-    if (fetchError) throw fetchError;
+    if (fetchError) {
+      console.error('[Archive][1] Fetch error:', fetchError);
+      throw fetchError;
+    }
+
+    console.log(
+      `[Archive][1] Fetched ${currentStatuses?.length ?? 0} active statuses`,
+      currentStatuses
+    );
+
     if (!currentStatuses || currentStatuses.length === 0) {
+      console.warn('[Archive] No active requirement statuses found');
       alert('No active requirement statuses to archive.');
       return;
     }
 
     // 2. Prepare duplicated rows
+    console.log('[Archive][2] Preparing duplicated statuses…');
+
     const duplicatedStatuses = currentStatuses.map((status) => ({
       orgUsername: status.orgUsername,
       requirementId: status.requirementId,
@@ -153,35 +175,61 @@ export default function OrgsRequirement({
       active: true
     }));
 
-    // 3. Insert duplicated rows
-    const { error: insertError } = await supabase
-      .from('org_requirement_status')
-      .insert(duplicatedStatuses);
-
-    if (insertError) throw insertError;
+    console.log(
+      `[Archive][2] Prepared ${duplicatedStatuses.length} new rows`,
+      duplicatedStatuses
+    );
 
     // 4. Deactivate old rows
+    console.log('[Archive][3] Deactivating old statuses…');
+
     const { error: updateError } = await supabase
       .from('org_requirement_status')
       .update({ active: false })
       .eq('orgUsername', username)
       .eq('active', true);
 
-    if (updateError) throw updateError;
+    if (updateError) {
+      console.error('[Archive][3] Update error:', updateError);
+      throw updateError;
+    }
+
+    console.log('[Archive][3] Old statuses deactivated');
+
+    // 3. Insert duplicated rows
+    console.log('[Archive][4] Inserting duplicated statuses…');
+
+    const { error: insertError } = await supabase
+      .from('org_requirement_status')
+      .insert(duplicatedStatuses);
+
+    if (insertError) {
+      console.error('[Archive][4] Insert error:', insertError);
+      throw insertError;
+    }
+
+    console.log('[Archive][4] Insert successful');
+
+    
 
     // 5. Update UI state
+    console.log('[Archive][5] Updating local UI state…');
+
     setStatuses((prev) =>
       prev.map((s) => ({ ...s, active: false }))
     );
 
+    console.log('[Archive][5] UI state updated');
+
     alert(`Requirements archived successfully for year ${currentYear}.`);
+
+    console.log('[Archive] Reloading page…');
     window.location.reload();
   } catch (err: any) {
-    console.error('Failed to archive requirements:', err.message ?? err);
+    console.error('[Archive] FAILED:', err?.message ?? err);
     alert('Something went wrong while archiving requirements.');
   }
 };
-
 
   const saveScores = async () => {
     setSaving(true);
