@@ -43,6 +43,7 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
     currentUserEmail: null as string | null,
     freeformAnswer: '',
     selectedPdfId: null as string | null,
+    allowedFileTypes: ['pdf'] as string[],
     
     loading: {
       page: true,
@@ -120,11 +121,21 @@ const loadRequirementFromSupabase = async () => {
 
     if (error) throw error;
 
+        const raw = (data.submissiontype || '').toString().trim().toLowerCase();
+
+    const allowed =
+      raw.includes(',') ? raw.split(',').map((s: string) => s.trim()).filter(Boolean)
+      : raw === 'pdf' ? ['pdf']
+      : raw === 'freeform' ? ['pdf']
+      : raw ? [raw]
+      : ['pdf'];
+
     updateState({
       requirement: data,
       instructions: data.instructions || '',
-      submissiontype: data.submissiontype as 'freeform' | 'pdf'
+      allowedFileTypes: allowed,
     });
+
   } catch (err: any) {
     console.error(err);
     setError('Failed to load requirement');
@@ -498,23 +509,25 @@ const loadRequirementFromSupabase = async () => {
 };
 
 
-  const handleSubmissionTypeChange = async (type: 'freeform' | 'pdf') => {
-  if (!checkPermission('osas', 'change submission type')) return;
+  const handleAllowedFileTypesChange = async (types: string[]) => {
+  if (!checkPermission('osas', 'change accepted file types')) return;
 
   try {
+    const payload = (types && types.length > 0) ? types.join(',') : 'pdf';
+
     const { error } = await supabase
       .from('requirements')
-      .update({ submissiontype: type })
+      .update({ submissiontype: payload })
       .eq('id', reqid);
 
     if (error) throw error;
-
-    updateState({ submissiontype: type });
   } catch (err) {
     console.error(err);
-    setError('Failed to update submission type');
+    setError('Failed to update accepted file types');
   }
 };
+
+
 
   if (state.loading.page) {
     return (
@@ -576,7 +589,7 @@ const loadRequirementFromSupabase = async () => {
                     handleRemovePdf={handleRemovePdf}
                     handleSaveInstructions={handleSaveInstructions}
                     handleCancelEditInstructions={handleCancelEditInstructions}
-                    handleSubmissionTypeChange={handleSubmissionTypeChange}
+                    handleAllowedFileTypesChange={handleAllowedFileTypesChange}
                   />
                 )}
 

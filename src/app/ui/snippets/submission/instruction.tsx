@@ -12,7 +12,7 @@ export function InstructionsBlock({
   handleRemovePdf,
   handleSaveInstructions,
   handleCancelEditInstructions,
-  handleSubmissionTypeChange,
+  handleAllowedFileTypesChange,
 }: {
   state: any;
   updateState: (updates: any) => void;
@@ -20,7 +20,7 @@ export function InstructionsBlock({
   handleRemovePdf: (pdfId: string) => void;
   handleSaveInstructions: () => void;
   handleCancelEditInstructions: () => void;
-  handleSubmissionTypeChange: (type: 'freeform' | 'pdf') => void;
+  handleAllowedFileTypesChange: (types: string[]) => void;
 }) {
   const isOSAS = state.userRole === 'osas';
   const isMember = state.userRole === 'member';
@@ -30,14 +30,16 @@ export function InstructionsBlock({
       <div className="flex justify-between items-center mb-8">
         <h2 className="text-red-600 font-bold text-2xl">Instructions:</h2>
         <div className="flex items-center gap-2">
-          {isMember && state.submissiontype === 'pdf' && !state.isEditingInstructions && (
+          {isMember && !state.isEditingInstructions && (
             <>
               <label className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors cursor-pointer">
                 <ArrowUpTrayIcon className="w-5 h-5" />
                 Upload PDF
                 <input
                   type="file"
-                  accept="application/pdf"
+                  accept={(state.allowedFileTypes || [])
+                    .map((t: string) => (t === 'pdf' ? 'application/pdf' : `image/${t}`))
+                    .join(',')}
                   multiple
                   onChange={handlePdfUpload}
                   className="hidden"
@@ -69,19 +71,33 @@ export function InstructionsBlock({
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 text-xl font-medium min-h-[200px]"
             placeholder="Enter instructions here..." />
 
-          <div className="mt-8 pt-8 border-t border-gray-200">
-            <h3 className="text-gray-900 font-bold text-lg mb-4">Submission Type:</h3>
-            <div className="flex gap-6">
-              {(['freeform', 'pdf'] as const).map(type => (
+            <div className="mt-8 pt-8 border-t border-gray-200">
+            <h3 className="text-gray-900 font-bold text-lg mb-4">Accepted File Types:</h3>
+            <div className="flex flex-wrap gap-6">
+              {(['pdf', 'png', 'jpg', 'jpeg'] as const).map(type => (
                 <label key={type} className="flex items-center gap-3 cursor-pointer">
-                  <input type="radio" name="submissiontype" value={type} checked={state.submissiontype === type}
-                    onChange={() => handleSubmissionTypeChange(type)}
-                    className="w-5 h-5 text-blue-600 focus:ring-2 focus:ring-blue-500 cursor-pointer" />
-                  <span className="text-gray-900 font-medium text-lg">{type === 'freeform' ? 'Freeform Answer' : 'PDF Submission'}</span>
+                  <input
+                    type="checkbox"
+                    checked={(state.allowedFileTypes || []).includes(type)}
+                    onChange={(e) => {
+                      const current = state.allowedFileTypes || [];
+                      const next = e.target.checked
+                        ? Array.from(new Set([...current, type]))
+                        : current.filter((t: string) => t !== type);
+
+                      updateState({ allowedFileTypes: next });
+                      handleAllowedFileTypesChange(next);
+                    }}
+                    className="w-5 h-5 text-blue-600 focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                  />
+                  <span className="text-gray-900 font-medium text-lg">
+                    {type.toUpperCase()}
+                  </span>
                 </label>
               ))}
             </div>
           </div>
+
         </>
       ) : (
         <p className="text-gray-900 mb-10 leading-relaxed text-xl max-w-4xl font-medium">{state.instructions}</p>
