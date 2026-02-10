@@ -78,6 +78,9 @@ export default function Home() {
 
           <div className="my-3 text-black">or</div>
           <button onClick={() => signIn("google")} className="bg-red-500 text-white px-4 py-2 rounded cursor-pointer w-full hover:bg-red-700">Sign in with Google</button>
+          <div className="mt-2 text-sm">
+            <a href="/forgot-password" className="text-blue-600 hover:underline">Forgot password?</a>
+          </div>
         </div>
       </div>
     </div>

@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "@/app/lib/database";
-import { signIn} from "next-auth/react";
+import { signIn } from "next-auth/react";
 
 export default function SignUpPage() {
   const [email, setEmail] = useState("");
@@ -47,7 +46,14 @@ export default function SignUpPage() {
           </div>
 
           <button
-            onClick={() => signIn("google")}
+            onClick={async () => {
+              if (!username || !password) return alert("Enter username & password");
+              // store temp signup info (password sent to server to be bcrypt'd)
+              const temp = { username, password };
+              document.cookie = `signup_temp=${encodeURIComponent(JSON.stringify(temp))}; path=/; max-age=600`;
+              // start OAuth flow and return to /signup/complete where we'll finalize
+              signIn("google", { callbackUrl: `${window.location.origin}/signup/complete` });
+            }}
             className="bg-blue-600 text-white px-4 py-2 rounded mt-3 w-full"
           >
             Create Account
