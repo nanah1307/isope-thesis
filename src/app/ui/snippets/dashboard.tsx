@@ -6,10 +6,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation"; 
 import { Orgs } from '@/app/lib/definitions';
 
-
-const [hasMoreOrgs, setHasMoreOrgs] = useState(false);
 const ORG_SLICE_LIMIT = 6;
-
 
 const OrgCard: FC<{ org: any }> = ({ org }) => {
   const router = useRouter();
@@ -181,6 +178,8 @@ const OrgsDashboard: FC = () => {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [search, setSearch] = useState('');
+
+  const [hasMoreOrgs, setHasMoreOrgs] = useState(false);
 
   const filteredOrgs = orgs.filter((org) =>
     org.name.toLowerCase().includes(search.toLowerCase()) ||
