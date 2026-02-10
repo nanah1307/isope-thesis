@@ -4,6 +4,33 @@ import { supabaseAdmin } from '@/app/lib/database';
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
+
+    const download = searchParams.get('download');
+    const filepath = searchParams.get('filepath');
+
+    if (download === '1' && filepath) {
+      const fileName = filepath.split('/').pop() || 'download';
+
+      const { data, error } = await supabaseAdmin.storage
+        .from('requirement-pdfs')
+        .download(filepath);
+
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+
+      const arrayBuffer = await data.arrayBuffer();
+      const contentType = data.type || 'application/octet-stream';
+
+      return new Response(arrayBuffer, {
+        headers: {
+          'Content-Type': contentType,
+          'Content-Disposition': `attachment; filename="${fileName}"`,
+          'Cache-Control': 'no-store',
+        },
+      });
+    }
+
     const orgname = searchParams.get('orgname');
     const reqid = searchParams.get('reqid');
 

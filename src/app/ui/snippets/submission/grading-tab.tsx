@@ -1,6 +1,6 @@
 'use client';
 
-import { DocumentIcon, ArrowUpTrayIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { DocumentIcon, ArrowUpTrayIcon, ArrowDownTrayIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { PDFViewer } from './pdf-viewer';
 
 export function GradingTab({
@@ -32,6 +32,16 @@ export function GradingTab({
   const allowedFiles = allFiles.filter((f: any) => allowed.includes(getExt(f.filepath)));
 
   const pdfFiles = allowedFiles.filter((f: any) => getExt(f.filepath) === 'pdf');
+
+  const handleDownloadFile = (file: any) => {
+    const url = `/api/requirements/pdfs?download=1&filepath=${encodeURIComponent(file.id || file.filepath)}`;
+
+    const a = document.createElement('a');
+    a.href = url;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  };
 
   return (
     <div>
@@ -86,14 +96,25 @@ export function GradingTab({
                       {fileName}
                     </span>
 
-                    {state.userRole === 'member' && (
+                    <div className="flex items-center gap-3 flex-shrink-0">
                       <button
-                        onClick={() => handleRemovePdf(file.id)}
-                        className="text-gray-400 hover:text-red-600 transition-colors flex-shrink-0 cursor-pointer"
+                        onClick={() => handleDownloadFile(file)}
+                        className="text-gray-400 hover:text-blue-600 transition-colors cursor-pointer"
+                        title="Download"
                       >
-                        <TrashIcon className="w-5 h-5" />
+                        <ArrowDownTrayIcon className="w-5 h-5" />
                       </button>
-                    )}
+
+                      {state.userRole === 'member' && (
+                        <button
+                          onClick={() => handleRemovePdf(file.id)}
+                          className="text-gray-400 hover:text-red-600 transition-colors cursor-pointer"
+                          title="Delete"
+                        >
+                          <TrashIcon className="w-5 h-5" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 );
               })}
