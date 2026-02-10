@@ -8,16 +8,12 @@ import {TrashIcon, ArrowUpTrayIcon, PencilSquareIcon } from '@heroicons/react/24
 export function InstructionsBlock({
   state,
   updateState,
-  handlePdfUpload,
-  handleRemovePdf,
   handleSaveInstructions,
   handleCancelEditInstructions,
   handleAllowedFileTypesChange,
 }: {
   state: any;
   updateState: (updates: any) => void;
-  handlePdfUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  handleRemovePdf: (pdfId: string) => void;
   handleSaveInstructions: () => void;
   handleCancelEditInstructions: () => void;
   handleAllowedFileTypesChange: (types: string[]) => void;
@@ -31,34 +27,12 @@ export function InstructionsBlock({
         <h2 className="text-red-600 font-bold text-2xl">Instructions:</h2>
         <div className="flex items-center gap-2">
           {isMember && !state.isEditingInstructions && (
-            <>
-              <label className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors cursor-pointer">
-                <ArrowUpTrayIcon className="w-5 h-5" />
-                Upload PDF
-                <input
-                  type="file"
-                  accept={(state.allowedFileTypes || ['pdf'])
-                    .map((t: string) => {
-                      const x = (t || '').toLowerCase().trim();
-                      if (x === 'pdf') return 'application/pdf';
-                      if (x === 'png') return 'image/png';
-                      if (x === 'jpg' || x === 'jpeg') return 'image/jpeg';
-                      if (x === 'doc') return '.doc';
-                      if (x === 'docx') return '.docx';
-                      if (x === 'ppt') return '.ppt';
-                      if (x === 'pptx') return '.pptx';
-                      if (x === 'xls') return '.xls';
-                      if (x === 'xlsx') return '.xlsx';
-                      return '';
-                    })
-                    .filter(Boolean)
-                    .join(',')}
-                  multiple
-                  onChange={handlePdfUpload}
-                  className="hidden"
-                />
-              </label>
-            </>
+            <button
+              onClick={() => updateState({ activeTab: 'submission' })}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors cursor-pointer"
+            >
+              Go to submission
+            </button>
           )}
 
           {isOSAS && !state.isEditingInstructions ? (
@@ -123,33 +97,6 @@ export function InstructionsBlock({
             </div>
           )}
         </>
-      )}
-      {isMember && state.uploadedPdfs.length > 0 && (
-        <div className="mt-10 pt-8 border-t border-gray-200">
-          <h3 className="text-gray-900 font-semibold mb-4">
-            Uploaded PDFs
-          </h3>
-
-          <div className="space-y-3">
-            {state.uploadedPdfs.map((pdf: any) => (
-              <div
-                key={pdf.id}
-                className="flex items-start justify-between bg-gray-100 p-4 rounded-lg border border-gray-300"
-              >
-                <span className="text-gray-900 break-all pr-4">
-                  {pdf.filepath.split('/').pop()}
-                </span>
-
-                <button
-                  onClick={() => handleRemovePdf(pdf.id)}
-                  className="text-red-600 hover:text-red-800 transition-colors flex-shrink-0 cursor-pointer"
-                >
-                  <TrashIcon className="w-5 h-5" />
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
       )}
     </div>
   );

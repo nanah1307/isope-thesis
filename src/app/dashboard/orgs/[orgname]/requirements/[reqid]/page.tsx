@@ -6,7 +6,6 @@ import { supabaseAdmin, supabase } from '@/app/lib/database';
 import { useSession } from "next-auth/react";
 import { InstructionsBlock } from '@/app/ui/snippets/submission/instruction';
 import { SubmissionInfo } from '@/app/ui/snippets/submission/submission-info';
-import { PDFViewer } from '@/app/ui/snippets/submission/pdf-viewer';
 import { GradingTab } from '@/app/ui/snippets/submission/grading-tab';
 import { ArrowUturnLeftIcon } from '@heroicons/react/24/solid';
 import { useRouter } from 'next/navigation';
@@ -570,14 +569,12 @@ const loadRequirementFromSupabase = async () => {
             <div className="bg-white rounded-lg shadow-sm">
               <div className="border-b-2 border-gray-300 flex">
                 {(['instructions', 'submission'] as const).map(tab => (
-                  (tab === 'submission' && !state.hasSubmitted) ? null : (
-                    <button key={tab} onClick={() => !isEditing && updateState({ activeTab: tab as any })} disabled={isEditing}
-                      className={`px-6 py-4 font-medium ${isEditing ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'} ${
-                        state.activeTab === tab ? 'text-gray-900 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'
-                      }`}>
-                      {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                    </button>
-                  )
+                  <button key={tab} onClick={() => !isEditing && updateState({ activeTab: tab as any })} disabled={isEditing}
+                    className={`px-6 py-4 font-medium ${isEditing ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'} ${
+                      state.activeTab === tab ? 'text-gray-900 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'
+                    }`}>
+                    {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                  </button>
                 ))}
               </div>
 
@@ -586,20 +583,20 @@ const loadRequirementFromSupabase = async () => {
                   <InstructionsBlock
                     state={state}
                     updateState={updateState}
-                    handlePdfUpload={handlePdfUpload}
-                    handleRemovePdf={handleRemovePdf}
                     handleSaveInstructions={handleSaveInstructions}
                     handleCancelEditInstructions={handleCancelEditInstructions}
                     handleAllowedFileTypesChange={handleAllowedFileTypesChange}
                   />
                 )}
 
-                {state.activeTab === 'submission' && state.hasSubmitted && (
+                {state.activeTab === 'submission' && (
                   <GradingTab
                     state={state}
                     updateState={updateState}
                     isOSAS={isOSAS}
                     handleSubmitFreeform={handleSubmitFreeform}
+                    handlePdfUpload={handlePdfUpload}
+                    handleRemovePdf={handleRemovePdf}
                   />
                 )}
               </div>

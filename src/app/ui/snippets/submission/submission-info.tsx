@@ -36,7 +36,7 @@ export function SubmissionInfo({
           {isOSAS && !state.isEditingGrade ? (
             <button onClick={() => updateState({ isEditingGrade: true })} disabled={state.isEditingInstructions || state.loading.grade}
               className={`flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors ${
-                state.isEditingInstructions || state.loading.requirement ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                state.isEditingInstructions || state.loading.grade ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
               }`}>
               <PencilSquareIcon className="w-5 h-5" />
               Edit
@@ -94,46 +94,6 @@ export function SubmissionInfo({
           </div>
         )}
       </div>
-
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <h3 className="font-semibold text-gray-900 mb-4">Adviser's Feedback</h3>
-        <div className="flex items-center gap-3">
-          <div className="w-6 h-6 border-2 border-gray-300 rounded" />
-          <span className="font-semibold text-gray-900">Approved!</span>
-        </div>
-      </div>
-
-       <div className="bg-white rounded-lg shadow-sm p-6">
-              <h3 className="font-semibold text-gray-900 mb-4">Comments</h3>
-              <div className="mb-4">
-                <textarea
-                  placeholder="Add a comment..."
-                  className="w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none text-sm placeholder:text-gray-400"
-                />
-                <button
-                  className="mt-2 w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-medium px-4 py-2 rounded-lg transition-colors text-sm $"
-                >
-                  Add Comment
-                </button>
-              </div>
-              <div className="space-y-3 max-h-[400px] overflow-y-auto"> 
-                 
-                  <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <span className="text-xs text-gray-500"></span>
-                        <span className="text-xs text-gray-400 ml-2"></span>
-                      </div>
-                      <button
-                        className="text-gray-400 hover:text-red-600 transition-colors cursor-pointer"
-                      >
-                        <TrashIcon className="w-5 h-5" />
-                      </button>
-                    </div>
-                    <p className="text-sm text-gray-700 break-words"></p>
-                  </div>
-              </div>
-            </div>         
     </>
   );
 }

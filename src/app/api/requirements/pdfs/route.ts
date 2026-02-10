@@ -13,45 +13,42 @@ export async function GET(req: Request) {
 
     const folderPath = `${orgname}/${reqid}`;
 
-    const { data: files, error: listErr } = await supabaseAdmin.storage
+    const { data: files, error } = await supabaseAdmin.storage
       .from('requirement-pdfs')
-      .list(folderPath, { limit: 100, sortBy: { column: 'created_at', order: 'asc' } });
+      .list(folderPath, { limit: 200 });
 
-    if (listErr) {
-      return NextResponse.json({ error: listErr.message }, { status: 500 });
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    const pdfFiles = (files || []).filter((f: any) => (f.name || '').toLowerCase().endsWith('.pdf'));
+    const { data: pub } = supabaseAdmin.storage
+      .from('requirement-pdfs')
+      .getPublicUrl('');
 
-    const pdfs = await Promise.all(
-      pdfFiles.map(async (f: any) => {
-        const filepath = `${folderPath}/${f.name}`;
+    const basePublicUrl = pub.publicUrl.replace(/\/$/, '');
 
-        const { data } = supabaseAdmin.storage
-        .from('requirement-pdfs')
-        .getPublicUrl(filepath);
+    const pdfs = (files || []).map((f: any) => {
+      const filepath = `${folderPath}/${f.name}`;
+      const publicUrl = `${basePublicUrl}/${filepath}`;
 
-        return {
-          id: filepath,
-          filepath,
-          publicUrl: data.publicUrl,
-          uploadedby: null,
-          uploadedat: f.created_at || null,
-        };
-      })
-    );
+      return {
+        id: filepath,
+        filepath,
+        publicUrl,
+        uploadedby: null,
+        uploadedat: f.created_at || null,
+      };
+    });
 
-    return NextResponse.json({ pdfs }, { status: 200 });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message || 'Server error' }, { status: 500 });
+    return NextResponse.json({ pdfs });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message || 'Failed to load files' }, { status: 500 });
   }
 }
 
-
 export async function DELETE(req: Request) {
   try {
-    const body = await req.json();
-    const filepath = body?.filepath;
+    const { filepath } = await req.json();
 
     if (!filepath) {
       return NextResponse.json({ error: 'Missing filepath' }, { status: 400 });
@@ -65,8 +62,8 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ ok: true }, { status: 200 });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message || 'Server error' }, { status: 500 });
+    return NextResponse.json({ success: true });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message || 'Failed to delete file' }, { status: 500 });
   }
 }
