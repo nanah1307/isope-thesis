@@ -5,6 +5,14 @@ import Link from 'next/link';
 import { DocumentTextIcon } from '@heroicons/react/24/outline';
 import { supabase } from '@/app/lib/database';
 
+type OrgsRequirementProps = {
+  username: string;
+  role: string;
+};
+
+
+
+
 type Requirement = {
   id: string;
   section: string;
@@ -26,12 +34,17 @@ type OrgRequirementStatus = {
   active: boolean;
 };
 
-export default function OrgsRequirement({ username }: { username: string }) {
+export default function OrgsRequirement({
+  username,
+  role,
+}: OrgsRequirementProps) {
   const [requirements, setRequirements] = useState<Requirement[]>([]);
   const [statuses, setStatuses] = useState<OrgRequirementStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  //console.log('ROLE IN OrgsRequirement:', role);
 
   // Fetch data from Supabase on client
   useEffect(() => {
@@ -102,31 +115,73 @@ export default function OrgsRequirement({ username }: { username: string }) {
   if (requirements.length === 0) return <div className="p-4 text-black">No requirements found.</div>;
 
   const deactivateAllStatuses = async () => {
-    const confirmed = confirm(
-      'Are you sure you want to archive ALL requirements for this organization?'
-    );
-    if (!confirmed) return;
+  const confirmed = confirm(
+    'Are you sure you want to archive ALL requirements for this organization?'
+  );
+  if (!confirmed) return;
 
-    try {
-      const { error } = await supabase
-        .from('org_requirement_status')
-        .update({ active: false })
-        .eq('orgUsername', username);
+  try {
+    const currentYear = new Date().getFullYear();
 
-      if (error) throw error;
+    // 1. Fetch current active statuses
+    const { data: currentStatuses, error: fetchError } = await supabase
+      .from('org_requirement_status')
+      .select('*')
+      .eq('orgUsername', username)
+      .eq('active', true);
 
-      // Update local state so UI reflects the change immediately
-      setStatuses((prev) =>
-        prev.map((s) => ({ ...s, active: false }))
-      );
-
-      alert('All requirement statuses have been deactivated.');
-      window.location.reload();
-    } catch (err: any) {
-      console.error('Failed to deactivate statuses:', err.message ?? err);
-      alert('Something went wrong while deactivating statuses.');
+    if (fetchError) throw fetchError;
+    if (!currentStatuses || currentStatuses.length === 0) {
+      alert('No active requirement statuses to archive.');
+      return;
     }
-  };
+
+    // 2. Prepare duplicated rows
+    const duplicatedStatuses = currentStatuses.map((status) => ({
+      orgUsername: status.orgUsername,
+      requirementId: status.requirementId,
+
+      // reset fields
+      submitted: false,
+      graded: false,
+      start: null,
+      due: null,
+      score: null,
+      grade: null,
+
+      year: currentYear,
+      active: true
+    }));
+
+    // 3. Insert duplicated rows
+    const { error: insertError } = await supabase
+      .from('org_requirement_status')
+      .insert(duplicatedStatuses);
+
+    if (insertError) throw insertError;
+
+    // 4. Deactivate old rows
+    const { error: updateError } = await supabase
+      .from('org_requirement_status')
+      .update({ active: false })
+      .eq('orgUsername', username)
+      .eq('active', true);
+
+    if (updateError) throw updateError;
+
+    // 5. Update UI state
+    setStatuses((prev) =>
+      prev.map((s) => ({ ...s, active: false }))
+    );
+
+    alert(`Requirements archived successfully for year ${currentYear}.`);
+    window.location.reload();
+  } catch (err: any) {
+    console.error('Failed to archive requirements:', err.message ?? err);
+    alert('Something went wrong while archiving requirements.');
+  }
+};
+
 
   const saveScores = async () => {
     setSaving(true);
@@ -176,12 +231,15 @@ export default function OrgsRequirement({ username }: { username: string }) {
           )}
         </div>
 
-        <button
-          onClick={deactivateAllStatuses}
-          className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 text-sm cursor-pointer"
-        >
-          Archive All Requirements
-        </button>
+        {role === 'osas' && (
+            <button
+              onClick={deactivateAllStatuses}
+              className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 text-sm cursor-pointer"
+            >
+              Archive All Requirements
+            </button>
+          )}
+
       </div>
 
       <table className="min-w-full border border-gray-300 bg-white text-black text-xs sm:text-sm md:text-base">

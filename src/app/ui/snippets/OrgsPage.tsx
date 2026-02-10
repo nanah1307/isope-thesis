@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import OrgsRequirementArchive from "./orgs/OrgsRequirementsArchive";
 import OrgsRequirement from "./orgs/OrgsRequirement";
 import OrgsMembers from "./orgs/OrgsMembers";
+import { useSession } from "next-auth/react";
 
 type OrgsProp = {
   org: any;
@@ -24,6 +25,9 @@ const links: LinkType[] = [
 ];
 
 export default function OrgsPage({ org }: OrgsProp) {
+  const { data: session, status } = useSession();
+  const role = (((session?.user as any)?.role) || '').toString().toLowerCase();
+
   const searchParams = useSearchParams();
   const tabParam = searchParams.get('tab');
 
@@ -168,7 +172,7 @@ export default function OrgsPage({ org }: OrgsProp) {
 
     Requirements: [
       <div key="requirements" className="w-full">
-        <OrgsRequirement username={org.username} />
+        <OrgsRequirement username={org.username} role={role}/>
       </div>
     ],
 
