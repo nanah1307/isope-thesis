@@ -37,8 +37,21 @@ export function InstructionsBlock({
                 Upload PDF
                 <input
                   type="file"
-                  accept={(state.allowedFileTypes || [])
-                    .map((t: string) => (t === 'pdf' ? 'application/pdf' : `image/${t}`))
+                  accept={(state.allowedFileTypes || ['pdf'])
+                    .map((t: string) => {
+                      const x = (t || '').toLowerCase().trim();
+                      if (x === 'pdf') return 'application/pdf';
+                      if (x === 'png') return 'image/png';
+                      if (x === 'jpg' || x === 'jpeg') return 'image/jpeg';
+                      if (x === 'doc') return '.doc';
+                      if (x === 'docx') return '.docx';
+                      if (x === 'ppt') return '.ppt';
+                      if (x === 'pptx') return '.pptx';
+                      if (x === 'xls') return '.xls';
+                      if (x === 'xlsx') return '.xlsx';
+                      return '';
+                    })
+                    .filter(Boolean)
                     .join(',')}
                   multiple
                   onChange={handlePdfUpload}
@@ -71,16 +84,16 @@ export function InstructionsBlock({
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 text-xl font-medium min-h-[200px]"
             placeholder="Enter instructions here..." />
 
-            <div className="mt-8 pt-8 border-t border-gray-200">
+          <div className="mt-8 pt-8 border-t border-gray-200">
             <h3 className="text-gray-900 font-bold text-lg mb-4">Accepted File Types:</h3>
             <div className="flex flex-wrap gap-6">
-              {(['pdf', 'png', 'jpg', 'jpeg'] as const).map(type => (
+              {(['pdf', 'png', 'jpg', 'jpeg', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'] as const).map(type => (
                 <label key={type} className="flex items-center gap-3 cursor-pointer">
                   <input
                     type="checkbox"
-                    checked={(state.allowedFileTypes || []).includes(type)}
+                    checked={(state.allowedFileTypes || ['pdf']).includes(type)}
                     onChange={(e) => {
-                      const current = state.allowedFileTypes || [];
+                      const current = state.allowedFileTypes || ['pdf'];
                       const next = e.target.checked
                         ? Array.from(new Set([...current, type]))
                         : current.filter((t: string) => t !== type);
@@ -88,21 +101,30 @@ export function InstructionsBlock({
                       updateState({ allowedFileTypes: next });
                       handleAllowedFileTypesChange(next);
                     }}
-                    className="w-5 h-5 text-blue-600 focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                  />
-                  <span className="text-gray-900 font-medium text-lg">
-                    {type.toUpperCase()}
-                  </span>
+                    className="w-5 h-5 text-blue-600 focus:ring-2 focus:ring-blue-500 cursor-pointer" />
+                  <span className="text-gray-900 font-medium text-lg uppercase">{type}</span>
                 </label>
               ))}
             </div>
           </div>
-
         </>
       ) : (
-        <p className="text-gray-900 mb-10 leading-relaxed text-xl max-w-4xl font-medium">{state.instructions}</p>
+        <>
+          <p className="text-gray-900 mb-10 leading-relaxed text-xl max-w-4xl font-medium">{state.instructions}</p>
+
+          {isMember && (
+            <div className="mb-10">
+              <h3 className="text-gray-900 font-semibold mb-3">Accepted File Types</h3>
+              <ul className="list-disc pl-6 text-gray-700">
+                {(state.allowedFileTypes && state.allowedFileTypes.length > 0 ? state.allowedFileTypes : ['pdf']).map((t: string) => (
+                  <li key={t} className="uppercase">{t}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </>
       )}
-      {isMember && state.submissiontype === 'pdf' && state.uploadedPdfs.length > 0 && (
+      {isMember && state.uploadedPdfs.length > 0 && (
         <div className="mt-10 pt-8 border-t border-gray-200">
           <h3 className="text-gray-900 font-semibold mb-4">
             Uploaded PDFs

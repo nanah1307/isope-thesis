@@ -70,7 +70,7 @@ export function GradingTab({
               <p className="text-gray-500 text-lg">No PDF submission uploaded yet</p>
               {isOSAS && (
                 <p className="text-gray-400 text-sm mt-2">
-                  Student needs to upload file in the Instructions tab
+                  Student needs to upload PDF in the Instructions tab
                 </p>
               )}
             </div>

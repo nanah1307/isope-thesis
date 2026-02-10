@@ -121,7 +121,7 @@ const loadRequirementFromSupabase = async () => {
 
     if (error) throw error;
 
-        const raw = (data.submissiontype || '').toString().trim().toLowerCase();
+    const raw = (data.submissiontype || '').toString().trim().toLowerCase();
 
     const allowed =
       raw.includes(',') ? raw.split(',').map((s: string) => s.trim()).filter(Boolean)
@@ -134,8 +134,8 @@ const loadRequirementFromSupabase = async () => {
       requirement: data,
       instructions: data.instructions || '',
       allowedFileTypes: allowed,
+      submissiontype: data.submissiontype as 'freeform' | 'pdf'
     });
-
   } catch (err: any) {
     console.error(err);
     setError('Failed to load requirement');
@@ -254,7 +254,10 @@ const loadRequirementFromSupabase = async () => {
       setLoading('pdf', true);
 
       for (const file of Array.from(files)) {
-        if (file.type !== 'application/pdf') continue;
+        const ext = (file.name.split('.').pop() || '').toLowerCase();
+        const allowed = (state.allowedFileTypes || []).map((t: string) => t.toLowerCase());
+
+        if (!ext || !allowed.includes(ext)) continue;
 
         const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
         const filePath = `${orgname}/${reqid}/${crypto.randomUUID()}_${safeName}`;
@@ -263,7 +266,7 @@ const loadRequirementFromSupabase = async () => {
         const { error: uploadError } = await supabaseAdmin.storage
           .from('requirement-pdfs')
           .upload(filePath, file, {
-            contentType: 'application/pdf',
+            contentType: file.type,
           });
 
         if (uploadError) throw uploadError;
@@ -526,8 +529,6 @@ const loadRequirementFromSupabase = async () => {
     setError('Failed to update accepted file types');
   }
 };
-
-
 
   if (state.loading.page) {
     return (
