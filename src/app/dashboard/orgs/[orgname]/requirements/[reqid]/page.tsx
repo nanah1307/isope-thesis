@@ -6,6 +6,7 @@ import { supabaseAdmin, supabase } from '@/app/lib/database';
 import { useSession } from "next-auth/react";
 import { InstructionsBlock } from '@/app/ui/snippets/submission/instruction';
 import { SubmissionInfo } from '@/app/ui/snippets/submission/submission-info';
+import { PDFViewer } from '@/app/ui/snippets/submission/pdf-viewer';
 import { GradingTab } from '@/app/ui/snippets/submission/grading-tab';
 import { ArrowUturnLeftIcon } from '@heroicons/react/24/solid';
 import { useRouter } from 'next/navigation';
@@ -252,15 +253,20 @@ const loadRequirementFromSupabase = async () => {
       setError(null);
       setLoading('pdf', true);
 
+      const allowed = (state.allowedFileTypes || ['pdf']).map((t: string) => (t || '').toLowerCase().trim());
+
       for (const file of Array.from(files)) {
         const ext = (file.name.split('.').pop() || '').toLowerCase();
-        const allowed = (state.allowedFileTypes || []).map((t: string) => t.toLowerCase());
 
-        if (!ext || !allowed.includes(ext)) continue;
+        if (!ext || !allowed.includes(ext)) {
+          setError(`Invalid file type: "${file.name}". Allowed types: ${allowed.join(', ')}`);
+          return;
+        }
+      }
 
+      for (const file of Array.from(files)) {
         const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
         const filePath = `${orgname}/${reqid}/${crypto.randomUUID()}_${safeName}`;
-
 
         const { error: uploadError } = await supabaseAdmin.storage
           .from('requirement-pdfs')
@@ -279,11 +285,12 @@ const loadRequirementFromSupabase = async () => {
 
       updateState({ hasSubmitted: true });
       loadRequirementPdfs();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setError('Failed to upload PDFs');
+      setError(err?.message || 'Failed to upload files');
     } finally {
       setLoading('pdf', false);
+      event.target.value = '';
     }
   };
 
