@@ -80,10 +80,12 @@ export default function OrgsPage({ org }: OrgsProp) {
       <div key="overview" className="space-y-4">
         {/* Bio Section */}
         <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-start justify-between mb-3">
-            <h3 className="text-lg font-semibold text-gray-900">About</h3>
-            {isEditingOrg && <span className="text-xs text-gray-500">Organization description</span>}
-          </div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-3">About</h3>
+          {isEditingOrg && (
+            <label className="block text-xs font-medium text-gray-600 uppercase tracking-wide mb-1.5">
+              Organization Description
+            </label>
+          )}
           {isEditingOrg ? (
             <textarea
               value={bioDraft}
