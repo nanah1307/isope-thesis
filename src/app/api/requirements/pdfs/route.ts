@@ -27,14 +27,14 @@ export async function GET(req: Request) {
       pdfFiles.map(async (f: any) => {
         const filepath = `${folderPath}/${f.name}`;
 
-        const { data: signed, error: signErr } = await supabaseAdmin.storage
-          .from('requirement-pdfs')
-          .createSignedUrl(filepath, 60 * 60);
+        const { data } = supabaseAdmin.storage
+        .from('requirement-pdfs')
+        .getPublicUrl(filepath);
 
         return {
           id: filepath,
           filepath,
-          signedUrl: signErr ? null : signed?.signedUrl,
+          signedUrl: data.publicUrl,
           uploadedby: null,
           uploadedat: f.created_at || null,
         };
