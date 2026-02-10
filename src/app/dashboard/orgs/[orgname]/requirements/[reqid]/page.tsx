@@ -489,6 +489,18 @@ const loadRequirementFromSupabase = async () => {
     loadRequirementPdfs();
   }, [orgname, reqid]);
 
+  useEffect(() => {
+    const onFocus = () => {
+      if (state.activeTab === 'submission' && state.submissiontype === 'pdf') {
+        loadRequirementPdfs();
+      }
+    };
+
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, [state.activeTab, state.submissiontype, orgname, reqid]);
+
+
   const handleSubmitGrade = async () => {
     if (!checkPermission('osas', 'submit grades')) return;
     const success = await saveGradeToSupabase(state.score);
