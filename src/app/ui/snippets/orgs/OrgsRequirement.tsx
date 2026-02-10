@@ -260,24 +260,26 @@ export default function OrgsRequirement({
   return (
     <div className="overflow-x-auto" key="requirements-1">
       <div className="mb-4 flex justify-between">
-        <div className="flex gap-2">
-          <button
-            onClick={() => setEditMode((prev) => !prev)}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm cursor-pointer"
-          >
-            {editMode ? 'Exit Edit Mode' : 'Edit Scores'}
-          </button>
+                {role === 'osas' && (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setEditMode((prev) => !prev)}
+                      className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm cursor-pointer"
+                    >
+                      {editMode ? 'Exit Edit Mode' : 'Edit Scores'}
+                    </button>
 
-          {editMode && (
-            <button
-              onClick={saveScores}
-              disabled={saving}
-              className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 text-sm cursor-pointer disabled:opacity-50"
-            >
-              {saving ? 'Saving...' : 'Save Scores'}
-            </button>
-          )}
-        </div>
+                    {editMode && (
+                      <button
+                        onClick={saveScores}
+                        disabled={saving}
+                        className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 text-sm cursor-pointer disabled:opacity-50"
+                      >
+                        {saving ? 'Saving...' : 'Save Scores'}
+                      </button>
+                    )}
+                  </div>
+                )}
 
         {role === 'osas' && (
             <button
