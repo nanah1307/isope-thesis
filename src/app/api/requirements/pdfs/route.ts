@@ -34,7 +34,7 @@ export async function GET(req: Request) {
         return {
           id: filepath,
           filepath,
-          signedUrl: data.publicUrl,
+          publicUrl: data.publicUrl,
           uploadedby: null,
           uploadedat: f.created_at || null,
         };

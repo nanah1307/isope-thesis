@@ -40,7 +40,7 @@ export function GradingTab({
                           onClick={() =>
                             updateState({
                               selectedPdfId: pdf.id,
-                              uploadedPdf: pdf.signedUrl,
+                              uploadedPdf: pdf.publicUrl,
                               pdfFileName: fileName,
                             })
                           }

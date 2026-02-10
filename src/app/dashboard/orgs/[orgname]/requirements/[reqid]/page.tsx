@@ -45,7 +45,7 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
     userRole: null as 'osas' | 'member' | null,
     currentUserEmail: null as string | null,
     freeformAnswer: '',
-
+    selectedPdfId: null as string | null,
     
     loading: {
       page: true,
@@ -66,7 +66,7 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
     uploadedPdfs: [] as {
       id: string;
       filepath: string;
-      signedUrl: string;
+      publicUrl: string;
       uploadedby: string;
       uploadedat: string;
     }[],
@@ -296,11 +296,21 @@ const loadRequirementFromSupabase = async () => {
         throw new Error(json?.error || 'Failed to load PDFs');
       }
 
-      setState((prev: any) => ({
-        ...prev,
-        uploadedPdfs: json.pdfs || [],
-        selectedPdfId: prev.selectedPdfId || ((json.pdfs && json.pdfs.length > 0) ? json.pdfs[0].id : null),
-      }));
+      setState((prev: any) => {
+        const pdfs = json.pdfs || [];
+        const selected =
+          pdfs.find((p: any) => p.id === prev.selectedPdfId) ||
+          pdfs[0] ||
+          null;
+
+        return {
+          ...prev,
+          uploadedPdfs: pdfs,
+          selectedPdfId: selected ? selected.id : null,
+          uploadedPdf: selected ? selected.publicUrl : null,
+          pdfFileName: selected ? selected.filepath.split('/').pop() : '',
+        };
+      });
     } catch (err: any) {
       console.error(err);
       setError(err.message || 'Failed to load PDFs');
@@ -308,30 +318,7 @@ const loadRequirementFromSupabase = async () => {
   };
 
 
-
-
-
-  const loadPdfFromSupabase = async () => {
-  try {
-    const filePath = `${orgname}/${reqid}.pdf`;
-
-    const { data, error } = await supabase.storage
-      .from('requirement-pdfs')
-      .createSignedUrl(filePath, 60 * 60);
-
-    if (error) return; // PDF may not exist yet
-
-    updateState({
-      uploadedPdf: data.signedUrl,
-      pdfFileName: `${reqid}.pdf`,
-    });
-  } catch (err) {
-    console.warn('No PDF uploaded yet');
-  }
-};
-
-
-
+  
   // Remove PDF
   const handleRemovePdf = async (pdfId: string) => {
     try {
