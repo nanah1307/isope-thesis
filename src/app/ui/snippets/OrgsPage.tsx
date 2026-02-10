@@ -44,6 +44,9 @@ export default function OrgsPage({ org }: OrgsProp) {
   const [adviser, setAdviser] = useState(org.adviser ?? '');
   const [adviserDraft, setAdviserDraft] = useState(org.adviser ?? '');
 
+  const [adviserEmail, setAdviserEmail] = useState(org.adviseremail ?? '');
+  const [adviserEmailDraft, setAdviserEmailDraft] = useState(org.adviseremail ?? '');
+
   const [accreditlvl, setAccreditlvl] = useState(org.accreditlvl ?? 1);
   const [accreditlvlDraft, setAccreditlvlDraft] = useState(org.accreditlvl ?? 1);
 
@@ -57,6 +60,7 @@ export default function OrgsPage({ org }: OrgsProp) {
       .update({
         bio: bioDraft || null,
         adviser: adviserDraft || null,
+        adviseremail: adviserEmailDraft || null,
         accreditlvl: accreditlvlDraft,
       })
       .eq('username', org.username); 
@@ -67,6 +71,7 @@ export default function OrgsPage({ org }: OrgsProp) {
     } else {
       setBio(bioDraft);
       setAdviser(adviserDraft);
+      setAdviserEmail(adviserEmailDraft);
       setAccreditlvl(accreditlvlDraft);
       setIsEditingOrg(false);
     }
@@ -102,6 +107,7 @@ export default function OrgsPage({ org }: OrgsProp) {
                 onClick={() => {
                   setBioDraft(bio);
                   setAdviserDraft(adviser);
+                  setAdviserEmailDraft(adviserEmail);
                   setAccreditlvlDraft(accreditlvl);
                   setIsEditingOrg(false);
                 }}
@@ -140,6 +146,21 @@ export default function OrgsPage({ org }: OrgsProp) {
               />
             ) : (
               <p className="text-sm sm:text-base leading-relaxed">Adviser: {adviser}</p>
+            )}
+          </div>
+
+          {/* Adviser Email */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+            {isEditingOrg && <span className="w-36 font-medium">Adviser Email:</span>}
+            {isEditingOrg ? (
+              <input
+                type="email"
+                value={adviserEmailDraft}
+                onChange={(e) => setAdviserEmailDraft(e.target.value)}
+                className="flex-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+              />
+            ) : (
+              <p className="text-sm sm:text-base leading-relaxed">Adviser Email: {adviserEmail}</p>
             )}
           </div>
 

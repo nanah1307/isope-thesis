@@ -20,8 +20,51 @@ export function GradingTab({
       {/* PDF submission */}
       {state.submissiontype === 'pdf' && (
         <>
-          {state.uploadedPdf ? (
-            <PDFViewer state={state} updateState={updateState} />
+          {state.uploadedPdfs && state.uploadedPdfs.length > 0 ? (
+           <div className="space-y-4">
+              {state.uploadedPdfs.length > 1 && (
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Uploaded PDFs ({state.uploadedPdfs.length})
+                  </label>
+
+                  <div className="flex flex-wrap gap-2">
+                    {state.uploadedPdfs.map((pdf: any) => {
+                      const fileName = pdf.filepath.split('/').pop();
+                      const isActive = state.selectedPdfId === pdf.id;
+
+                      return (
+                        <button
+                          key={pdf.id}
+                          type="button"
+                          onClick={() =>
+                            updateState({
+                              selectedPdfId: pdf.id,
+                              uploadedPdf: pdf.publicUrl,
+                              pdfFileName: fileName,
+                            })
+                          }
+                          className={`px-3 py-1.5 rounded-lg text-sm border transition-colors cursor-pointer ${
+                            isActive
+                              ? 'bg-blue-600 text-white border-blue-600'
+                              : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-100'
+                          }`}
+                          title={fileName}
+                        >
+                          {fileName}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              <PDFViewer
+                state={state}
+                updateState={updateState}
+              />
+            </div>
+
           ) : (
             <div className="flex items-center justify-center h-[600px] bg-gray-100 rounded-lg border-2 border-dashed border-gray-300">
               <div className="text-center">

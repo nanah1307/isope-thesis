@@ -44,8 +44,6 @@ export default function Home() {
           </Suspense>
           <div className="w-full h-px bg-blue-500 my-4"></div>
           <p className="text-black text-3xl">Sign in</p>
-
-
           <div className="space-y-2 mt-4 text-left">
             <input
               className="w-full border px-3 py-2 rounded"
@@ -80,6 +78,9 @@ export default function Home() {
 
           <div className="my-3 text-black">or</div>
           <button onClick={() => signIn("google")} className="bg-red-500 text-white px-4 py-2 rounded cursor-pointer w-full hover:bg-red-700">Sign in with Google</button>
+          <div className="mt-2 text-sm">
+            <a href="/forgot-password" className="text-blue-600 hover:underline">Forgot password?</a>
+          </div>
         </div>
       </div>
     </div>
@@ -88,6 +89,19 @@ export default function Home() {
 
 function LoginErrorMessage() {
   const error = useSearchParams().get("error");
-  if (error !== "unauthorized") return null;
-  return <p className="text-red-500">Only iAcademy accounts are allowed.</p>;
+  if (!error) return null;
+  
+  // Handle signup-specific errors
+  if (error === "Username already exists") {
+    return <p className="text-red-500">Username already exists</p>;
+  }
+  if (error === "User already exists") {
+    return <p className="text-red-500">User already exists</p>;
+  }
+  if (error === "unauthorized") {
+    return <p className="text-red-500">Only iAcademy accounts are allowed.</p>;
+  }
+  
+  // Generic error message
+  return <p className="text-red-500">{decodeURIComponent(error)}</p>;
 }

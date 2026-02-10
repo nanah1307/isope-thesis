@@ -125,7 +125,7 @@ export function SubmissionInfo({
                         <span className="text-xs text-gray-400 ml-2"></span>
                       </div>
                       <button
-                        className="text-gray-400 hover:text-red-600 transition-colors"
+                        className="text-gray-400 hover:text-red-600 transition-colors cursor-pointer"
                       >
                         <TrashIcon className="w-5 h-5" />
                       </button>

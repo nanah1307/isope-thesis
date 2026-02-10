@@ -1,39 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "@/app/lib/database";
+import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 
 export default function SignUpPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
   const [name, setName] = useState("");
-
-  const handleSignUp = async () => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-    });
-
-    if (error || !data.user) {
-      alert(error?.message);
-      return;
-    }
-
-    const { error: insertError } = await supabase.from("users").insert({
-      id: data.user.id,
-      email,
-      username,
-      name,
-      role: "member",
-    });
-
-    if (insertError) {
-      alert(insertError.message);
-    } else {
-      alert("Account created!");
-    }
-  };
+  const router = useRouter();
 
   return (
     <div className="bg-white min-h-screen">
@@ -57,25 +33,13 @@ export default function SignUpPage() {
 
           <div className="space-y-2 mt-4 text-left">
             <input
-              className="w-full border px-3 py-2 rounded"
-              placeholder="Name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-            <input
-              className="w-full border px-3 py-2 rounded"
+              className="w-full border px-3 py-2 rounded text-black"
               placeholder="Username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
             />
             <input
-              className="w-full border px-3 py-2 rounded"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-            <input
-              className="w-full border px-3 py-2 rounded"
+              className="w-full border px-3 py-2 rounded text-black"
               type="password"
               placeholder="Password"
               value={password}
@@ -84,10 +48,25 @@ export default function SignUpPage() {
           </div>
 
           <button
-            onClick={handleSignUp}
-            className="bg-blue-600 text-white px-4 py-2 rounded mt-3 w-full"
+            onClick={async () => {
+              if (!username || !password) return alert("Enter username & password");
+              // store temp signup info (password sent to server to be bcrypt'd)
+              const temp = { username, password };
+              document.cookie = `signup_temp=${encodeURIComponent(JSON.stringify(temp))}; path=/; max-age=600`;
+              // start OAuth flow and return to /signup/complete where we'll finalize
+              signIn("google", { callbackUrl: `${window.location.origin}/signup/complete` });
+            }}
+            className="bg-blue-600 text-white px-4 py-2 rounded mt-3 w-full cursor-pointer
+            hover:bg-blue-700"
           >
             Create Account
+          </button>
+          <button
+            onClick={() => router.push("/login")}
+            className="bg-gray-200 text-black px-4 py-2 rounded mt-3 w-full cursor-pointer
+            hover:bg-gray-300"
+          >
+            Already have an account? Sign in
           </button>
         </div>
       </div>

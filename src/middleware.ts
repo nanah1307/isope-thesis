@@ -7,8 +7,8 @@ export async function middleware(req: NextRequest) {
 
   const pathname = req.nextUrl.pathname;
 
-  // Not logged in: only allow /login and /signup
-  if (!token && pathname !== "/login" && pathname !== "/signup") {
+  // Not logged in: only allow /login, /signup, /forgot-password, and /reset-password
+  if (!token && pathname !== "/login" && pathname !== "/signup" && pathname !== "/forgot-password" && !pathname.startsWith("/reset-password")) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
@@ -18,7 +18,7 @@ export async function middleware(req: NextRequest) {
   // }
 
   // Logged in users shouldn't see login or signup pages
-  if (token && (pathname === "/login" || pathname === "/signup")) {
+  if (token && (pathname === "/login" || pathname === "/signup" || pathname === "/forgot-password")) {
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
   return NextResponse.next();

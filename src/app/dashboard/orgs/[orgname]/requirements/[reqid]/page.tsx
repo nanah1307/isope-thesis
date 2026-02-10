@@ -2,7 +2,7 @@
 
 import { useState, useEffect, use } from 'react';
 import { formatName } from '@/app/lib/assessments';
-import { supabase } from '@/app/lib/database';
+import { supabaseAdmin, supabase } from '@/app/lib/database';
 import { useSession } from "next-auth/react";
 import { InstructionsBlock } from '@/app/ui/snippets/submission/instruction';
 import { SubmissionInfo } from '@/app/ui/snippets/submission/submission-info';
@@ -39,13 +39,10 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
     error: null as string | null,
     uploadedPdf: null as string | null,
     pdfFileName: '',
-    currentPage: 1,
-    totalPages: 1,
-    pdfZoom: 1.0,
     userRole: null as 'osas' | 'member' | null,
     currentUserEmail: null as string | null,
     freeformAnswer: '',
-
+    selectedPdfId: null as string | null,
     
     loading: {
       page: true,
@@ -62,6 +59,14 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
       section: string;
       active: boolean;
     } | null),
+
+    uploadedPdfs: [] as {
+      id: string;
+      filepath: string;
+      publicUrl: string;
+      uploadedby: string;
+      uploadedat: string;
+    }[],
   });
 
   const requirementName = state.requirement?.title || reqid;
@@ -226,105 +231,114 @@ const loadRequirementFromSupabase = async () => {
 
   // Handle PDF upload
   const handlePdfUpload = async (
-  event: React.ChangeEvent<HTMLInputElement>
+    event: React.ChangeEvent<HTMLInputElement>
   ) => {
     if (!checkPermission('member', 'upload PDFs')) return;
 
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    if (file.type !== 'application/pdf') {
-      setError('Only PDF files are allowed');
-      return;
-    }
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
 
     try {
       setError(null);
       setLoading('pdf', true);
 
+      for (const file of Array.from(files)) {
+        if (file.type !== 'application/pdf') continue;
 
-      const filePath = `${orgname}/${reqid}.pdf`;
+        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const filePath = `${orgname}/${reqid}/${crypto.randomUUID()}_${safeName}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from('requirement-pdfs')
-        .upload(filePath, file, {
-          upsert: true,
-          contentType: 'application/pdf',
-        });
 
-      if (uploadError) throw uploadError;
+        const { error: uploadError } = await supabaseAdmin.storage
+          .from('requirement-pdfs')
+          .upload(filePath, file, {
+            contentType: 'application/pdf',
+          });
 
-      // Mark submission as submitted
+        if (uploadError) throw uploadError;
+      }
+
       await supabase
         .from('org_requirement_status')
-        .update({
-          submitted: true,
-        })
+        .update({ submitted: true })
         .eq('orgUsername', orgname)
         .eq('requirementId', reqid);
 
-      // Create signed URL for preview
-      const { data } = await supabase.storage
-        .from('requirement-pdfs')
-        .createSignedUrl(filePath, 60 * 60);
-
-      updateState({
-        uploadedPdf: data?.signedUrl ?? null,
-        pdfFileName: file.name,
-        hasSubmitted: true,
-      });
-    } catch (err: any) {
+      updateState({ hasSubmitted: true });
+      loadRequirementPdfs();
+    } catch (err) {
       console.error(err);
-      setError('Failed to upload PDF');
+      setError('Failed to upload PDFs');
     } finally {
       setLoading('pdf', false);
     }
   };
 
-  const loadPdfFromSupabase = async () => {
-  try {
-    const filePath = `${orgname}/${reqid}.pdf`;
+  const loadRequirementPdfs = async () => {
+    try {
+      setError(null);
 
-    const { data, error } = await supabase.storage
-      .from('requirement-pdfs')
-      .createSignedUrl(filePath, 60 * 60);
+      const res = await fetch(
+        `/api/requirements/pdfs?orgname=${encodeURIComponent(orgname)}&reqid=${encodeURIComponent(reqid)}`
+      );
 
-    if (error) return; // PDF may not exist yet
+      const json = await res.json();
 
-    updateState({
-      uploadedPdf: data.signedUrl,
-      pdfFileName: `${reqid}.pdf`,
-    });
-  } catch (err) {
-    console.warn('No PDF uploaded yet');
-  }
-};
+      if (!res.ok) {
+        throw new Error(json?.error || 'Failed to load PDFs');
+      }
 
+      setState((prev: any) => {
+        const pdfs = json.pdfs || [];
+        const selected =
+          pdfs.find((p: any) => p.id === prev.selectedPdfId) ||
+          pdfs[0] ||
+          null;
 
-
-  // Remove PDF
-  const handleRemovePdf = async () => {
-    if (!checkPermission('member', 'remove PDFs')) return;
-
-    const filePath = `${orgname}/${reqid}.pdf`;
-
-    await supabase.storage
-      .from('requirement-pdfs')
-      .remove([filePath]);
-
-    await supabase
-      .from('org_requirement_status')
-      .update({ submitted: false })
-      .eq('orgUsername', orgname)
-      .eq('requirementId', reqid);
-
-    updateState({
-      uploadedPdf: null,
-      pdfFileName: '',
-      currentPage: 1,
-      hasSubmitted: false,
-    });
+        return {
+          ...prev,
+          uploadedPdfs: pdfs,
+          selectedPdfId: selected ? selected.id : null,
+          uploadedPdf: selected ? selected.publicUrl : null,
+          pdfFileName: selected ? selected.filepath.split('/').pop() : '',
+        };
+      });
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || 'Failed to load PDFs');
+    }
   };
+
+
+  
+  // Remove PDF
+  const handleRemovePdf = async (pdfId: string) => {
+    try {
+      setError(null);
+
+      const res = await fetch('/api/requirements/pdfs', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filepath: pdfId }),
+      });
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        throw new Error(json?.error || 'Failed to delete PDF');
+      }
+
+      setState((prev: any) => ({
+        ...prev,
+        uploadedPdfs: prev.uploadedPdfs.filter((pdf: any) => pdf.id !== pdfId),
+        selectedPdfId: prev.selectedPdfId === pdfId ? null : prev.selectedPdfId,
+      }));
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || 'Failed to delete PDF');
+    }
+  };
+
 
   const handleSubmitFreeform = async () => {
   if (!checkPermission('member', 'submit freeform answers')) return;
@@ -403,6 +417,16 @@ const loadRequirementFromSupabase = async () => {
 
       updateState({ currentUserEmail: email });
 
+      const checkSupabaseAuth = async () => {
+      const { data, error } = await supabase.auth.getSession();
+
+      console.log('SUPABASE SESSION:', data?.session);
+      if (error) console.error('Supabase auth error:', error);
+    };
+
+    checkSupabaseAuth();
+
+
       if (rawRole === 'osas' || rawRole === 'member') {
         updateState({ userRole: rawRole as 'osas' | 'member' });
 
@@ -441,6 +465,7 @@ const loadRequirementFromSupabase = async () => {
     };
 
     loadSubmissionStatus();
+    loadRequirementPdfs();
   }, [orgname, reqid]);
 
   const handleSubmitGrade = async () => {
