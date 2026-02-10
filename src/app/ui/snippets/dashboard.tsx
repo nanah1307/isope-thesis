@@ -198,7 +198,7 @@ const OrgsDashboard: FC = () => {
           const { data: memberData } = await supabase
             .from('member')
             .select('*, orgs(*)')
-            .eq('student_name', name)
+            .eq('student_name', name);
 
             //extracts orgs from memberdata
           fetchedOrgs = memberData?.map((m) => m.orgs) ?? [];
@@ -214,6 +214,9 @@ const OrgsDashboard: FC = () => {
             if (data) fetchedOrgs = [data];
           }
         }
+
+        // limit to first 3 orgs
+      fetchedOrgs = fetchedOrgs.slice(0, 3);
 
         if (fetchedOrgs.length === 0) {
           setOrgs([]);
@@ -335,14 +338,25 @@ const OrgsDashboard: FC = () => {
       </div>
 
       {filteredOrgs.length === 0 ? (
-      <p className="text-black">No organizations found.</p>
+        <p className="text-black">No organizations found.</p>
       ) : (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredOrgs.map((org) => (
-        <OrgCard key={org.username} org={org} />
-        ))}
-      </div>
+        <div className="flex flex-col items-center gap-6">
+          <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredOrgs.map((org) => (
+              <OrgCard key={org.username} org={org} />
+            ))}
+          </div>
+
+          {/* See More Button */}
+          <a
+            href="/navorgs"
+            className="bg-[#014fb3] hover:bg-[#013db3] text-white px-6 py-2 rounded-md font-medium transition"
+          >
+            See More
+          </a>
+        </div>
       )}
+
 
       <CreateOrgModal
         isOpen={showModal}
