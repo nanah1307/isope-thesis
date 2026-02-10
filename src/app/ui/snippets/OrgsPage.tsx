@@ -81,29 +81,161 @@ export default function OrgsPage({ org }: OrgsProp) {
 
   const content: Record<string, React.ReactNode[]> = {
     Overview: [
-      <div key="overview" className="relative">
-        {/* Edit Overview */}
-        <div className="absolute top-0 right-0 flex flex-col space-y-2">
+      <div key="overview" className="space-y-4">
+        {/* Bio Section */}
+        <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-200">
+          <div className="flex items-start justify-between mb-3">
+            <h3 className="text-lg font-semibold text-gray-900">About</h3>
+            {isEditingOrg && <span className="text-xs text-gray-500">Organization description</span>}
+          </div>
+          {isEditingOrg ? (
+            <textarea
+              value={bioDraft}
+              onChange={(e) => setBioDraft(e.target.value)}
+              className="w-full min-h-[120px] p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-gray-900 cursor-text"
+              placeholder="Tell us about your organization..."
+            />
+          ) : (
+            <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">
+              {bio || <span className="text-gray-400 italic">No bio provided yet.</span>}
+            </p>
+          )}
+        </div>
+
+        {/* Adviser Information Card */}
+        <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Adviser Information</h3>
+          
+          <div className="space-y-4">
+            {/* Adviser Name */}
+            <div>
+              <label className="block text-xs font-medium text-gray-600 uppercase tracking-wide mb-1.5">
+                Adviser Name
+              </label>
+              {isEditingOrg ? (
+                <input
+                  type="text"
+                  value={adviserDraft}
+                  onChange={(e) => setAdviserDraft(e.target.value)}
+                  className="w-full p-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 cursor-text"
+                  placeholder="Enter adviser name"
+                />
+              ) : (
+                <p className="text-gray-900 font-medium">
+                  {adviser || <span className="text-gray-400 font-normal italic">Not assigned</span>}
+                </p>
+              )}
+            </div>
+
+            {/* Adviser Email */}
+            <div>
+              <label className="block text-xs font-medium text-gray-600 uppercase tracking-wide mb-1.5">
+                Contact Email
+              </label>
+              {isEditingOrg ? (
+                <input
+                  type="email"
+                  value={adviserEmailDraft}
+                  onChange={(e) => setAdviserEmailDraft(e.target.value)}
+                  className="w-full p-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 cursor-text"
+                  placeholder="adviser@example.com"
+                />
+              ) : (
+                <p className="text-gray-900">
+                  {adviserEmail || <span className="text-gray-400 italic">Not provided</span>}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Accreditation Card */}
+        <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Accreditation</h3>
+          
+          <div>
+            <label className="block text-xs font-medium text-gray-600 uppercase tracking-wide mb-1.5">
+              Current Level
+            </label>
+            {isEditingOrg ? (
+              <select
+                value={accreditlvlDraft}
+                onChange={(e) => setAccreditlvlDraft(Number(e.target.value))}
+                className="w-full p-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 cursor-pointer"
+              >
+                <option value={1}>Level 1</option>
+                <option value={2}>Level 2</option>
+                <option value={3}>Level 3</option>
+              </select>
+            ) : (
+              <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium ${
+                accreditlvl === 1 ? 'bg-yellow-100 text-yellow-800' :
+                accreditlvl === 2 ? 'bg-blue-100 text-blue-800' :
+                'bg-green-100 text-green-800'
+              }`}>
+                Level {accreditlvl}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Organization Logo Card - Only visible in edit mode */}
+        {isEditingOrg && (
+          <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Organization Logo</h3>
+            
+            <div className="space-y-4">
+              {/* Current Logo Preview */}
+              <div>
+                <label className="block text-xs font-medium text-gray-600 uppercase tracking-wide mb-2">
+                  Current Logo
+                </label>
+                <div className="flex items-center gap-4">
+                  <img
+                    src={org.avatar}
+                    alt="Organization Logo"
+                    className="w-20 h-20 rounded-lg object-cover border-2 border-gray-200"
+                  />
+                  <div className="text-sm text-gray-600">
+                    <p>Recommended: Square image (1:1 ratio)</p>
+                    <p>Maximum size: 5MB</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Upload Button */}
+              <div>
+                <label className="block text-xs font-medium text-gray-600 uppercase tracking-wide mb-2">
+                  Change Logo
+                </label>
+                <button className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-all shadow-sm hover:shadow-md cursor-pointer">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  Upload New Logo
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Action Buttons at the bottom */}
+        <div className="flex justify-end gap-2 pt-2">
           {!isEditingOrg ? (
             <button
-              className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-md cursor-pointer hover:bg-blue-700 transition-colors"
+              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-all shadow-sm hover:shadow-md flex items-center gap-2 cursor-pointer"
               onClick={() => setIsEditingOrg(true)}
             >
-              Edit
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+              Edit Overview
             </button>
           ) : (
             <>
               <button
                 disabled={saving}
-                className="px-3 py-1.5 text-sm font-medium text-white bg-green-600 rounded-md cursor-pointer hover:bg-green-700 disabled:opacity-50 transition-colors"
-                onClick={saveOrg}
-              >
-                {saving ? 'Saving...' : 'Save'}
-              </button>
-
-              <button
-                disabled={saving}
-                className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-200 rounded-md cursor-pointer hover:bg-gray-300 transition-colors"
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
                 onClick={() => {
                   setBioDraft(bio);
                   setAdviserDraft(adviser);
@@ -114,73 +246,30 @@ export default function OrgsPage({ org }: OrgsProp) {
               >
                 Cancel
               </button>
+              <button
+                disabled={saving}
+                className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50 transition-all shadow-sm hover:shadow-md flex items-center gap-2 cursor-pointer disabled:cursor-not-allowed"
+                onClick={saveOrg}
+              >
+                {saving ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Save Changes
+                  </>
+                )}
+              </button>
             </>
           )}
-        </div>
-
-        {/* Editable Fields */}
-        <div className="space-y-3 pr-16">
-          {/* Bio */}
-          <div className="flex flex-col sm:flex-row sm:items-start gap-2">
-            {isEditingOrg && <span className="w-36 font-medium">Bio:</span>}
-            {isEditingOrg ? (
-              <textarea
-                value={bioDraft}
-                onChange={(e) => setBioDraft(e.target.value)}
-                className="flex-1 min-h-[80px] p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
-              />
-            ) : (
-              <p className="text-sm sm:text-base leading-relaxed">{bio}</p>
-            )}
-          </div>
-
-          {/* Adviser */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-            {isEditingOrg && <span className="w-36 font-medium">Adviser:</span>}
-            {isEditingOrg ? (
-              <input
-                type="text"
-                value={adviserDraft}
-                onChange={(e) => setAdviserDraft(e.target.value)}
-                className="flex-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
-              />
-            ) : (
-              <p className="text-sm sm:text-base leading-relaxed">Adviser: {adviser}</p>
-            )}
-          </div>
-
-          {/* Adviser Email */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-            {isEditingOrg && <span className="w-36 font-medium">Adviser Email:</span>}
-            {isEditingOrg ? (
-              <input
-                type="email"
-                value={adviserEmailDraft}
-                onChange={(e) => setAdviserEmailDraft(e.target.value)}
-                className="flex-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
-              />
-            ) : (
-              <p className="text-sm sm:text-base leading-relaxed">Adviser Email: {adviserEmail}</p>
-            )}
-          </div>
-
-          {/* Accreditation Level */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-            {isEditingOrg && <span className="w-36 font-medium">Accreditation Level:</span>}
-            {isEditingOrg ? (
-              <select
-                value={accreditlvlDraft}
-                onChange={(e) => setAccreditlvlDraft(Number(e.target.value))}
-                className="flex-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
-              >
-                <option value={1}>1</option>
-                <option value={2}>2</option>
-                <option value={3}>3</option>
-              </select>
-            ) : (
-              <p className="text-sm sm:text-base leading-relaxed">Accreditation Level: {accreditlvl}</p>
-            )}
-          </div>
         </div>
       </div>
     ],
@@ -205,24 +294,28 @@ export default function OrgsPage({ org }: OrgsProp) {
   };
 
   return (
-    <div className="min-h-screen bg-white p-4 sm:p-8">
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-8">
       <div className="text-black flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-6 p-4 sm:p-6 rounded mx-auto max-w-xl">
         <img
           src={org.avatar}
           alt={org.name}
-          className="w-16 h-16 sm:w-24 sm:h-24 rounded-full object-cover"
+          className="w-16 h-16 sm:w-24 sm:h-24 rounded-full object-cover shadow-md border-2 border-white"
         />
         <h1 className="text-2xl sm:text-3xl font-semibold text-center sm:text-left">{org.name}</h1>
       </div>
 
-      <nav className="rounded mt-6 p-2 sm:p-4">
-        <ul className="flex flex-wrap sm:flex-nowrap justify-start sm:justify-left gap-4 sm:space-x-8 overflow-x-auto pb-2">
+      <nav className="rounded-lg mt-6 p-2 bg-white shadow-sm border border-gray-200">
+        <ul className="flex flex-wrap sm:flex-nowrap justify-start gap-2 overflow-x-auto">
           {links.map(({ name }) => (
             <li key={name} className="flex-shrink-0">
               <button
                 type="button"
-                className={`cursor-pointer text-gray-700 hover:text-black hover:bg-gray-200 pb-1 focus:outline-none whitespace-nowrap 
-                  ${ active === name ? "font-bold border-b-4 border-blue-500 shadow-md" : "font-medium shadow-md"}`}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap focus:outline-none cursor-pointer
+                  ${ 
+                    active === name 
+                      ? "bg-blue-600 text-white shadow-sm" 
+                      : "bg-transparent text-gray-600 hover:bg-gray-100"
+                  }`}
                 onClick={() => setActive(name)}
               >
                 {name}
@@ -232,8 +325,8 @@ export default function OrgsPage({ org }: OrgsProp) {
         </ul>
       </nav>
 
-      <div className="mt-6 w-full bg-gray-100 p-4 sm:p-6 rounded-t text-gray-700 min-h-[300px] space-y-3 text-sm sm:text-base">
-        {content[active] ? content[active] : <p>No content available.</p>}
+      <div className="mt-6 w-full bg-gray-50 p-4 sm:p-6 rounded-lg min-h-[400px]">
+        {content[active] ? content[active] : <p className="text-gray-500">No content available.</p>}
       </div>
     </div>
   );

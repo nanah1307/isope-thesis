@@ -49,12 +49,12 @@ const OrgCard: FC<{ org: any }> = ({ org }) => {
 
       {/* Progress Bar */}
       <div className="mt-4">
-        <div className="text-xs font-semibold text-blue-600 mb-1 text-center">
+        <div className="text-xs font-semibold text-[#014fb3] mb-1 text-center">
           {progress}%
         </div>
         <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
           <div
-            className="bg-blue-600 h-full rounded-full transition-all"
+            className="bg-[#014fb3] h-full rounded-full transition-all"
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -65,7 +65,7 @@ const OrgCard: FC<{ org: any }> = ({ org }) => {
         {/* Requirements */}
         <button
           onClick={goToDues}
-          className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-md text-sm font-medium transition cursor-pointer"
+          className="flex items-center justify-center gap-2 bg-[#014fb3] hover:bg-[#013db3] text-white px-3 py-2 rounded-md text-sm font-medium transition cursor-pointer"
         >
           <DocumentIcon className="w-5 h-5" />
           <span>Requirements</span>
@@ -74,7 +74,7 @@ const OrgCard: FC<{ org: any }> = ({ org }) => {
         {/* Notifications */}
         <button
           onClick={(e) => e.stopPropagation()}
-          className="flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-md transition cursor-pointer"
+          className="flex items-center justify-center bg-[#014fb3] hover:bg-[#013db3] text-white p-2 rounded-md transition cursor-pointer"
         >
           <BellIcon className="w-5 h-5" />
         </button>
@@ -128,7 +128,7 @@ const CreateOrgModal: FC<{
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Enter organization name"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-black"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#014fb3] outline-none text-black"
               onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
             />
           </div>
@@ -143,7 +143,7 @@ const CreateOrgModal: FC<{
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Enter email address"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-black"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#014fb3] outline-none text-black"
               onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
             />
           </div>
@@ -158,7 +158,7 @@ const CreateOrgModal: FC<{
           </button>
           <button
             onClick={handleCreate}
-            className="cursor-pointer text-white px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-md transition"
+            className="cursor-pointer text-white px-4 py-2 bg-[#014fb3] hover:bg-[#013db3] rounded-md transition"
           >
             Create
           </button>
@@ -305,7 +305,7 @@ const OrgsDashboard: FC = () => {
   if (loading) return <div className="p-4 text-black">Loading organizations...</div>;
   
   return (
-    <div className="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen p-6 overflow-y-scroll">
+    <div className="bg-gradient-to-br from-[#e6f1ff] to-indigo-100 min-h-screen p-6 overflow-y-scroll">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <div>
@@ -321,12 +321,12 @@ const OrgsDashboard: FC = () => {
             onChange={(e) => setSearch(e.target.value)}
             className="w-64 min-w-[16rem] max-w-[16rem] flex-shrink-0
                        bg-white px-4 py-2 rounded-md border border-gray-300 text-black
-                       focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+                       focus:bg-white focus:ring-2 focus:ring-[#014fb3] outline-none"
           />
       
           <button
             onClick={() => setShowModal(true)}
-            className="cursor-pointer flex-shrink-0 bg-blue-600 hover:bg-blue-700 text-white
+            className="cursor-pointer flex-shrink-0 bg-[#014fb3] hover:bg-[#013db3] text-white
                        px-4 py-2 rounded-md text-sm font-medium transition-colors"
           >
             Create Organization
