@@ -48,7 +48,7 @@ export type OrgRequirementStatus = {
 };
 
 export type instructions= {
-    comments: Comments[];
+  comments: Comments[];
   newComment: string;
 
   activeTab: 'instructions' | 'grading';
