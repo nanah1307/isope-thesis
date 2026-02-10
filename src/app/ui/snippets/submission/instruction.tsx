@@ -32,22 +32,6 @@ export function InstructionsBlock({
         <div className="flex items-center gap-2">
           {isMember && state.submissiontype === 'pdf' && !state.isEditingInstructions && (
             <>
-              {state.uploadedPdfs && state.uploadedPdfs.length > 0 && (
-                <div className="space-y-2 mb-4">
-                  {state.uploadedPdfs.map((pdf: any, idx: number) => (
-                    <div key={pdf.id} className="flex items-center justify-between bg-gray-100 p-2 rounded-lg border border-gray-300">
-                      <span className="text-gray-900 truncate">{pdf.filepath.split('/').pop()}</span>
-                      <button
-                        onClick={() => handleRemovePdf(pdf.id)}
-                        className="text-red-600 hover:text-red-800 transition-colors cursor-pointer"
-                      >
-                        <TrashIcon className="w-5 h-5" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-
               <label className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors cursor-pointer">
                 <ArrowUpTrayIcon className="w-5 h-5" />
                 Upload PDF
@@ -61,8 +45,6 @@ export function InstructionsBlock({
               </label>
             </>
           )}
-
-
 
           {isOSAS && !state.isEditingInstructions ? (
             <button onClick={() => updateState({ isEditingInstructions: true })} disabled={state.isEditingGrade}
@@ -103,6 +85,33 @@ export function InstructionsBlock({
         </>
       ) : (
         <p className="text-gray-900 mb-10 leading-relaxed text-xl max-w-4xl font-medium">{state.instructions}</p>
+      )}
+      {isMember && state.submissiontype === 'pdf' && state.uploadedPdfs.length > 0 && (
+        <div className="mt-10 pt-8 border-t border-gray-200">
+          <h3 className="text-gray-900 font-semibold mb-4">
+            Uploaded PDFs
+          </h3>
+
+          <div className="space-y-3">
+            {state.uploadedPdfs.map((pdf: any) => (
+              <div
+                key={pdf.id}
+                className="flex items-start justify-between bg-gray-100 p-4 rounded-lg border border-gray-300"
+              >
+                <span className="text-gray-900 break-all pr-4">
+                  {pdf.filepath.split('/').pop()}
+                </span>
+
+                <button
+                  onClick={() => handleRemovePdf(pdf.id)}
+                  className="text-red-600 hover:text-red-800 transition-colors flex-shrink-0 cursor-pointer"
+                >
+                  <TrashIcon className="w-5 h-5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );

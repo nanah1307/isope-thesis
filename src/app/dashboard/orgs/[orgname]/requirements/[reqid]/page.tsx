@@ -245,7 +245,9 @@ const loadRequirementFromSupabase = async () => {
       for (const file of Array.from(files)) {
         if (file.type !== 'application/pdf') continue;
 
-        const filePath = `${orgname}/${reqid}/${crypto.randomUUID()}.pdf`;
+        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const filePath = `${orgname}/${reqid}/${crypto.randomUUID()}_${safeName}`;
+
 
         const { error: uploadError } = await supabaseAdmin.storage
           .from('requirement-pdfs')
