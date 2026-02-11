@@ -10,6 +10,14 @@ export function SubmissionInfo({
   formattedDueDate,
   isEditing,
   handleSubmitGrade,
+
+  comments,
+  commentText,
+  currentUserEmail,
+  loadingComments,
+  loadingCommentAction,
+  handleAddComment,
+  handleDeleteComment,
 }: {
   state: any;
   updateState: (updates: any) => void;
@@ -17,6 +25,14 @@ export function SubmissionInfo({
   formattedDueDate: string;
   isEditing: boolean;
   handleSubmitGrade: () => void;
+
+  comments: any[];
+  commentText: string;
+  currentUserEmail: string | null;
+  loadingComments: boolean;
+  loadingCommentAction: boolean;
+  handleAddComment: () => void;
+  handleDeleteComment: (id: string) => void;
 }) {
   return (
     <>
@@ -36,7 +52,7 @@ export function SubmissionInfo({
           {isOSAS && !state.isEditingGrade ? (
             <button onClick={() => updateState({ isEditingGrade: true })} disabled={state.isEditingInstructions || state.loading.grade}
               className={`flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors ${
-                state.isEditingInstructions || state.loading.grade ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                state.isEditingInstructions || state.loading.requirement ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
               }`}>
               <PencilSquareIcon className="w-5 h-5" />
               Edit
@@ -91,6 +107,79 @@ export function SubmissionInfo({
                 <span className="text-3xl font-bold text-gray-900">{state.submittedScore}/{state.maxScore}</span>
               </div>
             </div>
+          </div>
+        )}
+      </div>
+
+      <div className="bg-white rounded-lg shadow-sm p-6">
+        <h3 className="font-semibold text-gray-900 mb-4">Adviser's Feedback</h3>
+        <div className="flex items-center gap-3">
+          <div className="w-6 h-6 border-2 border-gray-300 rounded" />
+          <span className="font-semibold text-gray-900">Approved!</span>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-lg shadow-sm p-6">
+        <h3 className="font-semibold text-gray-900 mb-4">Comments</h3>
+
+        <div className="mb-4">
+          <textarea
+            placeholder="Add a comment..."
+            value={commentText}
+            onChange={(e) => updateState({ commentText: e.target.value })}
+            className="w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none text-sm placeholder:text-gray-400"
+          />
+          <button
+            onClick={handleAddComment}
+            disabled={loadingCommentAction || !(commentText || '').trim()}
+            className="cursor-pointer mt-2 w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-medium px-4 py-2 rounded-lg transition-colors text-sm $"
+          >
+            Add Comment
+          </button>
+        </div>
+
+        {loadingComments ? (
+          <div className="flex justify-center items-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          </div>
+        ) : (
+          <div className="space-y-3 max-h-[400px] overflow-y-auto">
+            {comments && comments.length > 0 ? (
+              comments.map((c: any) => {
+                const canDelete =
+                  currentUserEmail &&
+                  (c.authorEmail || '').toLowerCase() === currentUserEmail.toLowerCase();
+
+                const dateLabel = c.createdAt
+                  ? new Date(c.createdAt).toLocaleString()
+                  : '';
+
+                return (
+                  <div key={c.id} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <span className="text-xs text-gray-500">
+                          {c.authorName || c.authorEmail || 'Unknown'}
+                        </span>
+                        <span className="text-xs text-gray-400 ml-2">{dateLabel}</span>
+                      </div>
+                      {canDelete && (
+                        <button
+                          onClick={() => handleDeleteComment(c.id)}
+                          disabled={loadingCommentAction}
+                          className="text-gray-400 hover:text-red-600 transition-colors cursor-pointer"
+                        >
+                          <TrashIcon className="w-5 h-5" />
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-700 break-words">{c.content}</p>
+                  </div>
+                );
+              })
+            ) : (
+              <p className="text-sm text-gray-500">No comments yet</p>
+            )}
           </div>
         )}
       </div>

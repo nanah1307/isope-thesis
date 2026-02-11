@@ -10,8 +10,6 @@ import { PDFViewer } from '@/app/ui/snippets/submission/pdf-viewer';
 import { GradingTab } from '@/app/ui/snippets/submission/grading-tab';
 import { ArrowUturnLeftIcon } from '@heroicons/react/24/solid';
 import { useRouter } from 'next/navigation';
-import { useSearchParams } from 'next/navigation';
-
 
 
 
@@ -21,10 +19,6 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
   const { data: session, status } = useSession();
   
   const router = useRouter();
-
-  const searchParams = useSearchParams();
-  const statusId = searchParams.get('statusId');
-
 
   const goToDues = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -50,12 +44,25 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
     freeformAnswer: '',
     selectedPdfId: null as string | null,
     allowedFileTypes: ['pdf'] as string[],
+
+    commentText: '',
+    comments: [] as {
+      id: string;
+      orgUsername: string;
+      requirementId: string;
+      authorEmail: string;
+      authorName: string | null;
+      content: string;
+      createdAt: string;
+    }[],
     
     loading: {
       page: true,
       requirement: false,
       grade: false,
       pdf: false,
+      comments: false,
+      commentAction: false,
     },
     
     submissiontype: null as 'freeform' | 'pdf' | null,
@@ -158,10 +165,8 @@ const loadRequirementFromSupabase = async () => {
       const { data, error: fetchError } = await supabase
         .from('org_requirement_status')
         .select('grade, score, freeformans')
-        .eq('id', statusId)
-
-        /*.eq('orgUsername', orgname)
-        .eq('requirementId', reqid)*/
+        .eq('orgUsername', orgname)
+        .eq('requirementId', reqid)
         .maybeSingle() as any;
 
       if (fetchError) {
@@ -248,7 +253,7 @@ const loadRequirementFromSupabase = async () => {
     }
   };
 
-  // Handle PDF upload
+  // Handle file upload
   const handlePdfUpload = async (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
@@ -275,6 +280,7 @@ const loadRequirementFromSupabase = async () => {
       for (const file of Array.from(files)) {
         const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
         const filePath = `${orgname}/${reqid}/${crypto.randomUUID()}_${safeName}`;
+
 
         const { error: uploadError } = await supabaseAdmin.storage
           .from('requirement-pdfs')
@@ -339,7 +345,7 @@ const loadRequirementFromSupabase = async () => {
 
 
   
-  // Remove PDF
+  // Remove file
   const handleRemovePdf = async (pdfId: string) => {
     try {
       setError(null);
@@ -353,7 +359,7 @@ const loadRequirementFromSupabase = async () => {
       const json = await res.json();
 
       if (!res.ok) {
-        throw new Error(json?.error || 'Failed to delete PDF');
+        throw new Error(json?.error || 'Failed to delete file');
       }
 
       setState((prev: any) => ({
@@ -363,7 +369,7 @@ const loadRequirementFromSupabase = async () => {
       }));
     } catch (err: any) {
       console.error(err);
-      setError(err.message || 'Failed to delete PDF');
+      setError(err.message || 'Failed to delete file');
     }
   };
 
@@ -420,6 +426,93 @@ const loadRequirementFromSupabase = async () => {
   }
 };
 
+  const loadComments = async () => {
+    try {
+      setError(null);
+      setLoading('comments', true);
+
+      const res = await fetch(
+        `/api/requirements/comments?orgname=${encodeURIComponent(orgname)}&reqid=${encodeURIComponent(reqid)}`
+      );
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        throw new Error(json?.error || 'Failed to load comments');
+      }
+
+      updateState({ comments: json.comments || [] });
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || 'Failed to load comments');
+    } finally {
+      setLoading('comments', false);
+    }
+  };
+
+  const handleAddComment = async () => {
+    try {
+      const content = (state.commentText || '').trim();
+      if (!content) {
+        setError('Comment cannot be empty');
+        return;
+      }
+
+      setError(null);
+      setLoading('commentAction', true);
+
+      const res = await fetch('/api/requirements/comments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orgname,
+          reqid,
+          content,
+        }),
+      });
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        throw new Error(json?.error || 'Failed to add comment');
+      }
+
+      updateState({ commentText: '' });
+      loadComments();
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || 'Failed to add comment');
+    } finally {
+      setLoading('commentAction', false);
+    }
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    try {
+      setError(null);
+      setLoading('commentAction', true);
+
+      const res = await fetch('/api/requirements/comments', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: commentId }),
+      });
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        throw new Error(json?.error || 'Failed to delete comment');
+      }
+
+      loadComments();
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || 'Failed to delete comment');
+    } finally {
+      setLoading('commentAction', false);
+    }
+  };
+
   // Session effect
   useEffect(() => {
     if (status === 'loading') {
@@ -459,6 +552,7 @@ const loadRequirementFromSupabase = async () => {
         loadRequirementFromSupabase();
         loadGradeFromSupabase();
         loadDueDateFromSupabase();
+        loadComments();
       } else {
         setError(`Invalid role: "${rawRole}"`);
       }
@@ -491,6 +585,7 @@ const loadRequirementFromSupabase = async () => {
 
     loadSubmissionStatus();
     loadRequirementPdfs();
+    loadComments();
   }, [orgname, reqid]);
 
   const handleSubmitGrade = async () => {
@@ -626,6 +721,13 @@ const loadRequirementFromSupabase = async () => {
               formattedDueDate={formattedDueDate}
               isEditing={isEditing}
               handleSubmitGrade={handleSubmitGrade}
+              comments={state.comments}
+              commentText={state.commentText}
+              currentUserEmail={state.currentUserEmail}
+              loadingComments={state.loading.comments}
+              loadingCommentAction={state.loading.commentAction}
+              handleAddComment={handleAddComment}
+              handleDeleteComment={handleDeleteComment}
             />
               </div>
             </div>
