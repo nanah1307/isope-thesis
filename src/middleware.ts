@@ -7,6 +7,11 @@ export async function middleware(req: NextRequest) {
 
   const pathname = req.nextUrl.pathname;
 
+  // Allow public password reset APIs
+  if (pathname.startsWith("/api/forgot-password") || pathname.startsWith("/api/reset-password")) {
+    return NextResponse.next();
+  }
+
   // Not logged in: only allow /login, /signup, /forgot-password, and /reset-password
   if (!token && pathname !== "/login" && pathname !== "/signup" && pathname !== "/forgot-password" && !pathname.startsWith("/reset-password")) {
     return NextResponse.redirect(new URL("/login", req.url));
