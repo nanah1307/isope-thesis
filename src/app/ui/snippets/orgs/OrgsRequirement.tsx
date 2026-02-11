@@ -10,9 +10,6 @@ type OrgsRequirementProps = {
   role: string;
 };
 
-
-
-
 type Requirement = {
   id: string;
   section: string;
@@ -39,10 +36,14 @@ export default function OrgsRequirement({
   role,
 }: OrgsRequirementProps) {
   const [requirements, setRequirements] = useState<Requirement[]>([]);
+  const [originalRequirements, setOriginalRequirements] = useState<Requirement[]>([]);
   const [statuses, setStatuses] = useState<OrgRequirementStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  const [editRequirementsMode, setEditRequirementsMode] = useState(false);
+  const [savingRequirements, setSavingRequirements] = useState(false);
 
   //console.log('ROLE IN OrgsRequirement:', role);
 
@@ -66,10 +67,12 @@ export default function OrgsRequirement({
         if (statusError) throw statusError;
 
         setRequirements(reqData || []);
+        setOriginalRequirements(reqData || []);
         setStatuses(statusData || []);
       } catch (err: any) {
         console.error('Error fetching requirements:', err.message ?? err);
         setRequirements([]);
+        setOriginalRequirements([]);
         setStatuses([]);
       } finally {
         setLoading(false);
@@ -257,17 +260,84 @@ export default function OrgsRequirement({
     }
   };
 
+  const saveRequirementsEdits = async () => {
+    setSavingRequirements(true);
+
+    try {
+      const originalMap = new Map(originalRequirements.map((r) => [r.id, r]));
+
+      const titleUpdates = requirements
+        .filter((r) => {
+          const orig = originalMap.get(r.id);
+          return orig && (orig.title !== r.title);
+        })
+        .map((r) => ({ id: r.id, title: r.title }));
+
+      if (titleUpdates.length > 0) {
+        for (const u of titleUpdates) {
+          const { error } = await supabase
+            .from('requirements')
+            .update({ title: u.title })
+            .eq('id', u.id);
+
+          if (error) throw error;
+        }
+      }
+
+      const statusUpdates = statuses
+        .filter((s) => !!s.id)
+        .map((s) => ({
+          id: s.id,
+          start: s.start,
+          due: s.due,
+          score: s.score,
+        }));
+
+      if (statusUpdates.length > 0) {
+        const { error } = await supabase
+          .from('org_requirement_status')
+          .upsert(statusUpdates, { onConflict: 'id' });
+
+        if (error) throw error;
+      }
+
+      alert('Requirements updated successfully.');
+      setOriginalRequirements(requirements);
+      setEditRequirementsMode(false);
+    } catch (err: any) {
+      console.error('Failed to save requirements:', err.message ?? err);
+      alert('Failed to save requirements.');
+    } finally {
+      setSavingRequirements(false);
+    }
+  };
+
   return (
     <div className="overflow-x-auto" key="requirements-1">
       <div className="mb-4 flex justify-between">
                 {role === 'osas' && (
                   <div className="flex gap-2">
                     <button
-                      onClick={() => setEditMode((prev) => !prev)}
+                      onClick={() => {
+                        setEditMode((prev) => !prev);
+                        if (!editMode) setEditRequirementsMode(false);
+                      }}
                       className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm cursor-pointer"
                     >
                       {editMode ? 'Exit Edit Mode' : 'Edit Scores'}
                     </button>
+
+                    {role === 'osas' && (
+                      <button
+                        onClick={() => {
+                          setEditRequirementsMode((prev) => !prev);
+                          if (!editRequirementsMode) setEditMode(false);
+                        }}
+                        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm cursor-pointer"
+                      >
+                        {editRequirementsMode ? 'Exit Edit Mode' : 'Edit Requirements'}
+                      </button>
+                    )}
 
                     {editMode && (
                       <button
@@ -276,6 +346,16 @@ export default function OrgsRequirement({
                         className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 text-sm cursor-pointer disabled:opacity-50"
                       >
                         {saving ? 'Saving...' : 'Save Scores'}
+                      </button>
+                    )}
+
+                    {editRequirementsMode && (
+                      <button
+                        onClick={saveRequirementsEdits}
+                        disabled={savingRequirements}
+                        className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 text-sm cursor-pointer disabled:opacity-50"
+                      >
+                        {savingRequirements ? 'Saving...' : 'Save Requirements'}
                       </button>
                     )}
                   </div>
@@ -314,7 +394,26 @@ export default function OrgsRequirement({
                 const status = getStatus(req.id);
                 return (
                   <tr key={req.id} className="border-b border-gray-200">
-                    <td className="border px-3 py-2">{req.title}</td>
+                    <td className="border px-3 py-2">
+                      {editRequirementsMode ? (
+                        <input
+                          type="text"
+                          value={req.title}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setRequirements((prev) =>
+                              prev.map((r) =>
+                                r.id === req.id ? { ...r, title: val } : r
+                              )
+                            );
+                          }}
+                          className="w-full border border-gray-300 rounded px-2 py-1 text-black"
+                        />
+                      ) : (
+                        req.title
+                      )}
+                    </td>
+
                     <td className="border px-3 py-2 text-center">
                       {status?.id ? (
                         <Link
@@ -335,10 +434,53 @@ export default function OrgsRequirement({
                       )}
                     </td>
 
-                    <td className="border px-3 py-2">{status?.start ? new Date(status.start).toLocaleDateString() : '-'}</td>
-                    <td className="border px-3 py-2">{status?.due ? new Date(status.due).toLocaleDateString() : '-'}</td>
+                    <td className="border px-3 py-2">
+                      {editRequirementsMode ? (
+                        <input
+                          type="date"
+                          value={status?.start ? status.start : ''}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setStatuses((prev) =>
+                              prev.map((s) =>
+                                s.requirementId === req.id
+                                  ? { ...s, start: val || null }
+                                  : s
+                              )
+                            );
+                          }}
+                          className="border border-gray-300 rounded px-2 py-1 text-black"
+                        />
+                      ) : (
+                        status?.start ? new Date(status.start).toLocaleDateString() : '-'
+                      )}
+                    </td>
+
+                    <td className="border px-3 py-2">
+                      {editRequirementsMode ? (
+                        <input
+                          type="date"
+                          value={status?.due ? status.due : ''}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setStatuses((prev) =>
+                              prev.map((s) =>
+                                s.requirementId === req.id
+                                  ? { ...s, due: val || null }
+                                  : s
+                              )
+                            );
+                          }}
+                          className="border border-gray-300 rounded px-2 py-1 text-black"
+                        />
+                      ) : (
+                        status?.due ? new Date(status.due).toLocaleDateString() : '-'
+                      )}
+                    </td>
+
                     <td className="border px-3 py-2">{status?.submitted ? '✅' : '❌'}</td>
                     <td className="border px-3 py-2">{status?.graded ? '✅' : '❌'}</td>
+
                     <td className="border px-3 py-2">
                       {editMode ? (
                         <div className="flex items-center gap-1">
@@ -384,6 +526,40 @@ export default function OrgsRequirement({
                             className="w-16 border border-gray-300 rounded px-2 py-1 text-black"
                           />
                           <span>/ {status?.score ?? '-'}</span>
+                        </div>
+                      ) : editRequirementsMode ? (
+                        <div className="flex items-center gap-1">
+                          <span className="text-gray-500">-</span>
+                          <span>/</span>
+                          <input
+                            type="number"
+                            min={0}
+                            value={status?.score ?? ''}
+                            onChange={(e) => {
+                              if (e.target.value === '') {
+                                setStatuses((prev) =>
+                                  prev.map((s) =>
+                                    s.requirementId === req.id
+                                      ? { ...s, score: null }
+                                      : s
+                                  )
+                                );
+                                return;
+                              }
+
+                              const value = Number(e.target.value);
+                              if (value < 0) return;
+
+                              setStatuses((prev) =>
+                                prev.map((s) =>
+                                  s.requirementId === req.id
+                                    ? { ...s, score: value }
+                                    : s
+                                )
+                              );
+                            }}
+                            className="w-20 border border-gray-300 rounded px-2 py-1 text-black"
+                          />
                         </div>
                       ) : status?.graded ? (
                         `${status.grade}/${status.score ?? '-'}`
