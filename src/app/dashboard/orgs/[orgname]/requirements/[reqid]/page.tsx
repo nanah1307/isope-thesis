@@ -10,6 +10,8 @@ import { PDFViewer } from '@/app/ui/snippets/submission/pdf-viewer';
 import { GradingTab } from '@/app/ui/snippets/submission/grading-tab';
 import { ArrowUturnLeftIcon } from '@heroicons/react/24/solid';
 import { useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
+
 
 
 
@@ -19,6 +21,10 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
   const { data: session, status } = useSession();
   
   const router = useRouter();
+
+  const searchParams = useSearchParams();
+  const statusId = searchParams.get('statusId');
+
 
   const goToDues = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -152,8 +158,10 @@ const loadRequirementFromSupabase = async () => {
       const { data, error: fetchError } = await supabase
         .from('org_requirement_status')
         .select('grade, score, freeformans')
-        .eq('orgUsername', orgname)
-        .eq('requirementId', reqid)
+        .eq('id', statusId)
+
+        /*.eq('orgUsername', orgname)
+        .eq('requirementId', reqid)*/
         .maybeSingle() as any;
 
       if (fetchError) {

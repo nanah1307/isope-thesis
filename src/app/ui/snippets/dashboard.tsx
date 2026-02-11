@@ -7,6 +7,8 @@ import { useRouter } from "next/navigation";
 import { Orgs } from '@/app/lib/definitions';
 import { fetchAccessibleOrgs } from '@/app/lib/access-control';
 
+const ORG_SLICE_LIMIT = 3;
+
 const OrgCard: FC<{ org: any }> = ({ org }) => {
   const router = useRouter();
 
@@ -200,22 +202,27 @@ const OrgsDashboard: FC = () => {
           orgIdentifier,
         });
 
+              // check if there are more orgs than the slice limit
+        setHasMoreOrgs(fetchedOrgs.length > ORG_SLICE_LIMIT);
 
+        // create sliced version (do NOT reassign)
+        const slicedOrgs = fetchedOrgs.slice(0, ORG_SLICE_LIMIT);
 
-        if (fetchedOrgs.length === 0) {
+        if (slicedOrgs.length === 0) {
           setOrgs([]);
           return;
         }
 
         // Fetch requirement status for all orgs
-        const usernames = fetchedOrgs.map((o) => o.username);
+        const usernames = slicedOrgs.map((o) => o.username);
+
         const { data: reqStatus } = await supabase
           .from('org_requirement_status')
           .select('orgUsername, submitted')
           .in('orgUsername', usernames)
           .eq('active', true);
 
-        const orgsWithProgress = fetchedOrgs.map((org) => {
+        const orgsWithProgress = slicedOrgs.map((org) => {
           const rows = reqStatus?.filter((r) => r.orgUsername === org.username) || [];
           const total = rows.length;
           const submitted = rows.filter((r) => r.submitted).length;
