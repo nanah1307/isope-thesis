@@ -48,6 +48,14 @@ const OrgCard: FC<{ org: any }> = ({ org }) => {
         <h2 className="text-xl font-bold text-gray-900 mb-4 group-hover:underline line-clamp-2">
           {org.name}
         </h2>
+
+        {org.active === false && (
+          <span className="mt-1 inline-block text-xs font-semibold text-red-600 bg-red-100 px-2 py-1 rounded-full">
+            Archived
+          </span>
+        )}
+
+
       </div>
 
       {/* Progress Bar */}
