@@ -175,17 +175,24 @@ const CreateOrgModal: FC<{
 const OrgsDashboard: FC = () => {
   const { data: session, status } = useSession();
 
+  const [allOrgs, setAllOrgs] = useState<any[]>([]);
   const [orgs, setOrgs] = useState<any[]>([]);
+
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [search, setSearch] = useState('');
 
   const [hasMoreOrgs, setHasMoreOrgs] = useState(false);
 
-  const filteredOrgs = orgs.filter((org) =>
-    org.name.toLowerCase().includes(search.toLowerCase()) ||
-    org.username.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredOrgs = (
+  search.trim()
+    ? allOrgs.filter((org) =>
+        org.name.toLowerCase().includes(search.toLowerCase()) ||
+        org.username.toLowerCase().includes(search.toLowerCase())
+      )
+    : orgs
+  ).slice(0, ORG_SLICE_LIMIT);
+
 
   useEffect(() => {
     const fetchOrgs = async () => {
@@ -206,15 +213,17 @@ const OrgsDashboard: FC = () => {
         setHasMoreOrgs(fetchedOrgs.length > ORG_SLICE_LIMIT);
 
         // create sliced version (do NOT reassign)
-        const slicedOrgs = fetchedOrgs.slice(0, ORG_SLICE_LIMIT);
-
-        if (slicedOrgs.length === 0) {
+        if (fetchedOrgs.length === 0) {
+          setAllOrgs([]);
           setOrgs([]);
           return;
         }
 
-        // Fetch requirement status for all orgs
-        const usernames = slicedOrgs.map((o) => o.username);
+        // store ALL orgs
+        setAllOrgs(fetchedOrgs);
+
+        // Fetch requirement status for ALL orgs
+        const usernames = fetchedOrgs.map((o) => o.username);
 
         const { data: reqStatus } = await supabase
           .from('org_requirement_status')
@@ -222,7 +231,7 @@ const OrgsDashboard: FC = () => {
           .in('orgUsername', usernames)
           .eq('active', true);
 
-        const orgsWithProgress = slicedOrgs.map((org) => {
+        const orgsWithProgress = fetchedOrgs.map((org) => {
           const rows = reqStatus?.filter((r) => r.orgUsername === org.username) || [];
           const total = rows.length;
           const submitted = rows.filter((r) => r.submitted).length;
@@ -230,7 +239,12 @@ const OrgsDashboard: FC = () => {
           return { ...org, progress };
         });
 
-        setOrgs(orgsWithProgress);
+        // Store FULL list
+        setAllOrgs(orgsWithProgress);
+
+        // Slice only for display
+        setOrgs(orgsWithProgress.slice(0, ORG_SLICE_LIMIT));
+
       } catch (err: any) {
         console.error('Error fetching orgs:', err?.message ?? err);
         setOrgs([]);
