@@ -167,14 +167,25 @@ export default function OrgsRequirementArchive({ username }: { username: string 
                   <tr key={req.id} className="border-b border-gray-200">
                     <td className="border px-3 py-2">{req.title}</td>
                     <td className="border px-3 py-2 text-center">
-                      <Link
-                        href={`/dashboard/orgs/${username}/requirements/${req.id}`}
-                        className="text-blue-500 hover:underline flex flex-col items-center"
-                      >
-                        <DocumentTextIcon className="w-6 h-6 mb-1" />
-                        <span>View</span>
-                      </Link>
-                    </td>
+                        {status?.id ? (
+                          <Link
+                            href={{
+                              pathname: `/dashboard/orgs/${username}/requirements/${req.id}`,
+                              query: { statusId: status.id },
+                            }}
+                            className="text-blue-500 hover:underline flex flex-col items-center"
+                          >
+                            <DocumentTextIcon className="w-6 h-6 mb-1" />
+                            <span>View</span>
+                          </Link>
+                        ) : (
+                          <div className="text-gray-400 flex flex-col items-center cursor-not-allowed opacity-60">
+                            <DocumentTextIcon className="w-6 h-6 mb-1" />
+                            <span>No Data</span>
+                          </div>
+                        )}
+                      </td>
+
                     <td className="border px-3 py-2">{status?.start ? new Date(status.start).toLocaleDateString() : '-'}</td>
                     <td className="border px-3 py-2">{status?.due ? new Date(status.due).toLocaleDateString() : '-'}</td>
                     <td className="border px-3 py-2">{status?.submitted ? '✅' : '❌'}</td>

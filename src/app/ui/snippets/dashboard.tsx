@@ -7,6 +7,8 @@ import { useRouter } from "next/navigation";
 import { Orgs } from '@/app/lib/definitions';
 import { fetchAccessibleOrgs } from '@/app/lib/access-control';
 
+const ORG_SLICE_LIMIT = 3;
+
 const OrgCard: FC<{ org: any }> = ({ org }) => {
   const router = useRouter();
 
@@ -173,15 +175,24 @@ const CreateOrgModal: FC<{
 const OrgsDashboard: FC = () => {
   const { data: session, status } = useSession();
 
+  const [allOrgs, setAllOrgs] = useState<any[]>([]);
   const [orgs, setOrgs] = useState<any[]>([]);
+
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [search, setSearch] = useState('');
 
-  const filteredOrgs = orgs.filter((org) =>
-    org.name.toLowerCase().includes(search.toLowerCase()) ||
-    org.username.toLowerCase().includes(search.toLowerCase())
-  );
+  const [hasMoreOrgs, setHasMoreOrgs] = useState(false);
+
+  const filteredOrgs = (
+  search.trim()
+    ? allOrgs.filter((org) =>
+        org.name.toLowerCase().includes(search.toLowerCase()) ||
+        org.username.toLowerCase().includes(search.toLowerCase())
+      )
+    : orgs
+  ).slice(0, ORG_SLICE_LIMIT);
+
 
   useEffect(() => {
     const fetchOrgs = async () => {
@@ -198,15 +209,22 @@ const OrgsDashboard: FC = () => {
           orgIdentifier,
         });
 
+              // check if there are more orgs than the slice limit
+        setHasMoreOrgs(fetchedOrgs.length > ORG_SLICE_LIMIT);
 
-
+        // create sliced version (do NOT reassign)
         if (fetchedOrgs.length === 0) {
+          setAllOrgs([]);
           setOrgs([]);
           return;
         }
 
-        // Fetch requirement status for all orgs
+        // store ALL orgs
+        setAllOrgs(fetchedOrgs);
+
+        // Fetch requirement status for ALL orgs
         const usernames = fetchedOrgs.map((o) => o.username);
+
         const { data: reqStatus } = await supabase
           .from('org_requirement_status')
           .select('orgUsername, submitted')
@@ -221,7 +239,12 @@ const OrgsDashboard: FC = () => {
           return { ...org, progress };
         });
 
-        setOrgs(orgsWithProgress);
+        // Store FULL list
+        setAllOrgs(orgsWithProgress);
+
+        // Slice only for display
+        setOrgs(orgsWithProgress.slice(0, ORG_SLICE_LIMIT));
+
       } catch (err: any) {
         console.error('Error fetching orgs:', err?.message ?? err);
         setOrgs([]);
@@ -290,7 +313,7 @@ const OrgsDashboard: FC = () => {
   if (loading) return <div className="p-4 text-black">Loading organizations...</div>;
   
   return (
-    <div className="bg-gradient-to-br from-[#e6f1ff] to-indigo-100 min-h-screen p-6 overflow-y-scroll">
+    <div className="bg-gradient-to-br from-[#e6f1ff] to-indigo-100 min-h-screen p-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <div>
@@ -320,14 +343,26 @@ const OrgsDashboard: FC = () => {
       </div>
 
       {filteredOrgs.length === 0 ? (
-      <p className="text-black">No organizations found.</p>
+        <p className="text-black">No organizations found.</p>
       ) : (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredOrgs.map((org) => (
-        <OrgCard key={org.username} org={org} />
-        ))}
-      </div>
+        <div className="flex flex-col items-center gap-6">
+          <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredOrgs.map((org) => (
+              <OrgCard key={org.username} org={org} />
+            ))}
+          </div>
+
+          {hasMoreOrgs && (
+            <a
+              href="/navorgs"
+              className="bg-[#014fb3] hover:bg-[#013db3] text-white px-6 py-2 rounded-md font-medium transition"
+            >
+              See More
+            </a>
+          )}
+        </div>
       )}
+
 
       <CreateOrgModal
         isOpen={showModal}
