@@ -43,6 +43,7 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
     currentUserEmail: null as string | null,
     freeformAnswer: '',
     selectedPdfId: null as string | null,
+    allowedFileTypes: ['pdf'] as string[],
     
     loading: {
       page: true,
@@ -120,9 +121,19 @@ const loadRequirementFromSupabase = async () => {
 
     if (error) throw error;
 
+    const raw = (data.submissiontype || '').toString().trim().toLowerCase();
+
+    const allowed =
+      raw.includes(',') ? raw.split(',').map((s: string) => s.trim()).filter(Boolean)
+      : raw === 'pdf' ? ['pdf']
+      : raw === 'freeform' ? ['pdf']
+      : raw ? [raw]
+      : ['pdf'];
+
     updateState({
       requirement: data,
       instructions: data.instructions || '',
+      allowedFileTypes: allowed,
       submissiontype: data.submissiontype as 'freeform' | 'pdf'
     });
   } catch (err: any) {
@@ -242,17 +253,25 @@ const loadRequirementFromSupabase = async () => {
       setError(null);
       setLoading('pdf', true);
 
-      for (const file of Array.from(files)) {
-        if (file.type !== 'application/pdf') continue;
+      const allowed = (state.allowedFileTypes || ['pdf']).map((t: string) => (t || '').toLowerCase().trim());
 
+      for (const file of Array.from(files)) {
+        const ext = (file.name.split('.').pop() || '').toLowerCase();
+
+        if (!ext || !allowed.includes(ext)) {
+          setError(`Invalid file type: "${file.name}". Allowed types: ${allowed.join(', ')}`);
+          return;
+        }
+      }
+
+      for (const file of Array.from(files)) {
         const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
         const filePath = `${orgname}/${reqid}/${crypto.randomUUID()}_${safeName}`;
-
 
         const { error: uploadError } = await supabaseAdmin.storage
           .from('requirement-pdfs')
           .upload(filePath, file, {
-            contentType: 'application/pdf',
+            contentType: file.type,
           });
 
         if (uploadError) throw uploadError;
@@ -266,11 +285,12 @@ const loadRequirementFromSupabase = async () => {
 
       updateState({ hasSubmitted: true });
       loadRequirementPdfs();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setError('Failed to upload PDFs');
+      setError(err?.message || 'Failed to upload files');
     } finally {
       setLoading('pdf', false);
+      event.target.value = '';
     }
   };
 
@@ -498,21 +518,21 @@ const loadRequirementFromSupabase = async () => {
 };
 
 
-  const handleSubmissionTypeChange = async (type: 'freeform' | 'pdf') => {
-  if (!checkPermission('osas', 'change submission type')) return;
+  const handleAllowedFileTypesChange = async (types: string[]) => {
+  if (!checkPermission('osas', 'change accepted file types')) return;
 
   try {
+    const payload = (types && types.length > 0) ? types.join(',') : 'pdf';
+
     const { error } = await supabase
       .from('requirements')
-      .update({ submissiontype: type })
+      .update({ submissiontype: payload })
       .eq('id', reqid);
 
     if (error) throw error;
-
-    updateState({ submissiontype: type });
   } catch (err) {
     console.error(err);
-    setError('Failed to update submission type');
+    setError('Failed to update accepted file types');
   }
 };
 
@@ -556,14 +576,12 @@ const loadRequirementFromSupabase = async () => {
             <div className="bg-white rounded-lg shadow-sm">
               <div className="border-b-2 border-gray-300 flex">
                 {(['instructions', 'submission'] as const).map(tab => (
-                  (tab === 'submission' && !state.hasSubmitted) ? null : (
-                    <button key={tab} onClick={() => !isEditing && updateState({ activeTab: tab as any })} disabled={isEditing}
-                      className={`px-6 py-4 font-medium ${isEditing ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'} ${
-                        state.activeTab === tab ? 'text-gray-900 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'
-                      }`}>
-                      {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                    </button>
-                  )
+                  <button key={tab} onClick={() => !isEditing && updateState({ activeTab: tab as any })} disabled={isEditing}
+                    className={`px-6 py-4 font-medium ${isEditing ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'} ${
+                      state.activeTab === tab ? 'text-gray-900 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'
+                    }`}>
+                    {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                  </button>
                 ))}
               </div>
 
@@ -572,20 +590,20 @@ const loadRequirementFromSupabase = async () => {
                   <InstructionsBlock
                     state={state}
                     updateState={updateState}
-                    handlePdfUpload={handlePdfUpload}
-                    handleRemovePdf={handleRemovePdf}
                     handleSaveInstructions={handleSaveInstructions}
                     handleCancelEditInstructions={handleCancelEditInstructions}
-                    handleSubmissionTypeChange={handleSubmissionTypeChange}
+                    handleAllowedFileTypesChange={handleAllowedFileTypesChange}
                   />
                 )}
 
-                {state.activeTab === 'submission' && state.hasSubmitted && (
+                {state.activeTab === 'submission' && (
                   <GradingTab
                     state={state}
                     updateState={updateState}
                     isOSAS={isOSAS}
                     handleSubmitFreeform={handleSubmitFreeform}
+                    handlePdfUpload={handlePdfUpload}
+                    handleRemovePdf={handleRemovePdf}
                   />
                 )}
               </div>

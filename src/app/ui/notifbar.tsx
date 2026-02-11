@@ -2,9 +2,11 @@
 
 import Link from 'next/link';
 import { FC, useEffect, useState } from 'react';
+import { useSession } from "next-auth/react";
 import { supabase } from '@/app/lib/database';
 import { BellIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { CheckCircleIcon } from '@heroicons/react/24/solid';
+import { fetchAccessibleOrgs } from '@/app/lib/access-control';
 
 interface Notification {
   id: number;
@@ -20,22 +22,72 @@ const NotificationSidebar: FC = () => {
     { id: 3, title: 'Webinar', date: '11/5' }
   ]);
 
+  const { data: session, status } = useSession();
   const [requirements, setRequirements] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchRequirements = async () => {
       setLoading(true);
+      if (status === 'loading') {
+        setLoading(false);
+        return;
+      }
+  
+      const role = ((((session?.user as any)?.role) || '').toString().toLowerCase());
+      const name = ((session?.user as any)?.name || '');
+      const orgIdentifier = ((session?.user as any)?.username || session?.user?.name || name);
 
-      const { data, error } = await supabase
+
+      const accessibleOrgs = await fetchAccessibleOrgs({
+        role,
+        name,
+        orgIdentifier,
+      });
+
+      const accessibleUsernames = accessibleOrgs.map((o: any) => o.username);
+
+      if (role !== 'osas' && accessibleUsernames.length === 0) {
+        setRequirements([]);
+        setLoading(false);
+        return;
+      }
+
+      let query = supabase
         .from('org_requirement_status')
         .select(`
           *,
           requirements ( title ),
           orgs ( name )
         `)
-        .eq('graded', false)
         .eq('active', true);
+
+      if (role === 'adviser') {
+        query = query
+          .eq('submitted', true)
+          .eq('graded', false)
+          .eq('approved', false)
+          .in('orgUsername', accessibleUsernames);
+      } else if (role === 'member') {
+        query = query
+          .eq('submitted', false)
+          .eq('graded', false)
+          .in('orgUsername', accessibleUsernames);
+      } else if (role === 'osas') {
+        query = query
+          .eq('submitted', true)
+          .eq('graded', false)
+          .eq('approved', true);
+      } else {
+        query = query
+          .eq('graded', false)
+          .in('orgUsername', accessibleUsernames);
+      }
+
+
+      const { data, error } = await query;
+      console.log('TO DO role:', role);
+
 
 
       if (error) {
@@ -48,7 +100,8 @@ const NotificationSidebar: FC = () => {
     };
 
     fetchRequirements();
-  }, []);
+      }, [session, status]);
+
 
   const removeNotification = (id: number) => {
     setNotifications(notifications.filter(notif => notif.id !== id));
@@ -130,11 +183,11 @@ const NotificationSidebar: FC = () => {
           VIEW ALL
         </button>
 
-        {/* To Grade Section */}
+        {/* To Do Section */}
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-2">
             <CheckCircleIcon className="w-6 h-6 text-green-500 flex-shrink-0" />
-            <h3 className="font-bold text-base sm:text-lg">TO GRADE</h3>
+            <h3 className="font-bold text-base sm:text-lg">TO DO</h3>
           </div>
 
           {/* Counter */}
@@ -154,34 +207,55 @@ const NotificationSidebar: FC = () => {
 
             {!loading && requirements.length === 0 && (
               <p className="text-sm text-blue-200 italic">
-                No requirements to grade.
+                No requirements to do.
               </p>
             )}
 
-            {!loading && requirements.map((req) => (
-              <label
-                key={req.id}
-                className="flex items-start gap-3 cursor-pointer group"
-              >
-                <input
-                  type="checkbox"
-                  className="mt-1 w-4 h-4 rounded border-2 border-white bg-transparent cursor-pointer flex-shrink-0"
-                  checked={req.submitted}
-                  readOnly
-                />
+            {!loading && requirements.length > 0 && (
+              <div className="bg-blue-800/50 rounded-lg p-3 max-h-64 overflow-y-auto">
+                {Object.entries(
+                  requirements.reduce((acc: any, req: any) => {
+                    const orgName = req.orgs?.name || req.orgUsername || 'Unknown Organization';
+                    if (!acc[orgName]) acc[orgName] = [];
+                    acc[orgName].push(req);
+                    return acc;
+                  }, {})
+                ).map(([orgName, items]: any) => (
+                  <div key={orgName} className="mb-4 last:mb-0">
+                    <p className="text-xs font-bold text-yellow-300 uppercase tracking-wide mb-2">
+                      {orgName}
+                    </p>
 
-                <Link
-                  href={`/dashboard/orgs/${req.orgUsername}/requirements/${req.requirementId}`}
-                  className="text-sm leading-tight group-hover:text-blue-200 transition-colors"
-                >
-                  {req.orgs?.name} - {req.requirements?.title}
-                  <br />
-                  <span className="text-xs text-blue-200">
-                    Due: {req.due}
-                  </span>
-                </Link>
-              </label>
-            ))}
+                    <div className="space-y-2">
+                      {items.map((req: any) => (
+                        <div
+                          key={req.id}
+                          className="flex items-start cursor-pointer group"
+                        >
+                          <input
+                            type="checkbox"
+                            className="mt-1 w-4 h-4 rounded border-2 border-white bg-transparent cursor-pointer flex-shrink-0"
+                            checked={req.submitted}
+                            readOnly
+                          />
+
+                          <Link
+                            href={`/dashboard/orgs/${req.orgUsername}/requirements/${req.requirementId}`}
+                            className="text-sm leading-tight group-hover:text-blue-200 transition-colors"
+                          >
+                            {req.requirements?.title}
+                            <br />
+                            <span className="text-xs text-blue-200">
+                              Status: {!req.submitted ? 'Not submitted' : 'Submitted'} / {!req.graded ? 'Not graded' : 'Graded'}
+                            </span>
+                          </Link>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
