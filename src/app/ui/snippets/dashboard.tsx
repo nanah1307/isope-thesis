@@ -313,7 +313,7 @@ const OrgsDashboard: FC = () => {
   if (loading) return <div className="p-4 text-black">Loading organizations...</div>;
   
   return (
-    <div className="bg-gradient-to-br from-[#e6f1ff] to-indigo-100 min-h-screen p-6 overflow-y-scroll">
+    <div className="bg-gradient-to-br from-[#e6f1ff] to-indigo-100 min-h-screen p-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <div>
