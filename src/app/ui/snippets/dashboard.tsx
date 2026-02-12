@@ -48,6 +48,14 @@ const OrgCard: FC<{ org: any }> = ({ org }) => {
         <h2 className="text-xl font-bold text-gray-900 mb-4 group-hover:underline line-clamp-2">
           {org.name}
         </h2>
+
+        {org.active === false && (
+          <span className="mt-1 inline-block text-xs font-semibold text-red-600 bg-red-100 px-2 py-1 rounded-full">
+            Archived
+          </span>
+        )}
+
+
       </div>
 
       {/* Progress Bar */}
@@ -184,6 +192,15 @@ const OrgsDashboard: FC = () => {
 
   const [hasMoreOrgs, setHasMoreOrgs] = useState(false);
 
+  const [stats, setStats] = useState({
+  activeOrgs: 0,
+  totalOrgs: 0,
+  graded: 0,
+  approved: 0,
+  activeRequirements: 0,
+});
+
+
   const filteredOrgs = (
   search.trim()
     ? allOrgs.filter((org) =>
@@ -252,10 +269,46 @@ const OrgsDashboard: FC = () => {
       } finally {
         setLoading(false);
       }
+      
+      // ===============================
+      // Fetch ORG statistics
+      // ===============================
+
+      // ORGS TABLE STATS
+      const { data: orgStats } = await supabase
+        .from('orgs')
+        .select('active');
+
+      const totalOrgs = orgStats?.length || 0;
+      const activeOrgs = orgStats?.filter(o => o.active === true).length || 0;
+
+
+      // REQUIREMENT STATUS STATS
+      const { data: reqStats } = await supabase
+        .from('org_requirement_status')
+        .select('active, graded, approved')
+        .eq('active', true);
+
+      const activeRequirements = reqStats?.length || 0;
+      const graded = reqStats?.filter(r => r.graded === true).length || 0;
+      const approved = reqStats?.filter(r => r.approved === true).length || 0;
+
+
+      // Store stats
+      setStats({
+        activeOrgs,
+        totalOrgs,
+        graded,
+        approved,
+        activeRequirements,
+      });
+
     };
 
     fetchOrgs();
   }, [status, session]);
+
+  
 
   const handleCreateOrg = async (name: string, email: string) => {
     if (!name.trim() || !email.trim()) {
@@ -342,6 +395,53 @@ const OrgsDashboard: FC = () => {
           </button>
         </div>
       </div>
+
+      {/* ================= Statistics Section ================= */}
+      <div className="mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+          {/* Active Orgs */}
+          <div className="bg-white rounded-lg shadow-md p-6 text-center">
+            <h3 className="text-sm font-semibold text-gray-500 mb-2">
+              Active Organizations
+            </h3>
+            <p className="text-3xl font-bold text-[#014fb3]">
+              {stats.activeOrgs}
+              <span className="text-gray-400 text-lg font-medium">
+                {" "} / {stats.totalOrgs}
+              </span>
+            </p>
+          </div>
+
+          {/* Graded Requirements */}
+          <div className="bg-white rounded-lg shadow-md p-6 text-center">
+            <h3 className="text-sm font-semibold text-gray-500 mb-2">
+              Graded Requirements
+            </h3>
+            <p className="text-3xl font-bold text-[#014fb3]">
+              {stats.graded}
+              <span className="text-gray-400 text-lg font-medium">
+                {" "} / {stats.activeRequirements}
+              </span>
+            </p>
+          </div>
+
+          {/* Approved Requirements */}
+          <div className="bg-white rounded-lg shadow-md p-6 text-center">
+            <h3 className="text-sm font-semibold text-gray-500 mb-2">
+              Approved Requirements
+            </h3>
+            <p className="text-3xl font-bold text-[#014fb3]">
+              {stats.approved}
+              <span className="text-gray-400 text-lg font-medium">
+                {" "} / {stats.activeRequirements}
+              </span>
+            </p>
+          </div>
+
+        </div>
+      </div>
+
 
       {filteredOrgs.length === 0 ? (
         <p className="text-black">No organizations found.</p>

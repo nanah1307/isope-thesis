@@ -52,6 +52,10 @@ export default function OrgsPage({ org }: OrgsProp) {
 
   const [saving, setSaving] = useState(false);
 
+  const [isActive, setIsActive] = useState(org.active ?? true);
+  const [archiving, setArchiving] = useState(false);
+
+
   const saveOrg = async () => {
     setSaving(true);
 
@@ -78,6 +82,33 @@ export default function OrgsPage({ org }: OrgsProp) {
 
     setSaving(false);
   };
+
+  const toggleArchive = async () => {
+  const confirmed = window.confirm(
+    isActive
+      ? "Are you sure you want to archive this organization?"
+      : "Are you sure you want to unarchive this organization?"
+  );
+
+  if (!confirmed) return;
+
+  setArchiving(true);
+
+  const { error } = await supabase
+    .from("orgs")
+    .update({ active: !isActive })
+    .eq("username", org.username);
+
+  if (error) {
+    console.error("Failed to update archive status:", error.message);
+    alert("Failed to update organization status.");
+  } else {
+    setIsActive(!isActive);
+  }
+
+  setArchiving(false);
+  };
+
 
   const content: Record<string, React.ReactNode[]> = {
     Overview: [
@@ -225,17 +256,41 @@ export default function OrgsPage({ org }: OrgsProp) {
         <div className="flex justify-end gap-2 pt-2">
           {!isEditingOrg ? (
             role === 'osas' && (
-              <button
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-all shadow-sm hover:shadow-md flex items-center gap-2 cursor-pointer"
-                onClick={() => setIsEditingOrg(true)}
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-                Edit Overview
-              </button>
+              <div className="flex gap-2">
+                {/* Edit Button */}
+                <button
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-all shadow-sm hover:shadow-md flex items-center gap-2 cursor-pointer"
+                  onClick={() => setIsEditingOrg(true)}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                  Edit Overview
+                </button>
+
+                {/* Archive / Unarchive Button */}
+                <button
+                  disabled={archiving}
+                  onClick={toggleArchive}
+                  className={`px-4 py-2 text-sm font-medium rounded-lg transition-all shadow-sm hover:shadow-md flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed
+                    ${
+                      isActive
+                        ? "bg-red-600 text-white hover:bg-red-700"
+                        : "bg-green-600 text-white hover:bg-green-700"
+                    }`}
+                >
+                  {archiving ? (
+                    "Processing..."
+                  ) : isActive ? (
+                    "Archive Org"
+                  ) : (
+                    "Unarchive Org"
+                  )}
+                </button>
+              </div>
             )
           ) : (
+
             <>
               <button
                 disabled={saving}
@@ -306,6 +361,12 @@ export default function OrgsPage({ org }: OrgsProp) {
           className="w-16 h-16 sm:w-24 sm:h-24 rounded-full object-cover shadow-md border-2 border-white"
         />
         <h1 className="text-2xl sm:text-3xl font-semibold text-center sm:text-left">{org.name}</h1>
+        {!isActive && (
+  <span className="mt-2 inline-block px-3 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">
+    Archived
+  </span>
+)}
+
       </div>
 
       <nav className="rounded-lg mt-6 p-2 bg-white shadow-sm border border-gray-200">
