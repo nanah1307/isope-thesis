@@ -187,10 +187,22 @@ const OrgsDashboard: FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [search, setSearch] = useState('');
 
-  const filteredOrgs = orgs.filter((org) =>
-    org.name.toLowerCase().includes(search.toLowerCase()) ||
-    org.username.toLowerCase().includes(search.toLowerCase())
+  const filteredActiveOrgs = orgs.filter((org) =>
+    org.active === true &&
+    (
+      org.name.toLowerCase().includes(search.toLowerCase()) ||
+      org.username.toLowerCase().includes(search.toLowerCase())
+    )
   );
+
+  const filteredArchivedOrgs = orgs.filter((org) =>
+    org.active === false &&
+    (
+      org.name.toLowerCase().includes(search.toLowerCase()) ||
+      org.username.toLowerCase().includes(search.toLowerCase())
+    )
+  );
+
 
   useEffect(() => {
     const fetchOrgs = async () => {
@@ -343,16 +355,32 @@ const OrgsDashboard: FC = () => {
         </div>
       </div>
 
-      {filteredOrgs.length === 0 ? (
-      <p className="text-black">No organizations found.</p>
-      ) : (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* ACTIVE ORGS */}
+        {filteredActiveOrgs.length === 0 ? (
+          <p className="text-black">No active organizations found.</p>
+        ) : (
+          <>
+            <h2 className="text-xl font-bold text-black mb-4">Active Organizations</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+              {filteredActiveOrgs.map((org) => (
+                <OrgCard key={org.username} org={org} />
+              ))}
+            </div>
+          </>
+        )}
 
-        {filteredOrgs.map((org) => (
-        <OrgCard key={org.username} org={org} />
-        ))}
-      </div>
-      )}
+        {/* ARCHIVED ORGS */}
+        {filteredArchivedOrgs.length > 0 && (
+          <>
+            <h2 className="text-xl font-bold text-black mb-4">Archived Organizations</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredArchivedOrgs.map((org) => (
+                <OrgCard key={org.username} org={org} />
+              ))}
+            </div>
+          </>
+        )}
+
 
       <CreateOrgModal
         isOpen={showModal}
