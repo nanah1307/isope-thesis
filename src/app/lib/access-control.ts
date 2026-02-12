@@ -5,10 +5,12 @@ export const fetchAccessibleOrgs = async ({
   role,
   name,
   orgIdentifier,
+  email
 }: {
   role: string;
   name?: string;
   orgIdentifier?: string;
+  email?: string;
 }) => {
   let fetchedOrgs: Orgs[] = [];
 
@@ -19,7 +21,7 @@ export const fetchAccessibleOrgs = async ({
   const { data } = await supabase
     .from('orgs')
     .select('*')
-    .eq('adviser', name);
+    .eq('adviseremail', email);
 
   fetchedOrgs = data || [];
 } else if (role === 'member') {

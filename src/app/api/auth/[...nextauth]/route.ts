@@ -127,7 +127,7 @@ const handler = NextAuth({
           token.role = data.Role; 
         }
         // Ensure token.role is one of the allowed string roles; otherwise default to "member"
-        const validRoles = ["member", "admin", "osas", "org"];
+        const validRoles = ["member", "adviser", "osas", "org"];
         if (!validRoles.includes(String(token.role))) {
           token.role = "member";
         }
@@ -157,6 +157,7 @@ const handler = NextAuth({
         image: token.picture??null
       };
       (session.user as any).role = token.role ?? "member";
+      console.log(session)
       return session;
     }
       

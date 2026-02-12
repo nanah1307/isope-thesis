@@ -200,13 +200,14 @@ const OrgsDashboard: FC = () => {
       try {
         const role = (((session?.user as any)?.role) || '').toString().toLowerCase();
         const name = (session?.user as any)?.name;
-
+        const email = (session?.user as any)?.email;
         const orgIdentifier = (session?.user as any)?.username || session?.user?.name;
 
         const fetchedOrgs: Orgs[] = await fetchAccessibleOrgs({
           role,
           name,
           orgIdentifier,
+          email
         });
 
               // check if there are more orgs than the slice limit
