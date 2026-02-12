@@ -200,16 +200,18 @@ const OrgsDashboard: FC = () => {
   activeRequirements: 0,
 });
 
+  const source = allOrgs;
 
-  const filteredOrgs = (
-  search.trim()
-    ? allOrgs.filter((org) =>
+  const filteredOrgs = source
+    .filter((org) =>
+      org.active === true &&
+      (
+        !search.trim() ||
         org.name.toLowerCase().includes(search.toLowerCase()) ||
         org.username.toLowerCase().includes(search.toLowerCase())
       )
-    : orgs
-  ).slice(0, ORG_SLICE_LIMIT);
-
+    )
+    .slice(0, ORG_SLICE_LIMIT);
 
   useEffect(() => {
     const fetchOrgs = async () => {
@@ -443,7 +445,7 @@ const OrgsDashboard: FC = () => {
 
 
       {filteredOrgs.length === 0 ? (
-        <p className="text-black">No organizations found.</p>
+        <p className="text-black">No active organizations found.</p>
       ) : (
         <div className="flex flex-col items-center gap-6">
           <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
