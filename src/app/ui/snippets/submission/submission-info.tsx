@@ -10,7 +10,12 @@ export function SubmissionInfo({
   formattedDueDate,
   isEditing,
   handleSubmitGrade,
-
+  handleIsApproved,
+  approved,
+  isAdviser,
+  hasApprovalChanges,
+  savingApproval,
+  handleSaveApproval,
   comments,
   commentText,
   currentUserEmail,
@@ -25,7 +30,12 @@ export function SubmissionInfo({
   formattedDueDate: string;
   isEditing: boolean;
   handleSubmitGrade: () => void;
-
+  handleIsApproved: () => void;
+  approved: boolean;
+  isAdviser: boolean;
+  hasApprovalChanges: boolean;
+  savingApproval: boolean;
+  handleSaveApproval: () => void;
   comments: any[];
   commentText: string;
   currentUserEmail: string | null;
@@ -113,10 +123,52 @@ export function SubmissionInfo({
 
       <div className="bg-white rounded-lg shadow-sm p-6">
         <h3 className="font-semibold text-gray-900 mb-4">Adviser's Feedback</h3>
+
         <div className="flex items-center gap-3">
-          <div className="w-6 h-6 border-2 border-gray-300 rounded" />
-          <span className="font-semibold text-gray-900">Approved!</span>
+          <button
+            type="button"
+            onClick={handleIsApproved}
+            disabled={!isAdviser}
+            className={`w-6 h-6 border-2 rounded flex items-center justify-center transition
+              ${approved ? "border-green-500 bg-green-500" : "border-gray-300"}
+              ${isAdviser ? "cursor-pointer" : "cursor-default"}
+            `}
+            aria-pressed={approved}
+            aria-label="Approve submission"
+          >
+            {approved && (
+              <svg
+                className="w-4 h-4 text-white"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="3"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+            )}
+          </button>
+
+          <span className="font-semibold text-gray-900">
+            {approved ? "Approved!" : "Pending"}
+          </span>
         </div>
+
+        {isAdviser && hasApprovalChanges && (
+          <div className="mt-4">
+            <button
+              onClick={handleSaveApproval}
+              disabled={savingApproval}
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition disabled:opacity-50"
+            >
+              {savingApproval ? "Saving..." : "Save"}
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="bg-white rounded-lg shadow-sm p-6">

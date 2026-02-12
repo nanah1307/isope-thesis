@@ -17,7 +17,10 @@ import { useRouter } from 'next/navigation';
 export default function RequirementPage({ params }: { params: Promise<{ orgname: string; reqid: string }> }) {
   const { orgname, reqid } = use(params);
   const { data: session, status } = useSession();
-  
+  const [approved, setApproved] = useState(false);
+  const [initialApproved, setInitialApproved] = useState(false);
+  const [savingApproval, setSavingApproval] = useState(false);
+  const isAdviser = (session?.user as { role?: string } | null)?.role === "adviser";
   const router = useRouter();
 
   const goToDues = (e: React.MouseEvent) => {
@@ -39,7 +42,7 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
     error: null as string | null,
     uploadedPdf: null as string | null,
     pdfFileName: '',
-    userRole: null as 'osas' | 'member' | null,
+    userRole: null as 'osas' | 'member' | 'adviser' | null,
     currentUserEmail: null as string | null,
     freeformAnswer: '',
     selectedPdfId: null as string | null,
@@ -89,6 +92,7 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
 
   const isOSAS = state.userRole === 'osas';
   const isMember = state.userRole === 'member';
+  const hasApprovalChanges = approved !== initialApproved;
   const isEditing = state.isEditingInstructions || state.isEditingGrade;
 
   // Helper functions
@@ -253,6 +257,50 @@ const loadRequirementFromSupabase = async () => {
     }
   };
 
+  const handleIsApproved = () => {
+    if (!isAdviser) return;
+    setApproved((prev) => !prev);
+  };
+
+  const handleSaveApproval = async () => {
+    if (!isAdviser) return;
+
+    try {
+      setError(null);
+      setSavingApproval(true);
+
+      const { data: existing, error: fetchError } = await supabase
+        .from('org_requirement_status')
+        .select('id')
+        .eq('orgUsername', orgname)
+        .eq('requirementId', reqid)
+        .maybeSingle();
+
+      if (fetchError) throw fetchError;
+
+      const payload = { approved };
+      const { error: dbError } = existing
+        ? await supabase.from('org_requirement_status').update(payload).eq('id', existing.id)
+        : await supabase.from('org_requirement_status').insert({
+            ...payload,
+            orgUsername: orgname,
+            requirementId: reqid,
+            submitted: state.hasSubmitted,
+            score: state.maxScore,
+            start: new Date().toISOString().split('T')[0],
+            due: state.dueDate ? state.dueDate.toISOString().split('T')[0] : null,
+          });
+
+      if (dbError) throw dbError;
+
+      setInitialApproved(approved);
+    } catch (err: any) {
+      console.error(err);
+      setError(err?.message || 'Failed to save approval');
+    } finally {
+      setSavingApproval(false);
+    }
+  };
   // Handle file upload
   const handlePdfUpload = async (
     event: React.ChangeEvent<HTMLInputElement>
@@ -545,8 +593,8 @@ const loadRequirementFromSupabase = async () => {
     checkSupabaseAuth();
 
 
-      if (rawRole === 'osas' || rawRole === 'member') {
-        updateState({ userRole: rawRole as 'osas' | 'member' });
+      if (rawRole === 'osas' || rawRole === 'member' || rawRole === 'adviser') {
+        updateState({ userRole: rawRole as 'osas' | 'member' | 'adviser' });
 
         // kick off initial data loads
         loadRequirementFromSupabase();
@@ -568,7 +616,7 @@ const loadRequirementFromSupabase = async () => {
     const loadSubmissionStatus = async () => {
       const { data, error } = await supabase
         .from('org_requirement_status')
-        .select('submitted')
+        .select('submitted, approved')
         .eq('orgUsername', orgname)
         .eq('requirementId', reqid)
         .maybeSingle();
@@ -581,6 +629,10 @@ const loadRequirementFromSupabase = async () => {
       updateState({
         hasSubmitted: data?.submitted ?? false
       });
+
+      const approvedValue = !!data?.approved;
+      setApproved(approvedValue);
+      setInitialApproved(approvedValue);
     };
 
     loadSubmissionStatus();
@@ -721,6 +773,11 @@ const loadRequirementFromSupabase = async () => {
               formattedDueDate={formattedDueDate}
               isEditing={isEditing}
               handleSubmitGrade={handleSubmitGrade}
+              approved={approved}
+              isAdviser={isAdviser}
+              hasApprovalChanges={hasApprovalChanges}
+              savingApproval={savingApproval}
+              handleSaveApproval={handleSaveApproval}
               comments={state.comments}
               commentText={state.commentText}
               currentUserEmail={state.currentUserEmail}
@@ -728,6 +785,7 @@ const loadRequirementFromSupabase = async () => {
               loadingCommentAction={state.loading.commentAction}
               handleAddComment={handleAddComment}
               handleDeleteComment={handleDeleteComment}
+              handleIsApproved={handleIsApproved}
             />
               </div>
             </div>
