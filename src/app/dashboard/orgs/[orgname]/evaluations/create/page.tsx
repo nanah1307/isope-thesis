@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import type { QType, Question } from "@/app/lib/evaluationData";
 import OsasEvaluationView from "@/app/ui/snippets/evaluation/OsasEvaluationView";
+import { ArrowUturnLeftIcon } from '@heroicons/react/24/solid';
 
 async function readJsonSafe(res: Response) {
   const ct = res.headers.get("content-type") || "";
@@ -28,6 +29,12 @@ export default function Page({ params }: { params: Promise<{ orgname: string }> 
 
   const [questions, setQuestions] = useState<Question[]>([]);
   const [selectedType, setSelectedType] = useState<QType>("input");
+
+  const goToMembers = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    router.push(`/dashboard/orgs/${orgname}?tab=OrgMembers`);
+  };
+
 
   useEffect(() => {
     const boot = async () => {
@@ -197,7 +204,16 @@ export default function Page({ params }: { params: Promise<{ orgname: string }> 
       )}
 
       <div className="max-w-7xl mx-auto bg-white rounded-lg shadow border border-gray-200 p-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Edit Evaluation</h1>
+        <div className="flex items-center gap-4 mb-6">
+        <button
+          onClick={goToMembers}
+          className="flex items-center gap-2 text-gray-900 hover:text-blue-600 transition-colors cursor-pointer"
+        >
+          <ArrowUturnLeftIcon className="w-5 h-5" />
+        </button>
+
+        <h1 className="text-2xl font-bold text-gray-900">Edit Evaluation</h1>
+      </div>
 
         <OsasEvaluationView
           questions={questions}

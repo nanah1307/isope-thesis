@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import MemberEvaluationView from "@/app/ui/snippets/evaluation/MemberEvaluationView";
 import type { AnswersMap, Question } from "@/app/lib/evaluationData";
 import { useRouter } from "next/navigation";
+import { ArrowUturnLeftIcon } from '@heroicons/react/24/solid';
 
 async function readJsonSafe(res: Response) {
   const ct = res.headers.get("content-type") || "";
@@ -22,6 +23,11 @@ export default function Page({
 
   const router = useRouter();
   const { data: session, status } = useSession();
+
+  const goToMembers = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    router.push(`/dashboard/orgs/${orgname}?tab=OrgMembers`);
+  };
 
   const rawRole = ((session?.user as any)?.role || "").toString().trim().toLowerCase();
   const isOSAS = rawRole === "osas";
@@ -136,6 +142,12 @@ const submitEvaluation = async () => {
       <div className="max-w-5xl mx-auto space-y-4">
         <div className="bg-white p-4 rounded shadow flex items-center justify-between">
           <div>
+            <button
+              onClick={goToMembers}
+              className="flex items-center gap-2 text-lg font-bold text-black hover:text-blue-600 transition-colors cursor-pointer"
+            >
+              <ArrowUturnLeftIcon className="w-5 h-5" />
+            </button>
             <div className="text-lg font-bold text-black">Organization Evaluation</div>
             <div className="text-sm text-gray-600">
               Org: <span className="text-black">{orgname}</span>
