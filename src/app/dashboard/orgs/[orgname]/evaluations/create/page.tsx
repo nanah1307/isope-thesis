@@ -197,7 +197,7 @@ export default function Page({ params }: { params: Promise<{ orgname: string }> 
       )}
 
       <div className="max-w-7xl mx-auto bg-white rounded-lg shadow border border-gray-200 p-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Edit Evaluation Template (Global)</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-6">Edit Evaluation</h1>
 
         <OsasEvaluationView
           questions={questions}

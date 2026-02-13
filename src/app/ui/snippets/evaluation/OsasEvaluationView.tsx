@@ -56,7 +56,7 @@ export default function OsasEvaluationView({
                 <select
                   value={selectedType}
                   onChange={(e) => setSelectedType(e.target.value as QType)}
-                  className="w-full border border-gray-300 px-3 py-2 rounded text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-gray-300 px-3 py-2 rounded text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
                 >
                   <option value="input">Input</option>
                   <option value="dropdown">Dropdown</option>
@@ -68,14 +68,14 @@ export default function OsasEvaluationView({
                 <button 
                   type="button" 
                   onClick={addQuestion} 
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-medium transition-colors"
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-medium transition-colors cursor-pointer"
                 >
                   Add Question
                 </button>
                 <button 
                   type="button" 
                   onClick={saveForm} 
-                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-medium transition-colors"
+                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-medium transition-colors cursor-pointer"
                 >
                   Save Form
                 </button>
@@ -104,7 +104,7 @@ export default function OsasEvaluationView({
                 </div>
                 <button 
                   type="button" 
-                  className="text-red-600 hover:text-red-800 hover:bg-red-50 p-1.5 rounded transition-colors" 
+                  className="text-red-600 hover:text-red-800 hover:bg-red-50 p-1.5 rounded transition-colors cursor-pointer" 
                   onClick={() => removeQuestion(q.id)}
                   aria-label="Delete question"
                 >
@@ -142,10 +142,10 @@ export default function OsasEvaluationView({
                           />
                           <button 
                             type="button" 
-                            className="px-3 py-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded font-medium" 
+                            className="px-3 py-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded font-medium cursor-pointer" 
                             onClick={() => removeOption(q.id, idx)}
                           >
-                            Remove
+                            <TrashIcon className="h-5 w-5" />
                           </button>
                         </div>
                       ))}

@@ -143,13 +143,13 @@ export default function Page({
           <div className="flex gap-2">
             <button
               onClick={() => save(false)}
-              className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded"
+              className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded cursor-pointer"
             >
               Save Draft
             </button>
             <button
               onClick={() => save(true)}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded"
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded cursor-pointer"
             >
               Submit
             </button>
