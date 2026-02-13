@@ -219,8 +219,12 @@ const OrgsDashboard: FC = () => {
       try {
         const role = (((session?.user as any)?.role) || '').toString().toLowerCase();
         const name = (session?.user as any)?.name;
-        const email = (session?.user as any)?.email;
-        const orgIdentifier = (session?.user as any)?.username || session?.user?.name;
+        const email = ((session?.user as any)?.email || '').toString().trim().toLowerCase();
+        const orgIdentifier =
+          role === 'org'
+            ? session?.user?.email
+            : (session?.user as any)?.username || session?.user?.name;
+
 
         const fetchedOrgs: Orgs[] = await fetchAccessibleOrgs({
           role,

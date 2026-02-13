@@ -32,17 +32,27 @@ export const fetchAccessibleOrgs = async ({
 
     //extracts orgs from memberdata
   fetchedOrgs = memberData?.map((m) => m.orgs) ?? [];
-}
- else if (role === 'org') {
-    if (orgIdentifier) {
-      const { data } = await supabase
-        .from('orgs')
-        .select('*')
-        .or(`username.eq.${orgIdentifier},name.eq.${orgIdentifier}`)
-        .maybeSingle();
-      if (data) fetchedOrgs = [data];
+} 
+else if (role === 'org') {
+  // orgIdentifier should be the org's email
+  if (orgIdentifier) {
+    const { data, error } = await supabase
+      .from('orgs')
+      .select('*')
+      .eq('email', orgIdentifier)
+      .maybeSingle();
+
+    if (error) {
+      console.error('[fetchAccessibleOrgs][org]', error);
+      fetchedOrgs = [];
+    } else if (data) {
+      fetchedOrgs = [data];
+    } else {
+      fetchedOrgs = [];
     }
   }
+}
+
 
   return fetchedOrgs;
 };
