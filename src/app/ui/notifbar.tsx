@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { FC, useEffect, useState } from 'react';
 import { useSession } from "next-auth/react";
 import { supabase } from '@/app/lib/database';
-import { BellIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { BellIcon, XMarkIcon, ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { CheckCircleIcon } from '@heroicons/react/24/solid';
 import { fetchAccessibleOrgs } from '@/app/lib/access-control';
 
@@ -25,6 +25,7 @@ const NotificationSidebar: FC = () => {
   const { data: session, status } = useSession();
   const [requirements, setRequirements] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [expandedOrgs, setExpandedOrgs] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const fetchRequirements = async () => {
@@ -105,6 +106,18 @@ const NotificationSidebar: FC = () => {
 
   const removeNotification = (id: number) => {
     setNotifications(notifications.filter(notif => notif.id !== id));
+  };
+
+  const toggleOrg = (orgName: string) => {
+    setExpandedOrgs(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(orgName)) {
+        newSet.delete(orgName);
+      } else {
+        newSet.add(orgName);
+      }
+      return newSet;
+    });
   };
 
   return (
@@ -222,36 +235,42 @@ const NotificationSidebar: FC = () => {
                   }, {})
                 ).map(([orgName, items]: any) => (
                   <div key={orgName} className="mb-4 last:mb-0">
-                    <p className="text-xs font-bold text-yellow-300 uppercase tracking-wide mb-2">
+                    <button
+                      onClick={() => toggleOrg(orgName)}
+                      className="w-full flex items-center gap-2 text-xs font-bold text-yellow-300 uppercase tracking-wide mb-2 hover:text-yellow-200 transition-colors cursor-pointer"
+                    >
+                      {expandedOrgs.has(orgName) ? (
+                        <ChevronDownIcon className="w-4 h-4" />
+                      ) : (
+                        <ChevronRightIcon className="w-4 h-4" />
+                      )}
                       {orgName}
-                    </p>
+                      <span className="text-blue-200 normal-case">({items.length})</span>
+                    </button>
 
-                    <div className="space-y-2">
-                      {items.map((req: any) => (
-                        <div
-                          key={req.id}
-                          className="flex items-start cursor-pointer group"
-                        >
-                          <input
-                            type="checkbox"
-                            className="mt-1 w-4 h-4 rounded border-2 border-white bg-transparent cursor-pointer flex-shrink-0"
-                            checked={req.submitted}
-                            readOnly
-                          />
-
-                          <Link
-                            href={`/dashboard/orgs/${req.orgUsername}/requirements/${req.requirementId}`}
-                            className="text-sm leading-tight group-hover:text-blue-200 transition-colors"
+                    {expandedOrgs.has(orgName) && (
+                      <div className="space-y-2">
+                        {items.map((req: any) => (
+                          <div
+                            key={req.id}
+                            className="flex items-start cursor-pointer group"
                           >
-                            {req.requirements?.title}
-                            <br />
-                            <span className="text-xs text-blue-200">
-                              Status: {!req.submitted ? 'Not submitted' : 'Submitted'} / {!req.graded ? 'Not graded' : 'Graded'}
-                            </span>
-                          </Link>
-                        </div>
-                      ))}
-                    </div>
+                            
+
+                            <Link
+                              href={`/dashboard/orgs/${req.orgUsername}/requirements/${req.requirementId}`}
+                              className="text-sm leading-tight group-hover:text-blue-200 transition-colors"
+                            >
+                              {req.requirements?.title}
+                              <br />
+                              <span className={`text-xs ${req.graded ? 'text-green-200' : 'text-red-300'}`}>
+                                Status: {!req.submitted ? 'Not submitted' : 'Submitted'} / {!req.graded ? 'Not graded' : 'Graded'}
+                              </span>
+                            </Link>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
