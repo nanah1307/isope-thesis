@@ -153,7 +153,11 @@ const submitEvaluation = async () => {
     router.push(`/dashboard/orgs/${orgname}?tab=OrgMembers`);
   } catch (err: any) {
     console.error(err);
-    setError(err.message || "Failed to submit evaluation");
+
+    const message = err.message || "Failed to submit evaluation";
+
+    alert(`Error: ${message}`);
+    setError(message);
   }
 };
 
