@@ -49,7 +49,7 @@ export default function ForgotPasswordPage() {
         <h1 className="text-2xl md:text-3xl font-bold">iSOPE Online</h1>
       </header>
 
-      <div className="flex flex-col items-center justify-center h-64 my-5">
+      <div className="flex flex-col items-center justify-center h-64 mt-20 mb-5">
         <div className="border-8 border-blue-500 px-10 py-10 rounded-lg space-y-4 text-center w-full max-w-md">
           <p className="text-black font-bold">iACADEMY</p>
           <p className="text-black font-bold">iSOPE Online</p>
@@ -69,7 +69,7 @@ export default function ForgotPasswordPage() {
             <button
               type="submit"
               disabled={loading}
-              className="bg-blue-600 text-white px-4 py-2 rounded w-full cursor-pointer hover:bg-gray-800 disabled:opacity-60"
+              className="bg-[#014fb3] text-white px-4 py-2 rounded w-full cursor-pointer hover:bg-gray-800 disabled:opacity-60"
             >
               {loading ? "Sending..." : "Send reset link"}
             </button>

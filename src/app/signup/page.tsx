@@ -23,8 +23,8 @@ export default function SignUpPage() {
         <h1 className="text-2xl md:text-3xl font-bold">iSOPE Online</h1>
       </header>
 
-      <div className="flex flex-col items-center justify-center h-64 space-y-2justify-center">
-        <div className="mt-50 border-8 border-blue-500 px-20 py-10 rounded-lg space-y-4 text-center w-full max-w-md">
+      <div className="flex flex-col items-center mt-20 mb-5">
+        <div className="border-8 border-blue-500 px-20 py-10 rounded-lg space-y-4 text-center w-full max-w-md">
           <p className="text-black font-bold">iACADEMY</p>
           <p className="text-black font-bold">iSOPE Online</p>
           <div className="w-full h-px bg-blue-500 my-4"></div>
@@ -33,13 +33,13 @@ export default function SignUpPage() {
 
           <div className="space-y-2 mt-4 text-left">
             <input
-              className="w-full border px-3 py-2 rounded text-black"
+              className="w-full border px-3 py-2 rounded text-black placeholder:text-gray-400"
               placeholder="Username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
             />
             <input
-              className="w-full border px-3 py-2 rounded text-black"
+              className="w-full border px-3 py-2 rounded text-black placeholder:text-gray-400"
               type="password"
               placeholder="Password"
               value={password}

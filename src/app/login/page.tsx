@@ -35,7 +35,7 @@ export default function Home() {
         <h1 className="text-2xl md:text-3xl font-bold">iSOPE Online</h1>
       </header>
 
-      <div className="flex flex-col items-center justify-center h-64 my-5">
+      <div className="flex flex-col items-center justify-center h-64 mt-20 mb-5">
         <div className="mt-50 border-8 border-blue-500 px-10 py-10 rounded-lg space-y-2 text-center w-full max-w-md">
           <p className="text-black font-bold">iACADEMY</p>
           <p className="text-black font-bold">iSOPE Online</p>
@@ -46,13 +46,13 @@ export default function Home() {
           <p className="text-black text-3xl">Sign in</p>
           <div className="space-y-2 mt-4 text-left">
             <input
-              className="w-full border px-3 py-2 rounded"
+              className="w-full border px-3 py-2 rounded text-black placeholder:text-gray-500"
               placeholder="Username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
             />
             <input
-              className="w-full border px-3 py-2 rounded"
+              className="w-full border px-3 py-2 rounded text-black placeholder:text-gray-500"
               type="password"
               placeholder="Password"
               value={password}
