@@ -14,6 +14,7 @@ import { useRouter } from 'next/navigation';
 
 
 
+
 export default function RequirementPage({ params }: { params: Promise<{ orgname: string; reqid: string }> }) {
   const { orgname, reqid } = use(params);
   const { data: session, status } = useSession();
@@ -38,11 +39,15 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
     dueDate: null as Date | null,
     isEditingInstructions: false,
     isEditingGrade: false,
+
+    // ✅ ADDED (only change): controls "Edit freeform" mode
+    isEditingFreeform: false,
+
     instructions: '',
     error: null as string | null,
     uploadedPdf: null as string | null,
     pdfFileName: '',
-    userRole: null as 'osas' | 'member' | 'adviser' | null,
+    userRole: null as 'osas' | 'org' | 'adviser' | null,
     currentUserEmail: null as string | null,
     freeformAnswer: '',
     selectedPdfId: null as string | null,
@@ -91,7 +96,7 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
   const formattedDueDate = state.dueDate?.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) || 'TBD';
 
   const isOSAS = state.userRole === 'osas';
-  const isMember = state.userRole === 'member';
+  const isMember = state.userRole === 'org';
   const hasApprovalChanges = approved !== initialApproved;
   const isEditing = state.isEditingInstructions || state.isEditingGrade;
 
@@ -100,7 +105,7 @@ export default function RequirementPage({ params }: { params: Promise<{ orgname:
   
   const setError = (error: string | null) => updateState({ error });
   
-  const checkPermission = (role: 'osas' | 'member', action: string) => {
+  const checkPermission = (role: 'osas' | 'org', action: string) => {
     if (state.userRole !== role) {
       setError(`Only ${role} users can ${action}`);
       return false;
@@ -305,7 +310,7 @@ const loadRequirementFromSupabase = async () => {
   const handlePdfUpload = async (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
-    if (!checkPermission('member', 'upload PDFs')) return;
+    if (!checkPermission('org', 'upload PDFs')) return;
 
     const files = event.target.files;
     if (!files || files.length === 0) return;
@@ -423,7 +428,7 @@ const loadRequirementFromSupabase = async () => {
 
 
   const handleSubmitFreeform = async () => {
-  if (!checkPermission('member', 'submit freeform answers')) return;
+  if (!checkPermission('org', 'submit freeform answers')) return;
 
   try {
     setError(null);
@@ -467,7 +472,8 @@ const loadRequirementFromSupabase = async () => {
       if (insertError) throw insertError;
     }
 
-    updateState({ hasSubmitted: true });
+    // ✅ CHANGED (only change): lock editing again after submit
+    updateState({ hasSubmitted: true, isEditingFreeform: false });
   } catch (err: any) {
     console.error(err);
     setError('Failed to submit freeform response');
@@ -593,8 +599,8 @@ const loadRequirementFromSupabase = async () => {
     checkSupabaseAuth();
 
 
-      if (rawRole === 'osas' || rawRole === 'member' || rawRole === 'adviser') {
-        updateState({ userRole: rawRole as 'osas' | 'member' | 'adviser' });
+      if (rawRole === 'osas' || rawRole === 'org' || rawRole === 'adviser') {
+        updateState({ userRole: rawRole as 'osas' | 'org' | 'adviser' });
 
         // kick off initial data loads
         loadRequirementFromSupabase();

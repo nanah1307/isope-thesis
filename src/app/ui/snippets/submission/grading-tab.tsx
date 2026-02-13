@@ -43,10 +43,13 @@ export function GradingTab({
     a.remove();
   };
 
+  const freeformLocked = state.userRole === 'org' && state.hasSubmitted && !state.isEditingFreeform;
+  const isReadOnly = isOSAS || freeformLocked;
+
   return (
     <div>
       <div className="space-y-4">
-        {state.userRole === 'member' && (
+        {state.userRole === 'org' && (
           <div className="flex justify-end">
             <label className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors cursor-pointer">
               <ArrowUpTrayIcon className="w-5 h-5" />
@@ -105,7 +108,7 @@ export function GradingTab({
                         <ArrowDownTrayIcon className="w-5 h-5" />
                       </button>
 
-                      {state.userRole === 'member' && (
+                      {state.userRole === 'org' && (
                         <button
                           onClick={() => handleRemovePdf(file.id)}
                           className="text-gray-400 hover:text-red-600 transition-colors cursor-pointer"
@@ -190,24 +193,36 @@ export function GradingTab({
 
         <textarea
         className={`w-full h-[300px] rounded-lg border border-gray-300 p-4 text-gray-900 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-          isOSAS ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'
+          isReadOnly ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'
         }`}
         placeholder={isOSAS ? 'No response submitted yet' : 'Enter your response here...'}
         value={state.freeformAnswer || ''}
-        readOnly={isOSAS}
-        onChange={(e) =>
-          !isOSAS && updateState({ freeformAnswer: e.target.value })
-        }
+        readOnly={isReadOnly}
+        onChange={(e) => {
+          if (isReadOnly) return;
+          updateState({ freeformAnswer: e.target.value });
+        }}
       />
 
-      {!isOSAS && (
-        <button
-          onClick={handleSubmitFreeform}
-          disabled={!state.freeformAnswer}
-          className="mt-4 w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-medium px-6 py-3 rounded-lg transition-colors cursor-pointer"
-        >
-          Submit
-        </button>
+      {state.userRole === 'org' && (
+        <div className="mt-4 flex gap-2">
+          <button
+            onClick={handleSubmitFreeform}
+            disabled={freeformLocked || !(state.freeformAnswer || '').trim()}
+            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-medium px-6 py-3 rounded-lg transition-colors cursor-pointer"
+          >
+            Submit
+          </button>
+
+          <button
+            type="button"
+            onClick={() => updateState({ isEditingFreeform: true })}
+            disabled={!freeformLocked}
+            className="px-6 py-3 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed text-gray-900 font-medium transition-colors cursor-pointer"
+          >
+            Edit
+          </button>
+        </div>
       )}
       </div>
     </div>

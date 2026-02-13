@@ -19,14 +19,14 @@ export function InstructionsBlock({
   handleAllowedFileTypesChange: (types: string[]) => void;
 }) {
   const isOSAS = state.userRole === 'osas';
-  const isMember = state.userRole === 'member';
+  const isOrgUser = state.userRole === 'org';
 
   return (
     <div>
       <div className="flex justify-between items-center mb-8">
         <h2 className="text-red-600 font-bold text-2xl">Instructions:</h2>
         <div className="flex items-center gap-2">
-          {isMember && !state.isEditingInstructions && (
+          {isOrgUser && !state.isEditingInstructions && (
             <button
               onClick={() => updateState({ activeTab: 'submission' })}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors cursor-pointer"
@@ -86,7 +86,7 @@ export function InstructionsBlock({
         <>
           <p className="text-gray-900 mb-10 leading-relaxed text-xl max-w-4xl font-medium">{state.instructions}</p>
 
-          {isMember && (
+          {isOrgUser && (
             <div className="mb-10">
               <h3 className="text-gray-900 font-semibold mb-3">Accepted File Types</h3>
               <ul className="list-disc pl-6 text-gray-700">
