@@ -49,7 +49,7 @@ export default function UploadMembersModal() {
       {/* Trigger button */}
       <button
         onClick={() => setOpen(true)}
-        className="px-4 py-2 bg-blue-500 text-white rounded cursor-pointer hover:bg-blue-700"
+        className="bg-[#014fb3]  text-white px-4 py-2 rounded hover:bg-blue-700 text-sm cursor-pointer"
       >
         Upload Members
       </button>
@@ -59,7 +59,7 @@ export default function UploadMembersModal() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-white rounded-lg w-full max-w-md p-6 space-y-4">
             <div className="flex justify-between items-center">
-              <h2 className="text-lg font-semibold">
+              <h2 className="text-lg font-semibold text-black">
                 Upload Members (Excel)
               </h2>
               <button
@@ -100,7 +100,7 @@ export default function UploadMembersModal() {
             <button
               onClick={handleUpload}
               disabled={!file || loading}
-              className="w-full py-2 bg-blue-500 text-white rounded enabled:cursor-pointer enabled:hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed" 
+              className="w-full py-2 bg-[#014fb3] text-white rounded enabled:cursor-pointer enabled:hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed" 
             >
               {loading ? "Uploading..." : "Upload"}
             </button>

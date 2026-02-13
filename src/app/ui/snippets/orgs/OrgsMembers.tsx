@@ -120,7 +120,7 @@ export default function OrgsMembers({ username }: { username: string }) {
         {isOSAS && (
           <button
             onClick={() => router.push(`/dashboard/orgs/${username}/evaluations/create`)}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm cursor-pointer"
+            className="bg-[#014fb3] text-white px-4 py-2 rounded hover:bg-blue-700 text-sm cursor-pointer"
           >
             Edit Evaluation
           </button>
