@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { TrashIcon } from "@heroicons/react/24/outline";
 import type { Question, QType, AnswersMap } from "@/app/lib/evaluationData";
 import AnswerView from "@/app/ui/snippets/evaluation/AnswerView";
 
@@ -36,97 +37,158 @@ export default function OsasEvaluationView({
   };
 
   return (
-    <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div className="bg-white p-4 rounded shadow">
-        <h2 className="text-lg font-semibold mb-3">Form Editor</h2>
-
-        <div className="flex gap-2 mb-4 items-center">
-          <label className="text-sm">Add question:</label>
-          <select
-            value={selectedType}
-            onChange={(e) => setSelectedType(e.target.value as QType)}
-            className="border px-2 py-1 rounded"
-          >
-            <option value="input">Input</option>
-            <option value="dropdown">Dropdown</option>
-            <option value="likert">Likert (scale)</option>
-            <option value="checkbox">Checkboxes</option>
-          </select>
-          <button type="button" onClick={addQuestion} className="ml-auto bg-blue-600 text-white px-3 py-1 rounded">
-            Add
-          </button>
-          <button type="button" onClick={saveForm} className="bg-green-600 text-white px-3 py-1 rounded">
-            Save
-          </button>
+    <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6 p-6">
+      {/* Form Editor */}
+      <div className="space-y-6">
+        {/* Header Section */}
+        <div className="bg-white border border-gray-200">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900">Form Editor</h2>
+          </div>
+          
+          {/* Add Question Controls */}
+          <div className="px-6 py-4">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex-1">
+                <label className="block text-xs font-medium text-gray-500 uppercase mb-1">
+                  Question Type
+                </label>
+                <select
+                  value={selectedType}
+                  onChange={(e) => setSelectedType(e.target.value as QType)}
+                  className="w-full border border-gray-300 px-3 py-2 rounded text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="input">Input</option>
+                  <option value="dropdown">Dropdown</option>
+                  <option value="likert">Likert (scale)</option>
+                  <option value="checkbox">Checkboxes</option>
+                </select>
+              </div>
+              <div className="flex gap-2 sm:items-end">
+                <button 
+                  type="button" 
+                  onClick={addQuestion} 
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-medium transition-colors"
+                >
+                  Add Question
+                </button>
+                <button 
+                  type="button" 
+                  onClick={saveForm} 
+                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-medium transition-colors"
+                >
+                  Save Form
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
+        {/* Questions List */}
         <div className="space-y-4">
-          {questions.length === 0 && <p className="text-sm text-gray-500">No questions yet — add one.</p>}
+          {questions.length === 0 && (
+            <div className="bg-white border border-gray-200 px-6 py-8">
+              <p className="text-sm text-gray-500 text-center">No questions yet — add one to get started.</p>
+            </div>
+          )}
 
-          {questions.map((q) => (
-            <div key={q.id} className="border rounded p-3">
-              <div className="flex items-start gap-2">
-                <div className="flex-1">
+          {questions.map((q, index) => (
+            <div key={q.id} className="bg-white border border-gray-200">
+              {/* Question Header */}
+              <div className="px-6 py-3 border-b border-gray-200 flex items-center justify-between bg-gray-50">
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-semibold text-gray-900">Question {index + 1}</span>
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                    {q.type}
+                  </span>
+                </div>
+                <button 
+                  type="button" 
+                  className="text-red-600 hover:text-red-800 hover:bg-red-50 p-1.5 rounded transition-colors" 
+                  onClick={() => removeQuestion(q.id)}
+                  aria-label="Delete question"
+                >
+                  <TrashIcon className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Question Content */}
+              <div className="px-6 py-4 space-y-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 uppercase mb-1">
+                    Question Text
+                  </label>
                   <input
-                    className="w-full border px-2 py-1 mb-2 text-black"
+                    className="w-full border border-gray-300 px-3 py-2 rounded text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={q.text}
                     onChange={(e) => updateQuestion(q.id, { text: e.target.value })}
+                    placeholder="Enter your question here..."
                   />
+                </div>
 
-                  <div className="text-sm text-black mb-2">
-                    Type: <strong>{q.type}</strong>
-                  </div>
-
-                  {(q.type === "dropdown" || q.type === "checkbox") && (
+                {(q.type === "dropdown" || q.type === "checkbox") && (
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 uppercase mb-2">
+                      Options
+                    </label>
                     <div className="space-y-2">
-                      <div className="text-sm font-medium">Options</div>
                       {(q.options || []).map((opt, idx) => (
-                        <div key={idx} className="flex gap-2 items-center">
+                        <div key={idx} className="flex gap-2">
                           <input
-                            className="flex-1 border px-2 py-1 text-black"
+                            className="flex-1 border border-gray-300 px-3 py-2 rounded text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                             value={opt}
                             onChange={(e) => updateOption(q.id, idx, e.target.value)}
+                            placeholder={`Option ${idx + 1}`}
                           />
-                          <button type="button" className="text-red-500" onClick={() => removeOption(q.id, idx)}>
+                          <button 
+                            type="button" 
+                            className="px-3 py-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded font-medium" 
+                            onClick={() => removeOption(q.id, idx)}
+                          >
                             Remove
                           </button>
                         </div>
                       ))}
-                      <button type="button" className="text-sm text-blue-600" onClick={() => addOption(q.id)}>
+                      <button 
+                        type="button" 
+                        className="text-sm text-blue-600 hover:text-blue-800 font-medium" 
+                        onClick={() => addOption(q.id)}
+                      >
                         + Add option
                       </button>
                     </div>
-                  )}
+                  </div>
+                )}
 
-                  {q.type === "likert" && (
-                    <div className="mt-2">
-                      <label className="text-sm">Scale (number of points):</label>
-                      <input
-                        type="number"
-                        min={2}
-                        max={10}
-                        value={q.scale ?? 5}
-                        onChange={(e) => updateQuestion(q.id, { scale: Number(e.target.value) })}
-                        className="ml-2 border px-2 py-1 w-20 text-black"
-                      />
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <button type="button" className="text-sm text-red-600" onClick={() => removeQuestion(q.id)}>
-                    Delete
-                  </button>
-                </div>
+                {q.type === "likert" && (
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 uppercase mb-1">
+                      Scale (Number of Points)
+                    </label>
+                    <input
+                      type="number"
+                      min={2}
+                      max={10}
+                      value={q.scale ?? 5}
+                      onChange={(e) => updateQuestion(q.id, { scale: Number(e.target.value) })}
+                      className="border border-gray-300 px-3 py-2 w-24 rounded text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                )}
               </div>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="bg-white p-4 rounded shadow">
-        <h2 className="text-lg font-semibold mb-3">Preview</h2>
-        <AnswerView questions={questions} answers={previewAnswers} setAnswer={setAnswer} />
+      {/* Preview */}
+      <div className="bg-white border border-gray-200">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h2 className="text-lg font-semibold text-gray-900">Preview</h2>
+        </div>
+        <div className="px-6 py-4">
+          <AnswerView questions={questions} answers={previewAnswers} setAnswer={setAnswer} />
+        </div>
       </div>
     </div>
   );
