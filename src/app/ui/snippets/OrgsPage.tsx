@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from "react";
-import { supabase } from '@/app/lib/database';
+import { supabase, supabaseAdmin } from '@/app/lib/database';
 import { useSearchParams } from "next/navigation";
 import OrgsRequirementArchive from "./orgs/OrgsRequirementsArchive";
 import OrgsRequirement from "./orgs/OrgsRequirement";
@@ -55,6 +55,86 @@ export default function OrgsPage({ org }: OrgsProp) {
   const [isActive, setIsActive] = useState(org.active ?? true);
   const [archiving, setArchiving] = useState(false);
 
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.match('image/(jpeg|jpg|png)')) {
+      alert('Please select a JPG or PNG image');
+      return;
+    }
+
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File size must be less than 5MB');
+      return;
+    }
+
+    setUploading(true);
+
+    try {
+      // Generate unique filename
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${org.username}-${Date.now()}.${fileExt}`;
+      const filePath = `org-logos/${fileName}`;
+
+      // Upload to Supabase storage
+      const { data: uploadData, error: uploadError } = await supabaseAdmin
+        .storage
+        .from('orglogos')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        alert('Failed to upload image: ' + uploadError.message);
+        setUploading(false);
+        return;
+      }
+
+      // Get public URL
+      const { data: urlData } = supabaseAdmin
+        .storage
+        .from('orglogos')
+        .getPublicUrl(filePath);
+
+      const publicUrl = urlData.publicUrl;
+
+      // Update org table with new avatar URL
+      const { error: updateError } = await supabase
+        .from('orgs')
+        .update({ avatar: publicUrl })
+        .eq('username', org.username);
+
+      if (updateError) {
+        console.error('Database update error:', updateError);
+        alert('Failed to update organization avatar');
+        setUploading(false);
+        return;
+      }
+
+      // Update local org object
+      org.avatar = publicUrl;
+      alert('Logo updated successfully!');
+      
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+
+    } catch (error) {
+      console.error('Unexpected error:', error);
+      alert('An unexpected error occurred');
+    }
+
+    setUploading(false);
+  };
 
   const saveOrg = async () => {
     setSaving(true);
@@ -241,11 +321,34 @@ export default function OrgsPage({ org }: OrgsProp) {
                 <label className="block text-xs font-medium text-gray-600 uppercase tracking-wide mb-2">
                   Change Logo
                 </label>
-                <button className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-all shadow-sm hover:shadow-md cursor-pointer">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  Upload New Logo
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png"
+                  onChange={handleLogoUpload}
+                  className="hidden"
+                />
+                <button 
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-all shadow-sm hover:shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {uploading ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      Upload New Logo
+                    </>
+                  )}
                 </button>
               </div>
             </div>
