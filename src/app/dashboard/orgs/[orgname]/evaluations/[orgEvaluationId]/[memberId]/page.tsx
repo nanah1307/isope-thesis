@@ -86,29 +86,30 @@ export default function Page({
     boot();
   }, [status, session, orgEvaluationId, memberId]);
 
-  const save = async (markSubmitted: boolean) => {
-    try {
-      setError(null);
+const submitEvaluation = async () => {
+  try {
+    setError(null);
 
-      const res = await fetch(
-        `/api/org-evaluations/${encodeURIComponent(orgEvaluationId)}/responses/${encodeURIComponent(memberId)}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ answers, submitted: markSubmitted }),
-        }
-      );
+    const res = await fetch(
+      `/api/org-evaluations/${encodeURIComponent(orgEvaluationId)}/responses/${encodeURIComponent(memberId)}`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ answers, submitted: true }),
+      }
+    );
 
-      const json = await readJsonSafe(res);
-      if (!res.ok) throw new Error(json?.error || "Failed to save");
+    const json = await readJsonSafe(res);
+    if (!res.ok) throw new Error(json?.error || "Failed to submit");
 
-      setSubmitted(markSubmitted);
-      router.refresh();
-    } catch (err: any) {
-      console.error(err);
-      setError(err.message || "Failed to save response");
-    }
-  };
+    setSubmitted(true);
+    router.refresh();
+  } catch (err: any) {
+    console.error(err);
+    setError(err.message || "Failed to submit evaluation");
+  }
+};
+
 
   if (loading) {
     return (
@@ -142,13 +143,7 @@ export default function Page({
 
           <div className="flex gap-2">
             <button
-              onClick={() => save(false)}
-              className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded cursor-pointer"
-            >
-              Save Draft
-            </button>
-            <button
-              onClick={() => save(true)}
+              onClick={submitEvaluation}
               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded cursor-pointer"
             >
               Submit
