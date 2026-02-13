@@ -93,9 +93,47 @@ export default function Page({
     boot();
   }, [status, session, orgEvaluationId, memberId]);
 
+  const validateRequiredAnswers = () => {
+  const missing: string[] = [];
+
+  for (const q of questions) {
+    const v = answers[q.id];
+
+    if (q.type === "input") {
+      const s = (v ?? "").toString().trim();
+      if (!s) missing.push(q.text);
+    }
+
+    if (q.type === "dropdown") {
+      const s = (v ?? "").toString().trim();
+      if (!s) missing.push(q.text);
+    }
+
+    if (q.type === "checkbox") {
+      const arr = Array.isArray(v) ? v : [];
+      if (arr.length === 0) missing.push(q.text);
+    }
+
+    if (q.type === "likert") {
+      const n = Number(v);
+      const max = q.scale ?? 5;
+      if (!Number.isFinite(n) || n < 1 || n > max) missing.push(q.text);
+    }
+  }
+
+  return missing;
+};
+
+
 const submitEvaluation = async () => {
   try {
     setError(null);
+
+    const missing = validateRequiredAnswers();
+    if (missing.length > 0) {
+      setError(`Please answer all required fields. Missing: ${missing.join(", ")}`);
+      return;
+    }
 
     const res = await fetch(
       `/api/org-evaluations/${encodeURIComponent(orgEvaluationId)}/responses/${encodeURIComponent(memberId)}`,
@@ -116,6 +154,9 @@ const submitEvaluation = async () => {
     setError(err.message || "Failed to submit evaluation");
   }
 };
+
+const missingCount = validateRequiredAnswers().length;
+
 
 
   if (loading) {
@@ -155,15 +196,16 @@ const submitEvaluation = async () => {
           </div>
 
           {!readOnly && (
-          <div className="flex gap-2">
-            <button
-              onClick={submitEvaluation}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded cursor-pointer"
-            >
-              Submit
-            </button>
-          </div>
-        )}
+            <div className="flex gap-2">
+              <button
+                onClick={submitEvaluation}
+                disabled={missingCount > 0}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded cursor-pointer"
+              >
+                Submit
+              </button>
+            </div>
+          )}
       </div>
 
         <MemberEvaluationView
