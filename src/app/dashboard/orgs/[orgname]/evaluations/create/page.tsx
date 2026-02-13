@@ -32,7 +32,7 @@ export default function Page({ params }: { params: Promise<{ orgname: string }> 
 
   const goToMembers = (e: React.MouseEvent) => {
     e.stopPropagation();
-    router.push(`/dashboard/orgs/${orgname}?tab=OrgMembers`);
+    router.push(`/dashboard/orgs/${orgname}?tab=Members`);
   };
 
 
@@ -142,45 +142,54 @@ export default function Page({ params }: { params: Promise<{ orgname: string }> 
   }
 
   const saveForm = async () => {
-    try {
-      setError(null);
-      if (!templateId) throw new Error("No active template found.");
+  try {
+    setError(null);
+    if (!templateId) throw new Error("No active template found.");
 
-      setLoading((p) => ({ ...p, saving: true }));
+    setLoading((p) => ({ ...p, saving: true }));
 
-      const payload = questions.map((q, idx) => ({
-        type: q.type,
-        text: q.text,
-        options: q.options || [],
-        scale: q.scale,
-        sort_order: idx,
-      }));
+    const payload = questions.map((q, idx) => ({
+      type: q.type,
+      text: q.text,
+      options: q.options || [],
+      scale: q.scale,
+      sort_order: idx,
+    }));
 
-      const res = await fetch(`/api/evaluation-template/${encodeURIComponent(templateId)}/questions`, {
+    const res = await fetch(
+      `/api/evaluation-template/${encodeURIComponent(templateId)}/questions`,
+      {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ questions: payload }),
-      });
+      }
+    );
 
-      const json = await readJsonSafe(res);
-      if (!res.ok) throw new Error(json?.error || "Failed to save template questions");
+    const json = await readJsonSafe(res);
+    if (!res.ok) throw new Error(json?.error || "Failed to save template questions");
 
-      // ensure THIS org has an active org evaluation instance
-      const res2 = await fetch(`/api/orgs/${encodeURIComponent(orgname)}/evaluations/create`, {
-        method: "POST",
-      });
+    const res2 = await fetch(
+      `/api/orgs/${encodeURIComponent(orgname)}/evaluations/create`,
+      { method: "POST" }
+    );
 
-      const json2 = await readJsonSafe(res2);
-      if (!res2.ok) throw new Error(json2?.error || "Failed to create org evaluation instance");
+    const json2 = await readJsonSafe(res2);
+    if (!res2.ok) throw new Error(json2?.error || "Failed to create org evaluation instance");
 
-      router.push(`/dashboard/orgs/${orgname}?tab=Members`);
-    } catch (err: any) {
-      console.error(err);
-      setError(err.message || "Failed to save template");
-    } finally {
-      setLoading((p) => ({ ...p, saving: false }));
-    }
-  };
+    alert("Success: Evaluation template saved.");
+    router.push(`/dashboard/orgs/${orgname}?tab=Members`);
+  } catch (err: any) {
+    console.error(err);
+
+    const message = err.message || "Failed to save template";
+
+    alert(`Error: ${message}`);
+    setError(message);
+  } finally {
+    setLoading((p) => ({ ...p, saving: false }));
+  }
+};
+
 
   if (loading.page) {
     return (

@@ -26,7 +26,7 @@ export default function Page({
 
   const goToMembers = (e: React.MouseEvent) => {
     e.stopPropagation();
-    router.push(`/dashboard/orgs/${orgname}?tab=OrgMembers`);
+    router.push(`/dashboard/orgs/${orgname}?tab=Members`);
   };
 
   const rawRole = ((session?.user as any)?.role || "").toString().trim().toLowerCase();
@@ -150,7 +150,7 @@ const submitEvaluation = async () => {
     setSubmitted(true);
 
     alert("Success: Evaluation submitted.");
-    router.push(`/dashboard/orgs/${orgname}?tab=OrgMembers`);
+    router.push(`/dashboard/orgs/${orgname}?tab=Members`);
   } catch (err: any) {
     console.error(err);
 
