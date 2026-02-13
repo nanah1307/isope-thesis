@@ -474,7 +474,15 @@ export default function OrgsPage({ org }: OrgsProp) {
 
       <nav className="rounded-lg mt-6 p-2 bg-white shadow-sm border border-gray-200">
         <ul className="flex flex-wrap sm:flex-nowrap justify-start gap-2 overflow-x-auto">
-          {links.map(({ name }) => (
+          {links
+            .filter(({ name }) => {
+              // Hide Requirements and Archive for members
+              if (role === 'member' && (name === 'Requirements' || name === 'Archive')) {
+                return false;
+              }
+              return true;
+            })
+            .map(({ name }) => (
             <li key={name} className="flex-shrink-0">
               <button
                 type="button"
