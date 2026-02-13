@@ -26,6 +26,7 @@ export default function Page({
   const rawRole = ((session?.user as any)?.role || "").toString().trim().toLowerCase();
   const isOSAS = rawRole === "osas";
   const isMember = rawRole === "member";
+  const readOnly = isOSAS;
 
   const sessionName = (session?.user as any)?.name
     ? ((session?.user as any)?.name || "").toString().trim().toLowerCase()
@@ -141,6 +142,7 @@ const submitEvaluation = async () => {
             </div>
           </div>
 
+          {!readOnly && (
           <div className="flex gap-2">
             <button
               onClick={submitEvaluation}
@@ -149,20 +151,15 @@ const submitEvaluation = async () => {
               Submit
             </button>
           </div>
-        </div>
+        )}
+      </div>
 
         <MemberEvaluationView
           questions={questions}
           answers={answers}
           setAnswer={setAnswer}
-          readOnly={false}
+          readOnly={readOnly}
         />
-
-        {submitted && (
-          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
-            Submitted
-          </div>
-        )}
       </div>
     </div>
   );
