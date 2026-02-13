@@ -131,7 +131,7 @@ const submitEvaluation = async () => {
 
     const missing = validateRequiredAnswers();
     if (missing.length > 0) {
-      setError(`Please answer all required fields. Missing: ${missing.join(", ")}`);
+      setError(`Please answer all required fields.`);
       return;
     }
 
@@ -148,16 +148,17 @@ const submitEvaluation = async () => {
     if (!res.ok) throw new Error(json?.error || "Failed to submit");
 
     setSubmitted(true);
-    router.refresh();
+
+    alert("Success: Evaluation submitted.");
+    router.push(`/dashboard/orgs/${orgname}?tab=OrgMembers`);
   } catch (err: any) {
     console.error(err);
     setError(err.message || "Failed to submit evaluation");
   }
 };
 
+
 const missingCount = validateRequiredAnswers().length;
-
-
 
   if (loading) {
     return (
