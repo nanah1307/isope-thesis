@@ -41,6 +41,10 @@ export default function OrgsPage({ org }: OrgsProp) {
   const [bio, setBio] = useState(org.bio ?? '');
   const [bioDraft, setBioDraft] = useState(org.bio ?? '');
 
+  // ✅ ADDED: org email state/draft
+  const [orgEmail, setOrgEmail] = useState(org.email ?? '');
+  const [orgEmailDraft, setOrgEmailDraft] = useState(org.email ?? '');
+
   const [adviser, setAdviser] = useState(org.adviser ?? '');
   const [adviserDraft, setAdviserDraft] = useState(org.adviser ?? '');
 
@@ -145,6 +149,7 @@ export default function OrgsPage({ org }: OrgsProp) {
         bio: bioDraft || null,
         adviser: adviserDraft || null,
         adviseremail: adviserEmailDraft || null,
+        email: orgEmailDraft || null, // ✅ ADDED: save org email
         accreditlvl: accreditlvlDraft,
       })
       .eq('username', org.username); 
@@ -154,6 +159,7 @@ export default function OrgsPage({ org }: OrgsProp) {
       alert('Failed to save changes');
     } else {
       setBio(bioDraft);
+      setOrgEmail(orgEmailDraft); // ✅ ADDED: update local state
       setAdviser(adviserDraft);
       setAdviserEmail(adviserEmailDraft);
       setAccreditlvl(accreditlvlDraft);
@@ -202,16 +208,44 @@ export default function OrgsPage({ org }: OrgsProp) {
             </label>
           )}
           {isEditingOrg ? (
-            <textarea
-              value={bioDraft}
-              onChange={(e) => setBioDraft(e.target.value)}
-              className="w-full min-h-[120px] p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-gray-900 cursor-text"
-              placeholder="Tell us about your organization..."
-            />
+            <>
+              <textarea
+                value={bioDraft}
+                onChange={(e) => setBioDraft(e.target.value)}
+                className="w-full min-h-[120px] p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-gray-900 cursor-text"
+                placeholder="Tell us about your organization..."
+              />
+
+              {/* ✅ ADDED: Organization Email INSIDE About card (editable) */}
+              <div className="mt-4">
+                <label className="block text-xs font-medium text-gray-600 uppercase tracking-wide mb-1.5">
+                  Organization Email
+                </label>
+                <input
+                  type="email"
+                  value={orgEmailDraft}
+                  onChange={(e) => setOrgEmailDraft(e.target.value)}
+                  className="w-full p-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 cursor-text"
+                  placeholder="organization@example.com"
+                />
+              </div>
+            </>
           ) : (
-            <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">
-              {bio || <span className="text-gray-400 italic">No bio provided yet.</span>}
-            </p>
+            <>
+              <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">
+                {bio || <span className="text-gray-400 italic">No bio provided yet.</span>}
+              </p>
+
+              {/* ✅ ADDED: Organization Email INSIDE About card (view) */}
+              <div className="mt-4">
+                <label className="block text-xs font-medium text-gray-600 uppercase tracking-wide mb-1.5">
+                  Organization Email
+                </label>
+                <p className="text-gray-900">
+                  {orgEmail || <span className="text-gray-400 italic">Not provided</span>}
+                </p>
+              </div>
+            </>
           )}
         </div>
 
@@ -400,6 +434,7 @@ export default function OrgsPage({ org }: OrgsProp) {
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
                 onClick={() => {
                   setBioDraft(bio);
+                  setOrgEmailDraft(orgEmail); // ✅ ADDED: reset email on cancel
                   setAdviserDraft(adviser);
                   setAdviserEmailDraft(adviserEmail);
                   setAccreditlvlDraft(accreditlvl);
@@ -465,11 +500,10 @@ export default function OrgsPage({ org }: OrgsProp) {
         />
         <h1 className="text-2xl sm:text-3xl font-semibold text-center sm:text-left">{org.name}</h1>
         {!isActive && (
-  <span className="mt-2 inline-block px-3 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">
-    Archived
-  </span>
-)}
-
+          <span className="mt-2 inline-block px-3 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">
+            Archived
+          </span>
+        )}
       </div>
 
       <nav className="rounded-lg mt-6 p-2 bg-white shadow-sm border border-gray-200">
