@@ -71,8 +71,8 @@ export default function ResetPasswordPage() {
         <h1 className="text-2xl md:text-3xl font-bold">iSOPE Online</h1>
       </header>
 
-      <div className="flex flex-col items-center justify-center h-64 my-5">
-        <div className="border-8 border-blue-500 px-10 py-10 rounded-lg space-y-4 text-center w-full max-w-md">
+      <div className="flex flex-col items-center justify-center h-64 mt-20 mb-5">
+        <div className="mt-50 border-8 border-blue-500 px-10 py-10 rounded-lg space-y-4 text-center w-full max-w-md">
           <p className="text-black font-bold">iACADEMY</p>
           <p className="text-black font-bold">iSOPE Online</p>
           <div className="w-full h-px bg-blue-500 my-2"></div>
