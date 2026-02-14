@@ -1,465 +1,801 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
-import { requirements, orgRequirementStatuses } from '@/app/lib/definitions';
-import { 
-  getAssessmentByOrgAndReq, 
-  Comment,
-  saveCommentsToLocalStorage,
-  loadCommentsFromLocalStorage,
-  formatTimestamp,
-  formatName
-} from '@/app/lib/assessments';
+import { formatName } from '@/app/lib/assessments';
+import { supabaseAdmin, supabase } from '@/app/lib/database';
+import { useSession } from "next-auth/react";
+import { InstructionsBlock } from '@/app/ui/snippets/submission/instruction';
+import { SubmissionInfo } from '@/app/ui/snippets/submission/submission-info';
+import { PDFViewer } from '@/app/ui/snippets/submission/pdf-viewer';
+import { GradingTab } from '@/app/ui/snippets/submission/grading-tab';
+import { ArrowUturnLeftIcon } from '@heroicons/react/24/solid';
+import { useRouter } from 'next/navigation';
 
-const QuestionHeader = ({ title, icon }: { title: string; icon?: boolean }) => (
-  <div className={`bg-gradient-to-r from-yellow-100 to-yellow-50 rounded-lg p-4 mb-4 ${
-    icon ? 'border-2 border-yellow-400 flex items-center gap-3' : ''
-  }`}>
-    {icon && (
-      <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="white" className="w-5 h-5">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
-        </svg>
-      </div>
-    )}
-    <h3 className={`text-gray-900 font-bold ${icon ? 'text-lg' : 'text-base'} uppercase`}>{title}</h3>
-  </div>
-);
+
+
+
 
 export default function RequirementPage({ params }: { params: Promise<{ orgname: string; reqid: string }> }) {
   const { orgname, reqid } = use(params);
-  const [comments, setComments] = useState<Comment[]>([]);
-  const [newComment, setNewComment] = useState('');
-  const [activeTab, setActiveTab] = useState<'instructions' | 'grading'>('instructions');
-  const [hasSubmitted, setHasSubmitted] = useState(false);
-  const [membershipAnswer, setMembershipAnswer] = useState('');
-  const [evaluationAnswer, setEvaluationAnswer] = useState('');
-  const [attemptCount, setAttemptCount] = useState(0);
-  const [score, setScore] = useState<number>(0);
-  const [submittedScore, setSubmittedScore] = useState<number>(0);
-  const [dueDate, setDueDate] = useState<Date | null>(null);
-  const [currentTime, setCurrentTime] = useState(Date.now());
-  const [isEditingInstructions, setIsEditingInstructions] = useState(false);
-  const [isEditingGrade, setIsEditingGrade] = useState(false);
-  const [instructions, setInstructions] = useState('');
-  const [questionType, setQuestionType] = useState<'freeform' | 'pdf'>('freeform');
+  const { data: session, status } = useSession();
+  const [approved, setApproved] = useState(false);
+  const [initialApproved, setInitialApproved] = useState(false);
+  const [savingApproval, setSavingApproval] = useState(false);
+  const isAdviser = (session?.user as { role?: string } | null)?.role === "adviser";
+  const router = useRouter();
 
-  const requirement = requirements.find(r => r.id === reqid);
-  const requirementName = requirement?.title || reqid;
-  const formattedDueDate = dueDate?.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) || 'TBD';
+  const goToDues = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    router.push(`/dashboard/orgs/${orgname}?tab=Requirements`);
+  };
 
-  useEffect(() => {
-    const assessment = getAssessmentByOrgAndReq(orgname, reqid);
-    if (assessment) {
-      setHasSubmitted(assessment.submittedAt !== null);
-      setAttemptCount(assessment.submittedAt ? 1 : 0);
-      setMembershipAnswer(assessment.answers['membership'] || '');
-      setEvaluationAnswer(assessment.answers['evaluation_ld_q1'] || '');
+  // State consolidation
+  const [state, setState] = useState({
+    activeTab: 'instructions' as 'instructions' | 'submission',
+    hasSubmitted: false,
+    score: 0, //max score
+    submittedScore: 0,
+    maxScore: 100,
+    dueDate: null as Date | null,
+    isEditingInstructions: false,
+    isEditingGrade: false,
+
+    // ✅ ADDED (only change): controls "Edit freeform" mode
+    isEditingFreeform: false,
+
+    instructions: '',
+    error: null as string | null,
+    uploadedPdf: null as string | null,
+    pdfFileName: '',
+    userRole: null as 'osas' | 'org' | 'adviser' | null,
+    currentUserEmail: null as string | null,
+    freeformAnswer: '',
+    selectedPdfId: null as string | null,
+    allowedFileTypes: ['pdf'] as string[],
+
+    commentText: '',
+    comments: [] as {
+      id: string;
+      orgUsername: string;
+      requirementId: string;
+      authorEmail: string;
+      authorName: string | null;
+      content: string;
+      createdAt: string;
+    }[],
+    
+    loading: {
+      page: true,
+      requirement: false,
+      grade: false,
+      pdf: false,
+      comments: false,
+      commentAction: false,
+    },
+    
+    submissiontype: null as 'freeform' | 'pdf' | null,
+
+    requirement: null as ({
+      id: string;
+      title: string;
+      section: string;
+      active: boolean;
+    } | null),
+
+    uploadedPdfs: [] as {
+      id: string;
+      filepath: string;
+      publicUrl: string;
+      uploadedby: string;
+      uploadedat: string;
+    }[],
+  });
+
+  const requirementName = state.requirement?.title || reqid;
+
+  const formattedDueDate = state.dueDate?.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) || 'TBD';
+
+  const isOSAS = state.userRole === 'osas';
+  const isMember = state.userRole === 'org';
+  const hasApprovalChanges = approved !== initialApproved;
+  const isEditing = state.isEditingInstructions || state.isEditingGrade;
+
+  // Helper functions
+  const updateState = (updates: Partial<typeof state>) => setState(prev => ({ ...prev, ...updates }));
+  
+  const setError = (error: string | null) => updateState({ error });
+  
+  const checkPermission = (role: 'osas' | 'org', action: string) => {
+    if (state.userRole !== role) {
+      setError(`Only ${role} users can ${action}`);
+      return false;
     }
+    return true;
+  };
 
-    const reqStatus = orgRequirementStatuses.find(
-      (status) => status.orgUsername === orgname && status.requirementId === reqid
-    );
-    if (reqStatus) setDueDate(reqStatus.due);
+  const setLoading = (
+  key: keyof typeof state.loading,
+  value: boolean
+) => {
+  setState(prev => ({
+    ...prev,
+    loading: {
+      ...prev.loading,
+      [key]: value,
+    },
+  }));
+};
 
-    const gradeKey = `grade_${orgname}_${reqid}`;
-    const savedGrade = localStorage.getItem(gradeKey);
-    if (savedGrade) {
-      try {
-        const gradeData = JSON.parse(savedGrade);
-        setScore(gradeData.score || 0);
-        setSubmittedScore(gradeData.score || 0);
-      } catch (e) {
-        console.error('Error loading grade:', e);
+
+  
+
+const loadRequirementFromSupabase = async () => {
+  try {
+    setError(null);
+    setLoading('requirement', true);
+
+    const { data, error } = await supabase
+      .from('requirements')
+      .select('id, title, section, active, instructions, submissiontype')
+      .eq('id', reqid)
+      .eq('active', true)
+      .single();
+
+    if (error) throw error;
+
+    const raw = (data.submissiontype || '').toString().trim().toLowerCase();
+
+    const allowed =
+      raw.includes(',') ? raw.split(',').map((s: string) => s.trim()).filter(Boolean)
+      : raw === 'pdf' ? ['pdf']
+      : raw === 'freeform' ? ['pdf']
+      : raw ? [raw]
+      : ['pdf'];
+
+    updateState({
+      requirement: data,
+      instructions: data.instructions || '',
+      allowedFileTypes: allowed,
+      submissiontype: data.submissiontype as 'freeform' | 'pdf'
+    });
+  } catch (err: any) {
+    console.error(err);
+    setError('Failed to load requirement');
+  } finally {
+    setLoading('requirement', false);
+  }
+};
+
+  // Load grade from Supabase
+  const loadGradeFromSupabase = async () => {
+    try {
+      setError(null);
+      setLoading('grade', true);
+      const { data, error: fetchError } = await supabase
+        .from('org_requirement_status')
+        .select('grade, score, freeformans')
+        .eq('orgUsername', orgname)
+        .eq('requirementId', reqid)
+        .maybeSingle() as any;
+
+      if (fetchError) {
+        console.error('Error fetching grade:', fetchError);
+        setError(fetchError.message);
+        return;
       }
-    }
 
-    // Load saved instructions
-    const instructionsKey = `instructions_${orgname}_${reqid}`;
-    const savedInstructions = localStorage.getItem(instructionsKey);
-    if (savedInstructions) {
-      setInstructions(savedInstructions);
+      if (data) {
+        updateState({
+          maxScore: data.score || 100,
+          score: data.grade || 0,
+          submittedScore: data.grade || 0,
+          freeformAnswer: data.freeformans || '',
+        });
+      }
+    } catch (err) {
+      console.error('Error loading grade:', err);
+      setError('Failed to load grade data');
+    } finally {
+      setLoading('grade', false);
+    }
+  };
+
+  // Save grade to Supabase
+  const saveGradeToSupabase = async (newScore: number) => {
+    if (!checkPermission('osas', 'grade submissions')) return false;
+
+    try {
+      setError(null);
+      const { data: existing } = await supabase
+        .from('org_requirement_status')
+        .select('id')
+        .eq('orgUsername', orgname)
+        .eq('requirementId', reqid)
+        .maybeSingle();
+
+      const payload = { grade: newScore, graded: true };
+      const { error: dbError } = existing
+        ? await supabase.from('org_requirement_status').update(payload).eq('id', existing.id)
+        : await supabase.from('org_requirement_status').insert({
+            ...payload,
+            orgUsername: orgname,
+            requirementId: reqid,
+            submitted: state.hasSubmitted,
+            score: state.maxScore,
+            start: new Date().toISOString().split('T')[0],
+            due: state.dueDate ? state.dueDate.toISOString().split('T')[0] : null
+          });
+
+      if (dbError) {
+        console.error('Error saving grade:', dbError);
+        setError(dbError.message);
+        return false;
+      }
+
+      updateState({ submittedScore: newScore });
+      return true;
+    } catch (err) {
+      console.error('Error saving grade:', err);
+      setError('Failed to save grade');
+      return false;
+    }
+  };
+
+  //Display due date
+  const loadDueDateFromSupabase = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('org_requirement_status')
+        .select('due')
+        .eq('orgUsername', orgname)
+        .eq('requirementId', reqid)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      updateState({
+        dueDate: data?.due ? new Date(data.due) : null
+      });
+    } catch {
+      console.warn('No due date found yet');
+      updateState({ dueDate: null });
+    }
+  };
+
+  const handleIsApproved = () => {
+    if (!isAdviser) return;
+    setApproved((prev) => !prev);
+  };
+
+  const handleSaveApproval = async () => {
+    if (!isAdviser) return;
+
+    try {
+      setError(null);
+      setSavingApproval(true);
+
+      const { data: existing, error: fetchError } = await supabase
+        .from('org_requirement_status')
+        .select('id')
+        .eq('orgUsername', orgname)
+        .eq('requirementId', reqid)
+        .maybeSingle();
+
+      if (fetchError) throw fetchError;
+
+      const payload = { approved };
+      const { error: dbError } = existing
+        ? await supabase.from('org_requirement_status').update(payload).eq('id', existing.id)
+        : await supabase.from('org_requirement_status').insert({
+            ...payload,
+            orgUsername: orgname,
+            requirementId: reqid,
+            submitted: state.hasSubmitted,
+            score: state.maxScore,
+            start: new Date().toISOString().split('T')[0],
+            due: state.dueDate ? state.dueDate.toISOString().split('T')[0] : null,
+          });
+
+      if (dbError) throw dbError;
+
+      setInitialApproved(approved);
+    } catch (err: any) {
+      console.error(err);
+      setError(err?.message || 'Failed to save approval');
+    } finally {
+      setSavingApproval(false);
+    }
+  };
+  // Handle file upload
+  const handlePdfUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    if (!checkPermission('org', 'upload PDFs')) return;
+
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    try {
+      setError(null);
+      setLoading('pdf', true);
+
+      const allowed = (state.allowedFileTypes || ['pdf']).map((t: string) => (t || '').toLowerCase().trim());
+
+      for (const file of Array.from(files)) {
+        const ext = (file.name.split('.').pop() || '').toLowerCase();
+
+        if (!ext || !allowed.includes(ext)) {
+          setError(`Invalid file type: "${file.name}". Allowed types: ${allowed.join(', ')}`);
+          return;
+        }
+      }
+
+      for (const file of Array.from(files)) {
+        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const filePath = `${orgname}/${reqid}/${crypto.randomUUID()}_${safeName}`;
+
+
+        const { error: uploadError } = await supabaseAdmin.storage
+          .from('requirement-pdfs')
+          .upload(filePath, file, {
+            contentType: file.type,
+          });
+
+        if (uploadError) throw uploadError;
+      }
+
+      await supabase
+        .from('org_requirement_status')
+        .update({ submitted: true })
+        .eq('orgUsername', orgname)
+        .eq('requirementId', reqid);
+
+      updateState({ hasSubmitted: true });
+      loadRequirementPdfs();
+    } catch (err: any) {
+      console.error(err);
+      setError(err?.message || 'Failed to upload files');
+    } finally {
+      setLoading('pdf', false);
+      event.target.value = '';
+    }
+  };
+
+  const loadRequirementPdfs = async () => {
+    try {
+      setError(null);
+
+      const res = await fetch(
+        `/api/requirements/pdfs?orgname=${encodeURIComponent(orgname)}&reqid=${encodeURIComponent(reqid)}`
+      );
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        throw new Error(json?.error || 'Failed to load PDFs');
+      }
+
+      setState((prev: any) => {
+        const pdfs = json.pdfs || [];
+        const selected =
+          pdfs.find((p: any) => p.id === prev.selectedPdfId) ||
+          pdfs[0] ||
+          null;
+
+        return {
+          ...prev,
+          uploadedPdfs: pdfs,
+          selectedPdfId: selected ? selected.id : null,
+          uploadedPdf: selected ? selected.publicUrl : null,
+          pdfFileName: selected ? selected.filepath.split('/').pop() : '',
+        };
+      });
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || 'Failed to load PDFs');
+    }
+  };
+
+
+  
+  // Remove file
+  const handleRemovePdf = async (pdfId: string) => {
+    try {
+      setError(null);
+
+      const res = await fetch('/api/requirements/pdfs', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filepath: pdfId }),
+      });
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        throw new Error(json?.error || 'Failed to delete file');
+      }
+
+      setState((prev: any) => ({
+        ...prev,
+        uploadedPdfs: prev.uploadedPdfs.filter((pdf: any) => pdf.id !== pdfId),
+        selectedPdfId: prev.selectedPdfId === pdfId ? null : prev.selectedPdfId,
+      }));
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || 'Failed to delete file');
+    }
+  };
+
+
+  const handleSubmitFreeform = async () => {
+  if (!checkPermission('org', 'submit freeform answers')) return;
+
+  try {
+    setError(null);
+
+    // Check if a submission already exists
+    const { data: existing, error: fetchError } = await supabase
+      .from('org_requirement_status')
+      .select('id')
+      .eq('orgUsername', orgname)
+      .eq('requirementId', reqid)
+      .maybeSingle();
+
+    if (fetchError) throw fetchError;
+
+    if (existing) {
+      // Update existing submission
+      const { error: updateError } = await supabase
+        .from('org_requirement_status')
+        .update({
+          freeformans: state.freeformAnswer,
+          submitted: true,
+        })
+        .eq('id', existing.id);
+
+      if (updateError) throw updateError;
     } else {
-      setInstructions(`Accomplish evaluation by ${formattedDueDate}.`);
+      // Insert new submission
+      const { error: insertError } = await supabase
+        .from('org_requirement_status')
+        .insert({
+          orgUsername: orgname,
+          requirementId: reqid,
+          freeformans: state.freeformAnswer,
+          submitted: true,
+          graded: false,
+          score: state.maxScore || 100,
+          start: new Date().toISOString().split('T')[0],
+          active: true,
+        });
+
+      if (insertError) throw insertError;
     }
 
-    // Load saved question type
-    const questionTypeKey = `questionType_${orgname}_${reqid}`;
-    const savedQuestionType = localStorage.getItem(questionTypeKey);
-    if (savedQuestionType) {
-      setQuestionType(savedQuestionType as 'freeform' | 'pdf');
+    // ✅ CHANGED (only change): lock editing again after submit
+    updateState({ hasSubmitted: true, isEditingFreeform: false });
+  } catch (err: any) {
+    console.error(err);
+    setError('Failed to submit freeform response');
+  }
+};
+
+  const loadComments = async () => {
+    try {
+      setError(null);
+      setLoading('comments', true);
+
+      const res = await fetch(
+        `/api/requirements/comments?orgname=${encodeURIComponent(orgname)}&reqid=${encodeURIComponent(reqid)}`
+      );
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        throw new Error(json?.error || 'Failed to load comments');
+      }
+
+      updateState({ comments: json.comments || [] });
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || 'Failed to load comments');
+    } finally {
+      setLoading('comments', false);
     }
+  };
 
-    setComments(loadCommentsFromLocalStorage(orgname, reqid));
-  }, [orgname, reqid, formattedDueDate]);
+  const handleAddComment = async () => {
+    try {
+      const content = (state.commentText || '').trim();
+      if (!content) {
+        setError('Comment cannot be empty');
+        return;
+      }
 
+      setError(null);
+      setLoading('commentAction', true);
+
+      const res = await fetch('/api/requirements/comments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orgname,
+          reqid,
+          content,
+        }),
+      });
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        throw new Error(json?.error || 'Failed to add comment');
+      }
+
+      updateState({ commentText: '' });
+      loadComments();
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || 'Failed to add comment');
+    } finally {
+      setLoading('commentAction', false);
+    }
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    try {
+      setError(null);
+      setLoading('commentAction', true);
+
+      const res = await fetch('/api/requirements/comments', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: commentId }),
+      });
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        throw new Error(json?.error || 'Failed to delete comment');
+      }
+
+      loadComments();
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || 'Failed to delete comment');
+    } finally {
+      setLoading('commentAction', false);
+    }
+  };
+
+  // Session effect
   useEffect(() => {
-    if (orgname && reqid) saveCommentsToLocalStorage(orgname, reqid, comments);
-  }, [comments, orgname, reqid]);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentTime(Date.now());
-    }, 60000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  const handleAddComment = () => {
-    if (!newComment.trim()) return;
-    setComments(prev => [...prev, {
-      id: `comment${Date.now()}`,
-      text: newComment,
-      timestamp: new Date(),
-      author: 'OSAS'
-    }]);
-    setNewComment('');
-  };
-
-  const handleDeleteComment = (commentId: string) => {
-    setComments(prev => prev.filter(c => c.id !== commentId));
-  };
-
-  const handleSubmitGrade = () => {
-    localStorage.setItem(`grade_${orgname}_${reqid}`, JSON.stringify({
-      score,
-      feedback: '',
-      gradedAt: new Date().toISOString()
-    }));
-    setSubmittedScore(score);
-    setIsEditingGrade(false);
-  };
-
-  const handleSaveInstructions = () => {
-    const instructionsKey = `instructions_${orgname}_${reqid}`;
-    localStorage.setItem(instructionsKey, instructions);
-    setIsEditingInstructions(false);
-  };
-
-  const handleCancelEditInstructions = () => {
-    const instructionsKey = `instructions_${orgname}_${reqid}`;
-    const savedInstructions = localStorage.getItem(instructionsKey);
-    if (savedInstructions) {
-      setInstructions(savedInstructions);
-    } else {
-      setInstructions(`Accomplish evaluation by ${formattedDueDate}.`);
+    if (status === 'loading') {
+      setLoading('page', true);
+      return;
     }
-    setIsEditingInstructions(false);
+
+    if (status === 'unauthenticated') {
+      setError('User not authenticated');
+      setLoading('page', false);
+      return;
+    }
+
+    if (status === 'authenticated' && session?.user) {
+      const email = session.user.email || '';
+      const rawRole = ((session.user as any)?.role || '')
+        .toString()
+        .trim()
+        .toLowerCase();
+
+      updateState({ currentUserEmail: email });
+
+      const checkSupabaseAuth = async () => {
+      const { data, error } = await supabase.auth.getSession();
+
+      console.log('SUPABASE SESSION:', data?.session);
+      if (error) console.error('Supabase auth error:', error);
+    };
+
+    checkSupabaseAuth();
+
+
+      if (rawRole === 'osas' || rawRole === 'org' || rawRole === 'adviser') {
+        updateState({ userRole: rawRole as 'osas' | 'org' | 'adviser' });
+
+        // kick off initial data loads
+        loadRequirementFromSupabase();
+        loadGradeFromSupabase();
+        loadDueDateFromSupabase();
+        loadComments();
+      } else {
+        setError(`Invalid role: "${rawRole}"`);
+      }
+
+      // page is now ready to render
+      setLoading('page', false);
+    }
+  }, [status, session]);
+
+
+  // Initial data load
+  useEffect(() => {
+    const loadSubmissionStatus = async () => {
+      const { data, error } = await supabase
+        .from('org_requirement_status')
+        .select('submitted, approved')
+        .eq('orgUsername', orgname)
+        .eq('requirementId', reqid)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Failed to load submission status:', error);
+        return;
+      }
+
+      updateState({
+        hasSubmitted: data?.submitted ?? false
+      });
+
+      const approvedValue = !!data?.approved;
+      setApproved(approvedValue);
+      setInitialApproved(approvedValue);
+    };
+
+    loadSubmissionStatus();
+    loadRequirementPdfs();
+    loadComments();
+  }, [orgname, reqid]);
+
+  const handleSubmitGrade = async () => {
+    if (!checkPermission('osas', 'submit grades')) return;
+    const success = await saveGradeToSupabase(state.score);
+    if (success) updateState({ isEditingGrade: false });
   };
 
-  const handleQuestionTypeChange = (type: 'freeform' | 'pdf') => {
-    setQuestionType(type);
-    const questionTypeKey = `questionType_${orgname}_${reqid}`;
-    localStorage.setItem(questionTypeKey, type);
-  };
+  const handleSaveInstructions = async () => {
+  if (!checkPermission('osas', 'edit instructions')) return;
 
-  const AnswersDisplay = () => (
-    <>
-      <div className="mb-8">
-        <QuestionHeader title="TYPE OF MEMBERSHIP" icon />
-        <div className="bg-gray-50 border border-gray-300 rounded-lg p-4">
-          <p className="text-gray-900 font-medium">{membershipAnswer || 'No answer provided'}</p>
+  try {
+    setError(null);
+
+    const { error } = await supabase
+      .from('requirements')
+      .update({ instructions: state.instructions })
+      .eq('id', reqid);
+
+    if (error) throw error;
+
+    updateState({ isEditingInstructions: false });
+  } catch (err: any) {
+    console.error(err);
+    setError('Failed to save instructions');
+  }
+};
+
+
+  const handleCancelEditInstructions = async () => {
+  await loadRequirementFromSupabase();
+  updateState({ isEditingInstructions: false });
+};
+
+
+  const handleAllowedFileTypesChange = async (types: string[]) => {
+  if (!checkPermission('osas', 'change accepted file types')) return;
+
+  try {
+    const payload = (types && types.length > 0) ? types.join(',') : 'pdf';
+
+    const { error } = await supabase
+      .from('requirements')
+      .update({ submissiontype: payload })
+      .eq('id', reqid);
+
+    if (error) throw error;
+  } catch (err) {
+    console.error(err);
+    setError('Failed to update accepted file types');
+  }
+};
+
+  if (state.loading.page) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
         </div>
       </div>
-      <div className="mb-8">
-        <QuestionHeader title="EVALUATION - Leadership Development (LD)" />
-        <p className="text-gray-900 mb-4">
-          1. The organization's structure, system and processes allows for and encourage 
-          transfer of knowledge skills and attitude from present leaders to the next set of leaders.
-        </p>
-        <div className="bg-gray-50 border border-gray-300 rounded-lg p-4">
-          <p className="text-gray-900 font-medium">{evaluationAnswer || 'No answer provided'}</p>
-        </div>
-      </div>
-    </>
-  );
+    );
+  }
 
-  const TabButton = ({ tab, label }: { tab: 'instructions' | 'grading'; label: string }) => (
-    <button 
-      onClick={() => !isEditingInstructions && !isEditingGrade && setActiveTab(tab)} 
-      disabled={isEditingInstructions || isEditingGrade}
-      className={`px-6 py-4 font-medium ${
-        isEditingInstructions || isEditingGrade 
-          ? 'cursor-not-allowed opacity-50' 
-          : 'cursor-pointer'
-      } ${
-        activeTab === tab 
-          ? 'text-gray-900 border-b-2 border-blue-600' 
-          : 'text-gray-500 hover:text-gray-700'
-      }`}
-    >
-      {label}
-    </button>
-  );
 
   return (
     <div className="min-h-screen bg-gray-50 p-8 relative">
-      {/* Overlay when editing */}
-      {(isEditingInstructions || isEditingGrade) && (
-        <div className="fixed inset-0 bg-opacity-50 z-40" />
+      {isEditing && <div className="fixed inset-0 bg-opacity-50 z-40" />}
+      
+      {state.error && (
+        <div className="max-w-7xl mx-auto mb-4">
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative">
+            <span className="block sm:inline">{state.error}</span>
+            <button className="absolute top-0 bottom-0 right-0 px-4 py-3" onClick={() => setError(null)}>×</button>
+          </div>
+        </div>
       )}
+
       <div className="max-w-7xl mx-auto relative z-50">
         <div className="flex items-center gap-3 mb-8">
-          <div className="w-12 h-12 bg-blue-900 rounded-full" />
-          <h1 className="text-3xl font-bold text-gray-900">
-            {formatName(orgname)} - {requirementName}
-          </h1>
+          <div className="w-12 h-12 flex items-center justify-center">
+            <button onClick={goToDues} className="text-blue-900 hover:text-blue-700">
+              <ArrowUturnLeftIcon className="w-6 h-6 cursor-pointer" />
+            </button>
+          </div>
+          <h1 className="text-3xl font-bold text-gray-900">{formatName(orgname)} - {requirementName}</h1>
         </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           <div className="lg:col-span-3">
             <div className="bg-white rounded-lg shadow-sm">
               <div className="border-b-2 border-gray-300 flex">
-                <TabButton tab="instructions" label="Instructions" />
-                {hasSubmitted && <TabButton tab="grading" label="Grading" />}
+                {(['instructions', 'submission'] as const).map(tab => (
+                  <button key={tab} onClick={() => !isEditing && updateState({ activeTab: tab as any })} disabled={isEditing}
+                    className={`px-6 py-4 font-medium ${isEditing ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'} ${
+                      state.activeTab === tab ? 'text-gray-900 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'
+                    }`}>
+                    {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                  </button>
+                ))}
               </div>
-              <div className="p-12 min-h-[500px]">
-                {activeTab === 'instructions' && (
-                  <div>
-                    <div className="flex justify-between items-center mb-8">
-                      <h2 className="text-red-600 font-bold text-2xl">Instructions:</h2>
-                      {!isEditingInstructions ? (
-                        <button
-                          onClick={() => setIsEditingInstructions(true)}
-                          disabled={isEditingGrade}
-                          className={`flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors ${
-                            isEditingGrade ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-                          }`}
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
-                          </svg>
-                          Edit Instructions
-                        </button>
-                      ) : (
-                        <div className="flex gap-2">
-                          <button
-                            onClick={handleSaveInstructions}
-                            className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors cursor-pointer"
-                          >
-                            Save
-                          </button>
-                          <button
-                            onClick={handleCancelEditInstructions}
-                            className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white font-medium rounded-lg transition-colors cursor-pointer"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      )}
-                    </div>
 
-                    {isEditingInstructions ? (
-                      <>
-                        <textarea
-                          value={instructions}
-                          onChange={(e) => setInstructions(e.target.value)}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 text-xl font-medium min-h-[200px]"
-                          placeholder="Enter instructions here..."
-                        />
-                        
-                        <div className="mt-8 pt-8 border-t border-gray-200">
-                          <h3 className="text-gray-900 font-bold text-lg mb-4">Question Type:</h3>
-                          <div className="flex gap-6">
-                            <label className="flex items-center gap-3 cursor-pointer">
-                              <input
-                                type="radio"
-                                name="questionType"
-                                value="freeform"
-                                checked={questionType === 'freeform'}
-                                onChange={() => handleQuestionTypeChange('freeform')}
-                                className="w-5 h-5 text-blue-600 focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                              />
-                              <span className="text-gray-900 font-medium text-lg">Freeform Answer</span>
-                            </label>
-                            <label className="flex items-center gap-3 cursor-pointer">
-                              <input
-                                type="radio"
-                                name="questionType"
-                                value="pdf"
-                                checked={questionType === 'pdf'}
-                                onChange={() => handleQuestionTypeChange('pdf')}
-                                className="w-5 h-5 text-blue-600 focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                              />
-                              <span className="text-gray-900 font-medium text-lg">PDF Submission</span>
-                            </label>
-                          </div>
-                        </div>
-                      </>
-                    ) : (
-                      <p className="text-gray-900 mb-10 leading-relaxed text-xl max-w-4xl font-medium">
-                        {instructions}
-                      </p>
-                    )}
-                  </div>
+              <div className="p-12 min-h-[500px]">
+                {state.activeTab === 'instructions' && (
+                  <InstructionsBlock
+                    state={state}
+                    updateState={updateState}
+                    handleSaveInstructions={handleSaveInstructions}
+                    handleCancelEditInstructions={handleCancelEditInstructions}
+                    handleAllowedFileTypesChange={handleAllowedFileTypesChange}
+                  />
                 )}
-                {activeTab === 'grading' && hasSubmitted && (
-                  <div>
-                    <h2 className="text-gray-900 font-bold mb-8 text-2xl">Grading</h2>
-                    <div className="mb-8 bg-gray-50 rounded-lg p-6 border border-gray-200">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Submitted Answers</h3>
-                      <AnswersDisplay />
-                    </div>
-                  </div>
+
+                {state.activeTab === 'submission' && (
+                  <GradingTab
+                    state={state}
+                    updateState={updateState}
+                    isOSAS={isOSAS}
+                    handleSubmitFreeform={handleSubmitFreeform}
+                    handlePdfUpload={handlePdfUpload}
+                    handleRemovePdf={handleRemovePdf}
+                  />
                 )}
               </div>
             </div>
           </div>
           
           <div className="lg:col-span-1 space-y-6">
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h3 className="font-semibold text-gray-900 mb-4">Submission Info</h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Due by:</span>
-                  <span className="text-gray-900 font-medium">{formattedDueDate}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Attempts:</span>
-                  <span className="text-gray-900 font-medium">{attemptCount}</span>
-                </div>
-              </div>
-            </div>
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="font-semibold text-gray-900">Grade</h3>
-                {!isEditingGrade ? (
-                  <button
-                    onClick={() => setIsEditingGrade(true)}
-                    disabled={isEditingInstructions}
-                    className={`flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors ${
-                      isEditingInstructions ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-                    }`}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
-                    </svg>
-                    Edit
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => {
-                      setScore(submittedScore);
-                      setIsEditingGrade(false);
-                    }}
-                    className="px-3 py-1.5 bg-gray-500 hover:bg-gray-600 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer"
-                  >
-                    Cancel
-                  </button>
-                )}
-              </div>
-              
-              {isEditingGrade ? (
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Score (out of 100)
-                    </label>
-                    <input 
-                      type="text" 
-                      value={score || ''}
-                      onChange={(e) => {
-                        let value = parseInt(e.target.value);
-                        setScore(isNaN(value) ? 0 : Math.min(100, Math.max(1, value)));
-                      }}
-                      placeholder="100"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-                    />
-                  </div>
-                  <button 
-                    onClick={handleSubmitGrade}
-                    className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-3 rounded-lg transition-colors cursor-pointer"
-                  >
-                    Submit Grade
-                  </button>
-                </div>
-              ) : (
-                <div className="flex justify-center">
-                  <div className="relative w-32 h-32">
-                    <svg className="w-32 h-32 transform -rotate-90">
-                      <circle cx="64" cy="64" r="56" stroke="#e5e7eb" strokeWidth="12" fill="none" />
-                      <circle 
-                        cx="64" cy="64" r="56" 
-                        stroke={submittedScore > 0 ? "#3b82f6" : "#d1d5db"}
-                        strokeWidth="12" fill="none" 
-                        strokeDasharray="351.858" 
-                        strokeDashoffset={351.858 - (351.858 * submittedScore / 100)}
-                        strokeLinecap="round" 
-                      />
-                    </svg>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-3xl font-bold text-gray-900">{submittedScore}%</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h3 className="font-semibold text-gray-900 mb-4">Adviser's Feedback</h3>
-              <div className="flex items-center gap-3">
-                <div className="w-6 h-6 border-2 border-gray-300 rounded" />
-                <span className="font-semibold text-gray-900">Approved!</span>
-              </div>
-            </div>
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h3 className="font-semibold text-gray-900 mb-4">Comments</h3>
-              <div className="mb-4">
-                <textarea 
-                  value={newComment} 
-                  onChange={(e) => setNewComment(e.target.value)} 
-                  placeholder="Add a comment..." 
-                  disabled={isEditingInstructions || isEditingGrade}
-                  className={`w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-lg 
-                           focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none 
-                           text-sm placeholder:text-gray-400 ${
-                             isEditingInstructions || isEditingGrade ? 'opacity-50 cursor-not-allowed' : ''
-                           }`} 
-                  rows={3} 
-                />
-                <button 
-                  type="button"
-                  onClick={handleAddComment} 
-                  disabled={isEditingInstructions || isEditingGrade}
-                  className={`mt-2 w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 
-                           disabled:cursor-not-allowed text-white font-medium px-4 py-2 
-                           rounded-lg transition-colors text-sm ${
-                             isEditingInstructions || isEditingGrade ? '' : 'cursor-pointer'
-                           }`}
-                >
-                  Add Comment
-                </button>
-              </div>
-              <div className="space-y-3 max-h-[400px] overflow-y-auto">
-                {comments.map(c => (
-                  <div key={c.id} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <span className="text-xs text-gray-500" key={currentTime}>{formatTimestamp(c.timestamp)}</span>
-                        <span className="text-xs text-gray-400 ml-2">• {c.author}</span>
-                      </div>
-                      <button 
-                        type="button"
-                        onClick={() => handleDeleteComment(c.id)} 
-                        disabled={isEditingInstructions || isEditingGrade}
-                        className={`text-gray-400 hover:text-red-600 transition-colors ${
-                          isEditingInstructions || isEditingGrade ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-                        }`}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" 
-                          strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-                          <path strokeLinecap="round" strokeLinejoin="round" 
-                            d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" 
-                          />
-                        </svg>
-                      </button>
-                    </div>
-                    <p className="text-sm text-gray-700 break-words">{c.text}</p>
-                  </div>
-                ))}
+            <SubmissionInfo
+              state={state}
+              updateState={updateState}
+              isOSAS={isOSAS}
+              formattedDueDate={formattedDueDate}
+              isEditing={isEditing}
+              handleSubmitGrade={handleSubmitGrade}
+              approved={approved}
+              isAdviser={isAdviser}
+              hasApprovalChanges={hasApprovalChanges}
+              savingApproval={savingApproval}
+              handleSaveApproval={handleSaveApproval}
+              comments={state.comments}
+              commentText={state.commentText}
+              currentUserEmail={state.currentUserEmail}
+              loadingComments={state.loading.comments}
+              loadingCommentAction={state.loading.commentAction}
+              handleAddComment={handleAddComment}
+              handleDeleteComment={handleDeleteComment}
+              handleIsApproved={handleIsApproved}
+            />
               </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
   );
 }

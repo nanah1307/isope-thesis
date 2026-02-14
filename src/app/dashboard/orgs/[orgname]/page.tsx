@@ -3,8 +3,11 @@ import {getUserByUsername } from "@/app/lib/database"
 import { notFound } from "next/navigation";
 
 export default async function Page(props: any) {
-const { params } = props as { params: { orgname: string } };
-  const org = await getUserByUsername(params.orgname);
+  //type safety
+  const params = (await props).params ? await (props as any).params : (await props).params;
+  // ensure type for params
+  const p = params as { orgname: string };
+  const org = await getUserByUsername(p.orgname);
 
   if (!org) {
     notFound();
