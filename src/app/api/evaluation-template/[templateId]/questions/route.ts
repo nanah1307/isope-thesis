@@ -5,13 +5,13 @@ import { getToken } from "next-auth/jwt";
 const secret = process.env.NEXTAUTH_SECRET;
 const allowedTypes = new Set(["input", "dropdown", "likert", "checkbox"]);
 
-export async function PUT(req: Request, { params }: { params: { templateId: string } }) {
+export async function PUT(req: Request, { params }: { params: Promise<{ templateId: string }> }) {
   const token = await getToken({ req: req as any, secret });
   const role = ((token as any)?.role || "").toString().trim().toLowerCase();
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (role !== "osas") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  const templateId = params.templateId;
+  const { templateId } = await params;
 
   const body = await req.json();
   const questions = Array.isArray(body?.questions) ? body.questions : null;

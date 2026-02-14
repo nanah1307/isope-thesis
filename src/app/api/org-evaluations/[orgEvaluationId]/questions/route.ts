@@ -4,11 +4,11 @@ import { getToken } from "next-auth/jwt";
 
 const secret = process.env.NEXTAUTH_SECRET;
 
-export async function GET(req: Request, { params }: { params: { orgEvaluationId: string } }) {
+export async function GET(req: Request, { params }: { params: Promise<{ orgEvaluationId: string }> }) {
   const token = await getToken({ req: req as any, secret });
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const orgEvaluationId = params.orgEvaluationId;
+  const { orgEvaluationId } = await params;
 
   const { data: orgEval, error: eErr } = await supabaseAdmin
     .from("org_evaluations")

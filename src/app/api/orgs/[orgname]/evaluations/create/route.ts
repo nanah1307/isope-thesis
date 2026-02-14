@@ -4,14 +4,14 @@ import { getToken } from "next-auth/jwt";
 
 const secret = process.env.NEXTAUTH_SECRET;
 
-export async function POST(req: Request, { params }: { params: { orgname: string } }) {
+export async function POST(req: Request, { params }: { params: Promise<{ orgname: string }> }) {
   const token = await getToken({ req: req as any, secret });
   const role = ((token as any)?.role || "").toString().trim().toLowerCase();
 
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (role !== "osas") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  const orgname = params.orgname;
+  const { orgname } = await params;
 
   const { data: existing, error: exErr } = await supabaseAdmin
     .from("org_evaluations")

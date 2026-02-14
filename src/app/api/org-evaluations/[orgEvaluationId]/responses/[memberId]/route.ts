@@ -4,12 +4,12 @@ import { getToken } from "next-auth/jwt";
 
 const secret = process.env.NEXTAUTH_SECRET;
 
-export async function GET(req: Request, { params }: { params: { orgEvaluationId: string; memberId: string } }) {
+export async function GET(req: Request, { params }: { params: Promise<{ orgEvaluationId: string; memberId: string }> }) {
   const token = await getToken({ req: req as any, secret });
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const orgEvaluationId = params.orgEvaluationId;
-  const memberId = Number(params.memberId);
+  const { orgEvaluationId, memberId: memberIdStr } = await params;
+  const memberId = Number(memberIdStr);
 
   const { data, error } = await supabaseAdmin
     .from("org_evaluation_responses")
@@ -23,15 +23,15 @@ export async function GET(req: Request, { params }: { params: { orgEvaluationId:
   return NextResponse.json({ response: data || null });
 }
 
-export async function PUT(req: Request, { params }: { params: { orgEvaluationId: string; memberId: string } }) {
+export async function PUT(req: Request, { params }: { params: Promise<{ orgEvaluationId: string; memberId: string }> }) {
   const token = await getToken({ req: req as any, secret });
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const role = ((token as any)?.role || "").toString().trim().toLowerCase();
   const email = ((token as any)?.email || "").toString();
 
-  const orgEvaluationId = params.orgEvaluationId;
-  const memberId = Number(params.memberId);
+  const { orgEvaluationId, memberId: memberIdStr } = await params;
+  const memberId = Number(memberIdStr);
 
   const body = await req.json();
   const answers = body?.answers ?? {};
