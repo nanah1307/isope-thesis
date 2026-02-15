@@ -63,7 +63,7 @@ export default function Home() {
           <div className="flex gap-2 mt-3">
             <button
               onClick={handleCredentialsLogin}
-              className="bg-blue-600 text-white px-4 py-2 rounded w-1/2 cursor-pointer hover:bg-gray-800"
+              className="bg-[#014fb3] text-white px-4 py-2 rounded w-1/2 cursor-pointer hover:bg-gray-800"
             >
               Login
             </button>
@@ -79,7 +79,7 @@ export default function Home() {
           <div className="my-3 text-black">or</div>
           <button onClick={() => signIn("google")} className="bg-red-500 text-white px-4 py-2 rounded cursor-pointer w-full hover:bg-red-700">Sign in with Google</button>
           <div className="mt-2 text-sm">
-            <a href="/forgot-password" className="text-blue-600 hover:underline">Forgot password?</a>
+            <a href="/forgot-password" className="text-[#014fb3] hover:underline">Forgot password?</a>
           </div>
         </div>
       </div>

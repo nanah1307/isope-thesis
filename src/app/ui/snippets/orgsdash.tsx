@@ -64,7 +64,7 @@ const OrgCard: FC<{ org: any }> = ({ org }) => {
         </div>
         <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
           <div
-            className="bg-blue-600 h-full rounded-full transition-all"
+            className="bg-[#014fb3] h-full rounded-full transition-all"
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -75,7 +75,7 @@ const OrgCard: FC<{ org: any }> = ({ org }) => {
         {/* Requirements */}
         <button
           onClick={goToDues}
-          className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-md text-sm font-medium transition cursor-pointer"
+          className="flex items-center justify-center gap-2 bg-[#014fb3] hover:bg-blue-700 text-white px-3 py-2 rounded-md text-sm font-medium transition cursor-pointer"
         >
           <DocumentIcon className="w-5 h-5" />
           <span>Requirements</span>
@@ -84,7 +84,7 @@ const OrgCard: FC<{ org: any }> = ({ org }) => {
         {/* Notifications */}
         <button
           onClick={(e) => e.stopPropagation()}
-          className="flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-md transition cursor-pointer"
+          className="flex items-center justify-center bg-[#014fb3] hover:bg-blue-700 text-white p-2 rounded-md transition cursor-pointer"
         >
           <BellIcon className="w-5 h-5" />
         </button>
@@ -168,7 +168,7 @@ const CreateOrgModal: FC<{
           </button>
           <button
             onClick={handleCreate}
-            className="cursor-pointer text-white px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-md transition"
+            className="cursor-pointer text-white px-4 py-2 bg-[#014fb3] hover:bg-blue-700 rounded-md transition"
           >
             Create
           </button>
@@ -326,7 +326,7 @@ const OrgsDashboard: FC = () => {
   if (loading) return <div className="p-4 text-black">Loading organizations...</div>;
   
   return (
-    <div className="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen p-6">
+    <div className="bg min-h-screen p-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <div>
@@ -347,7 +347,7 @@ const OrgsDashboard: FC = () => {
       
           <button
             onClick={() => setShowModal(true)}
-            className="cursor-pointer flex-shrink-0 bg-blue-600 hover:bg-blue-700 text-white
+            className="cursor-pointer flex-shrink-0 bg-[#014fb3] hover:bg-blue-700 text-white
                        px-4 py-2 rounded-md text-sm font-medium transition-colors"
           >
             Create Organization

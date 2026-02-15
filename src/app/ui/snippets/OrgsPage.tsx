@@ -212,7 +212,7 @@ export default function OrgsPage({ org }: OrgsProp) {
               <textarea
                 value={bioDraft}
                 onChange={(e) => setBioDraft(e.target.value)}
-                className="w-full min-h-[120px] p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-gray-900 cursor-text"
+                className="w-full min-h-[120px] p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#014fb3] focus:border-transparent resize-none text-gray-900 cursor-text"
                 placeholder="Tell us about your organization..."
               />
 
@@ -225,7 +225,7 @@ export default function OrgsPage({ org }: OrgsProp) {
                   type="email"
                   value={orgEmailDraft}
                   onChange={(e) => setOrgEmailDraft(e.target.value)}
-                  className="w-full p-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 cursor-text"
+                  className="w-full p-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#014fb3] focus:border-transparent text-gray-900 cursor-text"
                   placeholder="organization@example.com"
                 />
               </div>
@@ -264,7 +264,7 @@ export default function OrgsPage({ org }: OrgsProp) {
                   type="text"
                   value={adviserDraft}
                   onChange={(e) => setAdviserDraft(e.target.value)}
-                  className="w-full p-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 cursor-text"
+                  className="w-full p-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#014fb3] focus:border-transparent text-gray-900 cursor-text"
                   placeholder="Enter adviser name"
                 />
               ) : (
@@ -284,7 +284,7 @@ export default function OrgsPage({ org }: OrgsProp) {
                   type="email"
                   value={adviserEmailDraft}
                   onChange={(e) => setAdviserEmailDraft(e.target.value)}
-                  className="w-full p-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 cursor-text"
+                  className="w-full p-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#014fb3] focus:border-transparent text-gray-900 cursor-text"
                   placeholder="adviser@example.com"
                 />
               ) : (
@@ -308,7 +308,7 @@ export default function OrgsPage({ org }: OrgsProp) {
               <select
                 value={accreditlvlDraft}
                 onChange={(e) => setAccreditlvlDraft(Number(e.target.value))}
-                className="w-full p-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 cursor-pointer"
+                className="w-full p-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#014fb3] focus:border-transparent text-gray-900 cursor-pointer"
               >
                 <option value={1}>Level 1</option>
                 <option value={2}>Level 2</option>
@@ -317,7 +317,7 @@ export default function OrgsPage({ org }: OrgsProp) {
             ) : (
               <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium ${
                 accreditlvl === 1 ? 'bg-yellow-100 text-yellow-800' :
-                accreditlvl === 2 ? 'bg-blue-100 text-blue-800' :
+                accreditlvl === 2 ? 'bg-[#e6f0ff] text-[#014fb3]' :
                 'bg-green-100 text-green-800'
               }`}>
                 Level {accreditlvl}
@@ -365,7 +365,7 @@ export default function OrgsPage({ org }: OrgsProp) {
                 <button 
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploading}
-                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-all shadow-sm hover:shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#014fb3] hover:bg-[#013584] rounded-lg transition-all shadow-sm hover:shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {uploading ? (
                     <>
@@ -396,7 +396,7 @@ export default function OrgsPage({ org }: OrgsProp) {
               <div className="flex gap-2">
                 {/* Edit Button */}
                 <button
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-all shadow-sm hover:shadow-md flex items-center gap-2 cursor-pointer"
+                  className="px-4 py-2 text-sm font-medium text-white bg-[#014fb3] rounded-lg hover:bg-[#013584] transition-all shadow-sm hover:shadow-md flex items-center gap-2 cursor-pointer"
                   onClick={() => setIsEditingOrg(true)}
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -523,7 +523,7 @@ export default function OrgsPage({ org }: OrgsProp) {
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap focus:outline-none cursor-pointer
                   ${ 
                     active === name 
-                      ? "bg-blue-600 text-white shadow-sm" 
+                      ? "bg-[#014fb3] text-white shadow-sm" 
                       : "bg-transparent text-gray-600 hover:bg-gray-100"
                   }`}
                 onClick={() => setActive(name)}
