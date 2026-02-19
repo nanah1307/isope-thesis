@@ -456,12 +456,12 @@ const OrgsDashboard: FC = () => {
         ) : (
           /* ================= Banner Section ================= */
           <div className="mb-8 bg-white rounded-lg shadow-md p-8 text-center">
-            <h2 className="text-2xl font-bold text-[#014fb3] mb-2">
-              Empowering Student Organizations
+            <h2 className="text-4xl font-bold text-[#014fb3] mb-2">
+              WE ARE BULLYPROOF
             </h2>
-            <p className="text-gray-600">
+            {/*<p className="text-gray-600">
               Manage requirements, track progress, and stay connected with OSAS.
-            </p>
+            </p>*/}
           </div>
         )}
 
