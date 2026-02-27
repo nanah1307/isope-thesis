@@ -81,27 +81,34 @@ const handler = NextAuth({
       if (existingUser?.Username) return true;
 
       // First-time login — insert new user record
-      if (!existingUser) {
-        // Determine role based on whether the email belongs to an org
-        const { data: matchedOrg } = await supabase
-          .from("orgs")
-          .select("id")
-          .eq("email", email)
-          .maybeSingle();
+        if (!existingUser) {
+          // Check if email belongs to an org account
+          const { data: matchedOrg } = await supabase
+            .from("orgs")
+            .select("id")
+            .eq("email", email)
+            .maybeSingle();
 
-        const role = matchedOrg ? "org" : "member";
+          // Check if email is listed as an adviser for any org
+          const { data: matchedAdviser } = await supabase
+            .from("orgs")
+            .select("id")
+            .eq("adviseremail", email)
+            .maybeSingle();
 
-        const { error } = await supabase.from("users").insert({
-          Email: email,
-          Name: user.name,
-          Role: role,
-        });
+          const role = matchedOrg ? "org" : matchedAdviser ? "adviser" : "member";
 
-        if (error) {
-          console.error("❌ Supabase insert failed:", error);
-          return "/login?error=unauthorized";
+          const { error } = await supabase.from("users").insert({
+            Email: email,
+            Name: user.name,
+            Role: role,
+          });
+
+          if (error) {
+            console.error("❌ Supabase insert failed:", error);
+            return "/login?error=unauthorized";
+          }
         }
-      }
 
       return true;
     },
