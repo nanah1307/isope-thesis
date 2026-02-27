@@ -82,36 +82,27 @@ const handler = NextAuth({
 
       // First-time login — insert new user record
         if (!existingUser) {
-          // Check if email belongs to an org account
-          const { data: matchedOrg } = await supabase
+          // Check all orgs and find one where email matches
+          const { data: orgs } = await supabase
             .from("orgs")
-            .select("id")
-            .eq("email", email)
-            .maybeSingle();
+            .select("email, adviseremail");
 
-          // Check if email is listed as an adviser for any org
-          const { data: matchedAdviser } = await supabase
-            .from("orgs")
-            .select("id")
-            .eq("adviseremail", email)
-            .maybeSingle();
-            console.log(matchedOrg)
-            console.log(matchedAdviser)
-            
+          const matchedOrg = orgs?.find((org) => org.email === email);
+          const matchedAdviser = orgs?.find((org) => org.adviseremail === email);
+
             const role = matchedOrg ? "org" : matchedAdviser ? "adviser" : "member";
 
-          const { error } = await supabase.from("users").insert({
-            Email: email,
-            Name: user.name,
-            Role: role,
-          });
-
+            const { error } = await supabase.from("users").insert({
+              Email: email,
+              Name: user.name,
+              Role: role,
+            });
+          
           if (error) {
             console.error("❌ Supabase insert failed:", error);
             return "/login?error=unauthorized";
           }
         }
-
       return true;
     },
 
@@ -134,13 +125,42 @@ const handler = NextAuth({
      * Attaches the user's role to the JWT token.
      * For Google logins, fetches role from the database.
      * For credentials logins, role is already on the user object.
+     * Always checks if email exists in orgs table and assigns "org" role if found.
      */
     async jwt({ token, user }) {
-      if (user?.email) {
+      const email = user?.email || token?.email as string;
+      
+      if (email) {
+        // First, check if email exists in orgs table
+        const { data: orgData } = await supabase
+          .from("orgs")
+          .select("id")
+          .eq("email", email)
+          .maybeSingle();
+
+        // If email found in orgs table, set role to "org"
+        if (orgData) {
+          token.role = "org";
+          return token;
+        }
+
+        // Check if email is an adviser
+        const { data: adviserData } = await supabase
+          .from("orgs")
+          .select("id")
+          .eq("adviseremail", email)
+          .maybeSingle();
+
+        if (adviserData) {
+          token.role = "adviser";
+          return token;
+        }
+
+        // Otherwise, fetch role from users table
         const { data, error } = await supabase
           .from("users")
           .select("Role")
-          .eq("Email", user.email)
+          .eq("Email", email)
           .single();
 
         const role = error ? "member" : data.Role;
