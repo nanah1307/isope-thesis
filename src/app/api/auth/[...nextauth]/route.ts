@@ -95,8 +95,10 @@ const handler = NextAuth({
             .select("id")
             .eq("adviseremail", email)
             .maybeSingle();
-
-          const role = matchedOrg ? "org" : matchedAdviser ? "adviser" : "member";
+            console.log(matchedOrg)
+            console.log(matchedAdviser)
+            
+            const role = matchedOrg ? "org" : matchedAdviser ? "adviser" : "member";
 
           const { error } = await supabase.from("users").insert({
             Email: email,
