@@ -86,7 +86,7 @@ const handler = NextAuth({
         const { data: matchedOrg } = await supabase
           .from("orgs")
           .select("id")
-          .eq("Email", email)
+          .eq("email", email)
           .maybeSingle();
 
         const role = matchedOrg ? "org" : "member";
