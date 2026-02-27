@@ -4,20 +4,23 @@ import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 
-const allowedDomain = "iacademy.edu.ph"; // change this to your domain
-
+const allowedDomain = "iacademy.edu.ph";
+const validRoles = ["member", "adviser", "osas", "org"];
 
 const handler = NextAuth({
   providers: [
+    // Google OAuth provider
     GoogleProvider({
       clientId: process.env.AUTH_GOOGLE_ID!,
       clientSecret: process.env.AUTH_GOOGLE_SECRET!,
     }),
+
+    // Username/password login
     CredentialsProvider({
       name: "Credentials",
       credentials: {
         username: { label: "Username", type: "text" },
-        password: { label: "Password", type: "password" }
+        password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
         if (!credentials?.username || !credentials?.password) {
@@ -31,21 +34,16 @@ const handler = NextAuth({
           .eq("Username", credentials.username)
           .maybeSingle();
 
-        if (error || !user) {
-          throw new Error("Invalid username or password");
-        }
+        if (error || !user) throw new Error("Invalid username or password");
 
-        // Verify password with bcrypt
+        // Compare the provided password against the stored hash
         const isValidPassword = await bcrypt.compare(
           credentials.password,
           user.PasswordHash || ""
         );
 
-        if (!isValidPassword) {
-          throw new Error("Invalid username or password");
-        }
+        if (!isValidPassword) throw new Error("Invalid username or password");
 
-        // Return user object if authentication succeeds
         return {
           id: user.id,
           email: user.Email,
@@ -53,67 +51,82 @@ const handler = NextAuth({
           username: user.Username,
           role: user.Role,
         };
-      }
+      },
     }),
   ],
+
   secret: process.env.NEXTAUTH_SECRET,
 
   callbacks: {
+    /**
+     * Runs on every sign-in attempt.
+     * - Blocks users outside the allowed domain
+     * - Auto-creates a new user record on first Google login
+     * - Assigns "org" role if email matches an org record, otherwise "member"
+     */
     async signIn({ user }) {
       const email = user?.email || "";
       const domain = email.split("@")[1];
-      
-      if (domain === allowedDomain) {
-        // Check if user exists
-        const { data: existingUser } = await supabase
-          .from("users")
-          .select("id, Username")
+
+      if (domain !== allowedDomain) return "/login?error=unauthorized";
+
+      // Check if user already exists in the database
+      const { data: existingUser } = await supabase
+        .from("users")
+        .select("id, Username")
+        .eq("Email", email)
+        .maybeSingle();
+
+      // If account is fully set up, allow login
+      if (existingUser?.Username) return true;
+
+      // First-time login — insert new user record
+      if (!existingUser) {
+        // Determine role based on whether the email belongs to an org
+        const { data: matchedOrg } = await supabase
+          .from("orgs")
+          .select("id")
           .eq("Email", email)
           .maybeSingle();
 
-        // If email exists and has a username, signup is already complete
-        if (existingUser?.Username) {
-          // Allow login since account is fully set up
-          return true;
-        }
+        const role = matchedOrg ? "org" : "member";
 
-        // Insert only if it doesn't exist
-        if (!existingUser) {
-          const { error } = await supabase.from("users").insert({
-            Email: email,
-            Name: user.name,
-            Role: "member"
-          });
+        const { error } = await supabase.from("users").insert({
+          Email: email,
+          Name: user.name,
+          Role: role,
+        });
 
-          if (error) {
-            console.error("❌ Supabase insert failed:", error);
-            return "/login?error=unauthorized"; // block login if DB fails
-          }
+        if (error) {
+          console.error("❌ Supabase insert failed:", error);
+          return "/login?error=unauthorized";
         }
-        return true; // allow login
-      } else {
-        return "/login?error=unauthorized"; // block login
       }
-      
+
+      return true;
     },
+
+    /**
+     * Controls where the user is redirected after sign-in.
+     * Allows internal redirects, defaults to /dashboard.
+     */
     async redirect({ url, baseUrl }) {
-      // Allow internal redirects (e.g., from signup/complete with error params)
       try {
         const dest = new URL(url, baseUrl);
         const base = new URL(baseUrl);
-        if (dest.origin === base.origin) {
-          return dest.toString();
-        }
+        if (dest.origin === base.origin) return dest.toString();
       } catch (e) {
-        // fallthrough
+        // fallthrough to default
       }
-      // Default redirect to dashboard after successful login
       return "/dashboard";
     },
-  //add roles of users
-    async jwt({token, user}){
 
-      //gets users Role and assigns user a specific role
+    /**
+     * Attaches the user's role to the JWT token.
+     * For Google logins, fetches role from the database.
+     * For credentials logins, role is already on the user object.
+     */
+    async jwt({ token, user }) {
       if (user?.email) {
         const { data, error } = await supabase
           .from("users")
@@ -121,46 +134,27 @@ const handler = NextAuth({
           .eq("Email", user.email)
           .single();
 
-        if (error) {
-          token.role = "member";
-        } else {
-          token.role = data.Role; 
-        }
-        // Ensure token.role is one of the allowed string roles; otherwise default to "member"
-        const validRoles = ["member", "adviser", "osas", "org"];
-        if (!validRoles.includes(String(token.role))) {
-          token.role = "member";
-        }
+        const role = error ? "member" : data.Role;
+        token.role = validRoles.includes(String(role)) ? role : "member";
       } else if ((user as any)?.role) {
-        // For credentials login, user object has role from authorize function
         token.role = (user as any).role;
       }
+
       return token;
     },
-      
-      // if (user?.email) {
-      //   const roleMap: Record<string, string> = {
-      //     "admin@yourcompany.com": "osas",
-      //     "manager@yourcompany.com": "adviser",
-      //     "staff@yourcompany.com": "org",
-      //   };
-      //   token.picture = user.image;
-      //   token.role = roleMap[user.email] ?? "member";
-      // }
-      //   return token;
-      // },
-      
-       async session({ session, token }) {
+
+    /**
+     * Exposes the role from the JWT token to the client-side session object.
+     */
+    async session({ session, token }) {
       session.user = session.user ?? {
         name: token.name ?? null,
         email: token.email ?? null,
-        image: token.picture??null
+        image: token.picture ?? null,
       };
       (session.user as any).role = token.role ?? "member";
-      console.log(session)
       return session;
-    }
-      
+    },
   },
 });
 
