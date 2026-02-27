@@ -203,9 +203,8 @@ const OrgsDashboard: FC = () => {
   activeRequirements: 0,
 });
 
-  const source = allOrgs;
 
-  const filteredOrgs = source
+  const filteredOrgs = allOrgs
     .filter((org) =>
       org.active === true &&
       (
@@ -237,7 +236,7 @@ const OrgsDashboard: FC = () => {
           email
         });
 
-              // check if there are more orgs than the slice limit
+        // check if there are more orgs than the slice limit
         setHasMoreOrgs(fetchedOrgs.length > ORG_SLICE_LIMIT);
 
         // create sliced version (do NOT reassign)
@@ -377,7 +376,7 @@ const OrgsDashboard: FC = () => {
   if (loading) return <div className="p-4 text-black">Loading organizations...</div>;
   
   return (
-    <div className="bg-[#e6f1ff]min-h-screen p-6">
+    <div className="bg-[#e6f1ff] min-h-screen p-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <div>
