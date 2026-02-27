@@ -10,13 +10,51 @@ export default function UserPage() {
   const [organizations, setOrganizations] = useState<string[]>([]);
 
   useEffect(() => {
-    if (!session?.user?.name) return;
+    if (!session?.user?.email) return;
 
     const fetchOrgs = async () => {
+      if (!session.user) return;
+      
+      const role = ((session.user as any)?.role || '').toString().toLowerCase();
+      const email = session.user.email;
+      
+      if (!email) return;
+
+      // If user is an org, get the org name from orgs table
+      if (role === 'org') {
+        const { data, error } = await supabase
+          .from("orgs")
+          .select("name")
+          .eq("email", email)
+          .maybeSingle();
+
+        if (!error && data) {
+          setOrganizations([data.name]);
+        }
+        return;
+      }
+
+      // If user is an adviser, get all orgs where adviseremail matches
+      if (role === 'adviser') {
+        const { data, error } = await supabase
+          .from("orgs")
+          .select("name")
+          .eq("adviseremail", email);
+
+        if (!error && data) {
+          const orgNames = data.map((org: any) => org.name).filter(Boolean);
+          setOrganizations(orgNames);
+        }
+        return;
+      }
+
+      // For members, use the existing logic
+      if (!session.user.name) return;
+      
       const { data, error } = await supabase
         .from("member")
         .select("organizations")
-        .eq("student_name", session.user!.name);
+        .eq("student_name", session.user.name);
 
       if (error || !data) return;
 
@@ -34,7 +72,7 @@ export default function UserPage() {
     };
 
     fetchOrgs();
-  }, [session?.user?.name]);
+  }, [session?.user?.email, (session?.user as any)?.role, session?.user?.name]);
 
 
 
@@ -50,15 +88,26 @@ export default function UserPage() {
                 <h1 className="text-gray-800 text-2xl sm:text-3xl font-bold"> User Information </h1>
                 <p className="text-gray-600 mt-2 text-sm sm:text-base"> <span className="font-semibold">Name:</span> {session.user?.name}</p>
                 <p className="text-gray-600 mt-2 text-sm sm:text-base"> <span className="font-semibold">Email:</span> {session.user?.email}</p>
+                <p className="text-gray-600 mt-2 text-sm sm:text-base"> <span className="font-semibold">Role:</span> {((session.user as any)?.role || 'member').toUpperCase()}</p>
             </div>
 
             {/* Current Organizations */}
             <div className="bg-white shadow-md rounded-lg p-6 sm:p-8 w-full break-words">
-                <h1 className="text-gray-800 text-2xl sm:text-3xl font-bold"> Current Organizations </h1>
+                <h1 className="text-gray-800 text-2xl sm:text-3xl font-bold"> 
+                  {((session.user as any)?.role || '').toLowerCase() === 'org' 
+                    ? 'Organization' 
+                    : ((session.user as any)?.role || '').toLowerCase() === 'adviser'
+                    ? 'Organizations Advised'
+                    : 'Current Organizations'
+                  }
+                </h1>
 
                 {organizations.length === 0 ? (
                   <p className="text-gray-600 mt-2 text-sm sm:text-base">
-                    You are not part of any organizations
+                    {((session.user as any)?.role || '').toLowerCase() === 'adviser'
+                      ? 'You are not advising any organizations'
+                      : 'You are not part of any organizations'
+                    }
                   </p>
                 ) : (
                   <ul className="text-gray-600 mt-2 text-sm sm:text-base list-disc list-inside space-y-1 max-h-[50vh] overflow-y-auto">
