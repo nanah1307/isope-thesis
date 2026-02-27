@@ -216,7 +216,7 @@ export default function Page({ params }: { params: Promise<{ orgname: string }> 
         <div className="flex items-center gap-4 mb-6">
         <button
           onClick={goToMembers}
-          className="flex items-center gap-2 text-gray-900 hover:text-blue-600 transition-colors cursor-pointer"
+          className="flex items-center gap-2 text-gray-900 hover:text-blue-[#014fb3] transition-colors cursor-pointer"
         >
           <ArrowUturnLeftIcon className="w-5 h-5" />
         </button>

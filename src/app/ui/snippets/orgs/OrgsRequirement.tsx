@@ -322,7 +322,7 @@ export default function OrgsRequirement({
                         setEditMode((prev) => !prev);
                         if (!editMode) setEditRequirementsMode(false);
                       }}
-                      className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm cursor-pointer"
+                      className="bg-[#014fb3] text-white px-4 py-2 rounded hover:bg-[#013584] text-sm cursor-pointer"
                     >
                       {editMode ? 'Exit Edit Mode' : 'Edit Scores'}
                     </button>
@@ -333,7 +333,7 @@ export default function OrgsRequirement({
                           setEditRequirementsMode((prev) => !prev);
                           if (!editRequirementsMode) setEditMode(false);
                         }}
-                        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm cursor-pointer"
+                        className="bg-[#014fb3] text-white px-4 py-2 rounded hover:bg-[#013584] text-sm cursor-pointer"
                       >
                         {editRequirementsMode ? 'Exit Edit Mode' : 'Edit Requirements'}
                       </button>
@@ -421,7 +421,7 @@ export default function OrgsRequirement({
                             pathname: `/dashboard/orgs/${username}/requirements/${req.id}`,
                             query: { statusId: status.id },
                           }}
-                          className="text-blue-500 hover:underline flex flex-col items-center"
+                          className="text-[#014fb3] hover:underline flex flex-col items-center"
                         >
                           <DocumentTextIcon className="w-6 h-6 mb-1" />
                           <span>View</span>

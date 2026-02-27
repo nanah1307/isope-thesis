@@ -192,6 +192,9 @@ const OrgsDashboard: FC = () => {
 
   const [hasMoreOrgs, setHasMoreOrgs] = useState(false);
 
+  const [role, setRole] = useState<string>('');
+
+
   const [stats, setStats] = useState({
   activeOrgs: 0,
   totalOrgs: 0,
@@ -218,6 +221,7 @@ const OrgsDashboard: FC = () => {
       if (status === 'loading') return;
       try {
         const role = (((session?.user as any)?.role) || '').toString().toLowerCase();
+        setRole(role);
         const name = (session?.user as any)?.name;
         const email = ((session?.user as any)?.email || '').toString().trim().toLowerCase();
         const orgIdentifier =
@@ -373,7 +377,7 @@ const OrgsDashboard: FC = () => {
   if (loading) return <div className="p-4 text-black">Loading organizations...</div>;
   
   return (
-    <div className="bg-gradient-to-br from-[#e6f1ff] to-indigo-100 min-h-screen p-6">
+    <div className="bg-[#e6f1ff]min-h-screen p-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <div>
@@ -402,52 +406,64 @@ const OrgsDashboard: FC = () => {
         </div>
       </div>
 
-      {/* ================= Statistics Section ================= */}
-      <div className="mb-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* ================= Conditional Section ================= */}
+        {role === 'osas' ? (
+          /* ================= Statistics Section ================= */
+          <div className="mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-          {/* Active Orgs */}
-          <div className="bg-white rounded-lg shadow-md p-6 text-center">
-            <h3 className="text-sm font-semibold text-gray-500 mb-2">
-              Active Organizations
-            </h3>
-            <p className="text-3xl font-bold text-[#014fb3]">
-              {stats.activeOrgs}
-              <span className="text-gray-400 text-lg font-medium">
-                {" "} / {stats.totalOrgs}
-              </span>
-            </p>
+              {/* Active Orgs */}
+              <div className="bg-white rounded-lg shadow-md p-6 text-center">
+                <h3 className="text-sm font-semibold text-gray-500 mb-2">
+                  Active Organizations
+                </h3>
+                <p className="text-3xl font-bold text-[#014fb3]">
+                  {stats.activeOrgs}
+                  <span className="text-gray-400 text-lg font-medium">
+                    {" "} / {stats.totalOrgs}
+                  </span>
+                </p>
+              </div>
+
+              {/* Graded Requirements */}
+              <div className="bg-white rounded-lg shadow-md p-6 text-center">
+                <h3 className="text-sm font-semibold text-gray-500 mb-2">
+                  Graded Requirements
+                </h3>
+                <p className="text-3xl font-bold text-[#014fb3]">
+                  {stats.graded}
+                  <span className="text-gray-400 text-lg font-medium">
+                    {" "} / {stats.activeRequirements}
+                  </span>
+                </p>
+              </div>
+
+              {/* Approved Requirements */}
+              <div className="bg-white rounded-lg shadow-md p-6 text-center">
+                <h3 className="text-sm font-semibold text-gray-500 mb-2">
+                  Approved Requirements
+                </h3>
+                <p className="text-3xl font-bold text-[#014fb3]">
+                  {stats.approved}
+                  <span className="text-gray-400 text-lg font-medium">
+                    {" "} / {stats.activeRequirements}
+                  </span>
+                </p>
+              </div>
+
+            </div>
           </div>
-
-          {/* Graded Requirements */}
-          <div className="bg-white rounded-lg shadow-md p-6 text-center">
-            <h3 className="text-sm font-semibold text-gray-500 mb-2">
-              Graded Requirements
-            </h3>
-            <p className="text-3xl font-bold text-[#014fb3]">
-              {stats.graded}
-              <span className="text-gray-400 text-lg font-medium">
-                {" "} / {stats.activeRequirements}
-              </span>
-            </p>
+        ) : (
+          /* ================= Banner Section ================= */
+          <div className="mb-8 bg-white rounded-lg shadow-md p-8 text-center">
+            <h2 className="text-4xl font-bold text-[#014fb3] mb-2">
+              Empowering Student Organizations
+            </h2>
+            {/*<p className="text-gray-600">
+              Manage requirements, track progress, and stay connected with OSAS.
+            </p>*/}
           </div>
-
-          {/* Approved Requirements */}
-          <div className="bg-white rounded-lg shadow-md p-6 text-center">
-            <h3 className="text-sm font-semibold text-gray-500 mb-2">
-              Approved Requirements
-            </h3>
-            <p className="text-3xl font-bold text-[#014fb3]">
-              {stats.approved}
-              <span className="text-gray-400 text-lg font-medium">
-                {" "} / {stats.activeRequirements}
-              </span>
-            </p>
-          </div>
-
-        </div>
-      </div>
-
+        )}
 
       {filteredOrgs.length === 0 ? (
         <p className="text-black">No active organizations found.</p>

@@ -80,7 +80,7 @@ export default function ForgotPasswordPage() {
 
           <button
             onClick={() => router.push("/login")}
-            className="text-blue-600 text-sm hover:underline"
+            className="text-[#014fb3] text-sm hover:underline"
           >
             Back to login
           </button>

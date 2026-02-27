@@ -190,7 +190,7 @@ const missingCount = validateRequiredAnswers().length;
           <div>
             <button
               onClick={goToMembers}
-              className="flex items-center gap-2 text-lg font-bold text-black hover:text-blue-600 transition-colors cursor-pointer"
+              className="flex items-center gap-2 text-lg font-bold text-black hover:text-bg-[#014fb3] transition-colors cursor-pointer"
             >
               <ArrowUturnLeftIcon className="w-5 h-5" />
             </button>
@@ -205,7 +205,7 @@ const missingCount = validateRequiredAnswers().length;
               <button
                 onClick={submitEvaluation}
                 disabled={missingCount > 0}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded cursor-pointer"
+                className="px-4 py-2 bg-bg-[#014fb3] hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded cursor-pointer"
               >
                 Submit
               </button>

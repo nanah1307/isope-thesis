@@ -99,7 +99,7 @@ function ResetPasswordForm() {
             <button
               type="submit"
               disabled={loading}
-              className="bg-blue-600 text-white px-4 py-2 rounded w-full cursor-pointer hover:bg-gray-800 disabled:opacity-60"
+              className="bg-[#014fb3] text-white px-4 py-2 rounded w-full cursor-pointer hover:bg-gray-800 disabled:opacity-60"
             >
               {loading ? "Resetting..." : "Reset password"}
             </button>
@@ -110,7 +110,7 @@ function ResetPasswordForm() {
 
           <button
             onClick={() => router.push("/login")}
-            className="text-blue-600 text-sm hover:underline"
+            className="text-[#014fb3] text-sm hover:underline"
           >
             Back to login
           </button>
