@@ -3,7 +3,9 @@ import { useEffect, useState, FC } from 'react';
 import { BellIcon, DocumentIcon } from '@heroicons/react/24/outline';
 import { supabase } from '@/app/lib/database';
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation"; 
+import { useRouter } from "next/navigation";
+import { Orgs } from '@/app/lib/definitions';
+import { fetchAccessibleOrgs } from '@/app/lib/access-control'; 
 
 const OrgCard: FC<{ org: any }> = ({ org }) => {
   const router = useRouter();
@@ -45,10 +47,6 @@ const OrgCard: FC<{ org: any }> = ({ org }) => {
           {org.name}
         </h2>
 
-        <h2 className="text-l text-gray-900 line-clamp-2">
-          {org.bio}
-        </h2>
-
         {org.active === false && (
           <span className="mt-1 inline-block text-xs font-semibold text-red-600 bg-red-100 px-2 py-1 rounded-full">
             Archived
@@ -59,7 +57,7 @@ const OrgCard: FC<{ org: any }> = ({ org }) => {
 
       {/* Progress Bar */}
       <div className="mt-4">
-        <div className="text-xs font-semibold text-blue-600 mb-1 text-center">
+        <div className="text-xs font-semibold text-[#014fb3] mb-1 text-center">
           {progress}%
         </div>
         <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
@@ -75,7 +73,7 @@ const OrgCard: FC<{ org: any }> = ({ org }) => {
         {/* Requirements */}
         <button
           onClick={goToDues}
-          className="flex items-center justify-center gap-2 bg-[#014fb3] hover:bg-blue-700 text-white px-3 py-2 rounded-md text-sm font-medium transition cursor-pointer"
+          className="flex items-center justify-center gap-2 bg-[#014fb3] hover:bg-[#013db3] text-white px-3 py-2 rounded-md text-sm font-medium transition cursor-pointer"
         >
           <DocumentIcon className="w-5 h-5" />
           <span>Requirements</span>
@@ -84,7 +82,7 @@ const OrgCard: FC<{ org: any }> = ({ org }) => {
         {/* Notifications */}
         <button
           onClick={(e) => e.stopPropagation()}
-          className="flex items-center justify-center bg-[#014fb3] hover:bg-blue-700 text-white p-2 rounded-md transition cursor-pointer"
+          className="flex items-center justify-center bg-[#014fb3] hover:bg-[#013db3] text-white p-2 rounded-md transition cursor-pointer"
         >
           <BellIcon className="w-5 h-5" />
         </button>
@@ -138,7 +136,7 @@ const CreateOrgModal: FC<{
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Enter organization name"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-black"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#014fb3] outline-none text-black"
               onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
             />
           </div>
@@ -153,7 +151,7 @@ const CreateOrgModal: FC<{
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Enter email address"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-black"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#014fb3] outline-none text-black"
               onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
             />
           </div>
@@ -168,7 +166,7 @@ const CreateOrgModal: FC<{
           </button>
           <button
             onClick={handleCreate}
-            className="cursor-pointer text-white px-4 py-2 bg-[#014fb3] hover:bg-blue-700 rounded-md transition"
+            className="cursor-pointer text-white px-4 py-2 bg-[#014fb3] hover:bg-[#013db3] rounded-md transition"
           >
             Create
           </button>
@@ -210,31 +208,18 @@ const OrgsDashboard: FC = () => {
       try {
         const role = (((session?.user as any)?.role) || '').toString().toLowerCase();
         const name = (session?.user as any)?.name;
+        const email = ((session?.user as any)?.email || '').toString().trim().toLowerCase();
+        const orgIdentifier =
+          role === 'org'
+            ? session?.user?.email
+            : (session?.user as any)?.username || session?.user?.name;
 
-        let fetchedOrgs: any[] = [];
-
-        if (role === 'osas') {
-          const { data } = await supabase.from('orgs').select('*');
-          fetchedOrgs = data || [];
-        } else if (role === 'adviser' || role === 'member') {
-          const { data: memberData } = await supabase
-            .from('member')
-            .select('*, orgs(*)')
-            .eq('student_name', name)
-            .maybeSingle();
-
-          if (memberData?.orgs) fetchedOrgs = [memberData.orgs];
-        } else if (role === 'org') {
-          const orgIdentifier = (session?.user as any)?.username || session?.user?.name;
-          if (orgIdentifier) {
-            const { data } = await supabase
-              .from('orgs')
-              .select('*')
-              .or(`username.eq.${orgIdentifier},name.eq.${orgIdentifier}`)
-              .maybeSingle();
-            if (data) fetchedOrgs = [data];
-          }
-        }
+        const fetchedOrgs: Orgs[] = await fetchAccessibleOrgs({
+          role,
+          name,
+          orgIdentifier,
+          email
+        });
 
         if (fetchedOrgs.length === 0) {
           setOrgs([]);
@@ -326,11 +311,11 @@ const OrgsDashboard: FC = () => {
   if (loading) return <div className="p-4 text-black">Loading organizations...</div>;
   
   return (
-    <div className="bg min-h-screen p-6">
+    <div className="min-h-screen p-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-black">DASHBOARD</h1>
+          <h1 className="text-3xl font-bold text-black">ALL ORGANIZATIONS</h1>
           <p className="text-black">Hello, {session?.user?.name}</p>
         </div>
       
@@ -342,12 +327,12 @@ const OrgsDashboard: FC = () => {
             onChange={(e) => setSearch(e.target.value)}
             className="w-64 min-w-[16rem] max-w-[16rem] flex-shrink-0
                        bg-white px-4 py-2 rounded-md border border-gray-300 text-black
-                       focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+                       focus:bg-white focus:ring-2 focus:ring-[#014fb3] outline-none"
           />
       
           <button
             onClick={() => setShowModal(true)}
-            className="cursor-pointer flex-shrink-0 bg-[#014fb3] hover:bg-blue-700 text-white
+            className="cursor-pointer flex-shrink-0 bg-[#014fb3] hover:bg-[#013db3] text-white
                        px-4 py-2 rounded-md text-sm font-medium transition-colors"
           >
             Create Organization

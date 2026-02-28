@@ -52,7 +52,5 @@ else if (role === 'org') {
     }
   }
 }
-
-
   return fetchedOrgs;
 };
