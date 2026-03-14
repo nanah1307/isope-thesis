@@ -184,7 +184,7 @@ const OrgsDashboard: FC = () => {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [search, setSearch] = useState('');
-
+  const [role, setRole] = useState('');
   const filteredActiveOrgs = orgs.filter((org) =>
     org.active === true &&
     (
@@ -225,7 +225,7 @@ const OrgsDashboard: FC = () => {
           setOrgs([]);
           return;
         }
-
+        if(role==='osas') setRole('osas');
         // Fetch requirement status for all orgs
         const usernames = fetchedOrgs.map((o) => o.username);
         const { data: reqStatus } = await supabase
@@ -366,12 +366,16 @@ const OrgsDashboard: FC = () => {
           </>
         )}
 
-
-      <CreateOrgModal
-        isOpen={showModal}
-        onClose={() => setShowModal(false)}
-        onCreate={handleCreateOrg}
-      />
+        {role === 'osas' && (
+            <CreateOrgModal
+              isOpen={showModal}
+              onClose={() => setShowModal(false)}
+              onCreate={handleCreateOrg}
+            />
+          )}
+          
+        
+      
     </div>
   );
 };
