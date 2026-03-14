@@ -366,7 +366,7 @@ const OrgsDashboard: FC = () => {
           </>
         )}
 
-        {role === 'osas' && 
+        {role == 'osas' && 
             <CreateOrgModal
               isOpen={showModal}
               onClose={() => setShowModal(false)}
