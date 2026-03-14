@@ -213,7 +213,7 @@ const OrgsDashboard: FC = () => {
           role === 'org'
             ? session?.user?.email
             : (session?.user as any)?.username || session?.user?.name;
-
+          if(role=='osas') setRole('osas');
         const fetchedOrgs: Orgs[] = await fetchAccessibleOrgs({
           role,
           name,
@@ -225,7 +225,7 @@ const OrgsDashboard: FC = () => {
           setOrgs([]);
           return;
         }
-        if(role==='osas') setRole('osas');
+        
         // Fetch requirement status for all orgs
         const usernames = fetchedOrgs.map((o) => o.username);
         const { data: reqStatus } = await supabase
