@@ -115,6 +115,7 @@ const CreateOrgModal: FC<{
   return (
     <div className="fixed inset-0 bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-bold text-black">Create Organization</h2>
           <button
@@ -124,7 +125,6 @@ const CreateOrgModal: FC<{
             ✕
           </button>
         </div>
-
         <div className="space-y-4">
           {/* Organization Name */}
           <div>
@@ -329,14 +329,14 @@ const OrgsDashboard: FC = () => {
                        bg-white px-4 py-2 rounded-md border border-gray-300 text-black
                        focus:bg-white focus:ring-2 focus:ring-[#014fb3] outline-none"
           />
-      
+      {role === 'osas' &&
           <button
             onClick={() => setShowModal(true)}
             className="cursor-pointer flex-shrink-0 bg-[#014fb3] hover:bg-[#013db3] text-white
                        px-4 py-2 rounded-md text-sm font-medium transition-colors"
           >
             Create Organization
-          </button>
+          </button>}
         </div>
       </div>
 
