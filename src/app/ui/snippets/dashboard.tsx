@@ -394,14 +394,16 @@ const OrgsDashboard: FC = () => {
                        bg-white px-4 py-2 rounded-md border border-gray-300 text-black
                        focus:bg-white focus:ring-2 focus:ring-[#014fb3] outline-none"
           />
-      
-          <button
-            onClick={() => setShowModal(true)}
-            className="cursor-pointer flex-shrink-0 bg-[#014fb3] hover:bg-[#013db3] text-white
-                       px-4 py-2 rounded-md text-sm font-medium transition-colors"
-          >
-            Create Organization
-          </button>
+
+          {role === 'osas' && (
+            <button
+              onClick={() => setShowModal(true)}
+              className="cursor-pointer flex-shrink-0 bg-[#014fb3] hover:bg-[#013db3] text-white
+                         px-4 py-2 rounded-md text-sm font-medium transition-colors"
+            >
+              Create Organization
+            </button>
+          )}
         </div>
       </div>
 
